@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+_scratch/
+
+# Generated dataset output
+ligtas_synthetic_dataset/
+*.npy
+*.pt
+
+# Downloaded NHSI cubes (large, not redistributable)
+data/
+*.mat
+
+# OS
+.DS_Store
