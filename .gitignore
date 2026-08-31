@@ -18,6 +18,9 @@ ligtas_synthetic_dataset/
 *.npy
 *.pt
 
+# CRN training output (checkpoints, heatmaps, loss curves)
+crn_outputs/
+
 # Downloaded NHSI cubes (large, not redistributable)
 data/
 *.mat

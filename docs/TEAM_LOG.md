@@ -42,6 +42,14 @@ Template:
 - `requirements.txt`: added `torch>=2.1`, `matplotlib>=3.7`.
   `.gitignore`: added `xphectra_venv/`, `crn_outputs/`.
 - Created `xphectra_venv` (Python 3.11.5) as the project's venv.
+- Fixed a second bug in `train_crn.py`: the final heatmap/report used
+  whatever the *last* epoch left the model at, not the checkpoint
+  actually saved as `crn_best.pt` (lowest val MAE). Now reloads
+  `crn_best.pt` before generating the reported heatmap.
+- Added `--weight-decay` CLI arg to `train_crn.py` (default 0.0 — no
+  behavior change unless passed) to support a diagnostic run.
+- Added `train_r2`/`val_r2` to the per-epoch `history.json` record
+  (previously only MAE was stored there).
 
 **Verified (numbers, not "looks good"):**
 - Self-test after the pH-scale change: sign test **PASS** (reflectance
@@ -64,6 +72,26 @@ Template:
   upsampled for the hidden-map comparison. Confirmed working.
 - `--n-points 8`: correctly prints a warning and clamps to 4 (dataset
   only embeds 4 probes/sample); ran without crashing. Confirmed working.
+- **Diagnosed the val instability with 3 isolated 15-epoch runs**, same
+  dataset, one variable changed per run, no architecture change (per
+  explicit instruction to understand the cause before touching
+  BatchNorm/etc.):
+  - Baseline repeat (`lr=1e-3`, no weight decay): val MAE range
+    **0.059–1.065** (spread 1.006), val R² range −14.2 to +0.93.
+    Confirms the instability reproduces — not a one-off fluke run.
+  - `lowlr` (`lr=1e-4`): val MAE range **0.108–0.599** (spread 0.491 —
+    roughly half of baseline). Clear stabilizing effect.
+  - `wd` (`lr=1e-3`, `weight_decay=1e-4`): val MAE range **0.082–0.705**
+    (spread 0.623) — barely different from baseline. Regularization is
+    NOT the main lever.
+  - Val set size confirmed: **50 samples**. Contributes some inherent
+    per-epoch metric noise, but doesn't alone explain the swing — if it
+    did, changing the learning rate wouldn't have nearly halved it.
+  - With the checkpoint-reload bug fixed, the baseline's corrected
+    best-epoch heatmap now visually matches the true field's zonal
+    pattern well. The earlier "bad" heatmap shown to the team was
+    largely a reporting-bug artifact, not proof the model wasn't
+    learning.
 
 **Decided:**
 - pH field correlation length: 18px → 77px (~1.5cm). Applied and dataset
@@ -72,6 +100,16 @@ Template:
 - Sparse-point loss requires a total-variation smoothness term (per Part
   B spec — 4 points alone underdetermine a 65,536-pixel map). Implemented
   at weight 0.05, not yet tuned.
+- Root cause of val instability: **learning rate too high (1e-3)**, not
+  overfitting (weight decay didn't help) and not purely a small-val-set
+  metric artifact (the LR change had a real, reproducible stabilizing
+  effect). No architecture change made this session.
+- Recommended new default: `--lr 1e-4` (not yet edited into the script's
+  default — still passed explicitly on the command line).
+- Started a longer confirmation run: 50 epochs (midpoint of the
+  requested 40–60 range) at `lr=1e-4`, with the checkpoint-reload fix in
+  place, logging full per-epoch val MAE/R² to both console log and
+  `history.json` — see "Context to feed next session."
 
 **Still open:**
 - **Dataset size.** Currently 400 samples (`--n 400`) — the only number
@@ -82,13 +120,14 @@ Template:
   any team agreement. Do not treat 5000 as a target until someone
   confirms it against the actual manuscript methodology (not in this
   repo) or a team decision.
-- **CRN validation instability** (val MAE/R² swinging wildly epoch to
-  epoch) is unresolved. Plausible, undistinguished causes: (a) genuine
-  overfitting/poor generalization given only 4 points/sample per train
-  step, (b) the val R² metric is currently averaged per-batch rather than
-  pooled globally across the whole val set, which can itself be noisy,
-  (c) learning rate too high / no LR schedule for a crude 300-sample
-  pass. Needs investigation before trusting any single "best" checkpoint.
+- **CRN validation instability — cause identified (learning rate), fix
+  not yet confirmed at longer horizon.** A 50-epoch run at `lr=1e-4` was
+  started to check the fix holds beyond 15 epochs; check that run's
+  outcome before treating this as closed. Also still unaddressed: the
+  val R² metric is averaged per-batch rather than pooled globally across
+  the whole val set, which adds its own noise on top of whatever the
+  model is doing — not yet fixed, was deliberately left unchanged during
+  the diagnostic runs so every run's evaluation code was identical.
 - 12 of 14 physical `PARAMS` in `generate_dataset.py` are still
   placeholders (AB's task) — the dataset and this CRN run are on
   placeholder physics, not yet citable.
@@ -107,8 +146,14 @@ Template:
 - Dataset on disk right now uses the NEW pH scale (~1.5cm). If you see
   old figures/numbers referencing a "~0.35cm mottled" field, they're
   stale, from before this session's regeneration.
-- `crn_outputs/crn_best.pt` is the epoch-8-by-val-MAE checkpoint, but
-  given the val volatility above, don't treat it as a stable final
-  result without re-running and checking the loss curve yourself first.
+- `crn_outputs/`, `crn_outputs_lowlr/`, `crn_outputs_wd/` (all gitignored,
+  not committed) are the 3 diagnostic runs from the LR investigation —
+  each has a `history.json` with full per-epoch train/val MAE and R².
+- A 50-epoch run at `lr=1e-4` (`--out crn_outputs_lr1e4_50ep`) was
+  started at the end of this session to confirm the LR fix holds over a
+  longer horizon than the 15-epoch diagnostics. **Check that folder's
+  `history.json`/log for the actual outcome before assuming `lr=1e-4` is
+  a settled default** — it was recommended, not yet proven at 50 epochs
+  or hardcoded into the script.
 - Don't re-introduce "5000 samples" as a target without a real source —
   see "Still open" above.

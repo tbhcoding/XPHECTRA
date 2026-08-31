@@ -258,10 +258,16 @@ def make_ph_field(shape, rng):
     Spatial variation WITHIN one 5x5 cm sample is small (~0.1 pH units),
     which is what real loin actually does. The earlier generator stretched
     every sample across the whole range, which is not physical.
+
+    TEAM DECISION (see TEAM_LOG.md): scale was 18.0 (~0.35 cm correlation
+    length), which verification found produced a mottled/speckled field
+    rather than the smooth gradient described above. Raised to 77.0
+    (~1.5 cm, at 256 px / 5 cm = 51.2 px/cm) for a visibly smoother,
+    few-blob field closer to what a real 5x5 cm sample should look like.
     """
     base = rng.uniform(5.35, 6.45)
     spread = rng.uniform(0.04, 0.14)
-    field = smooth_field(shape, scale=18.0, rng=rng)
+    field = smooth_field(shape, scale=77.0, rng=rng)
     return np.clip(base + spread * field, 5.2, 6.8)
 
 
