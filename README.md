@@ -9,7 +9,10 @@ pixel-wise pH ground truth.
 |---|---|
 | `generate_dataset.py` | Builds the dataset. Contains the parameter table. |
 | `extract_sensor_params.py` | Measures sensor noise + texture from the NHSI cubes. |
-| `requirements.txt` | Dependencies. |
+| `crn_model.py` | The CRN (`CrudeCRN`) — a small U-Net predicting a dense pH map from the 6-band cube. |
+| `train_crn.py` | Trains the CRN on the 4 sparse points + a smoothness prior. See Step 5. |
+| `requirements.txt` | Dependencies (now includes `torch`, `matplotlib`). |
+| `docs/TEAM_LOG.md` | Session-by-session log of what was done/verified/decided/still open. Read this before assuming any number here is final. |
 
 ---
 
@@ -195,6 +198,42 @@ Chapter 4 — it's the number your CNN has to beat.
 
 ---
 
+## Step 5 — Train the CRN (Priority 2)
+
+Once you have a generated dataset (Step 3), train the dense pH predictor
+on the **4 sparse points only** — `phtrue.npy` stays hidden from training
+and is used only as a sanity check, same rule as everywhere else in this
+project.
+
+```bash
+python train_crn.py --data ligtas_synthetic_dataset --epochs 50
+```
+
+Loss = sparse-point MSE + a total-variation smoothness term (required:
+4 points alone can't determine a 65,536-pixel map). `--out-res` (coarser
+prediction grid) and `--n-points` (currently capped at 4 — see the
+script's docstring) are configurable, not hardcoded.
+
+**Learning rate note:** the default is `1e-4`. An earlier default of
+`1e-3` caused wild epoch-to-epoch validation swings (val MAE bouncing
+between ~0.06 and 1.17 pH). Diagnosed and confirmed at a 50-epoch run —
+see `docs/TEAM_LOG.md` for the full investigation. `1e-4` is
+**significantly more stable, not perfectly stable** — a mild late-run
+uptick and grainy per-pixel texture at full resolution are still open.
+Don't treat any single "best epoch" number as final without checking the
+loss curve.
+
+Output per run (`--out`, default `crn_outputs/`):
+
+```
+crn_best.pt              best checkpoint by val MAE (not committed to git)
+loss_curve.png           train/val sparse loss + MAE per epoch
+sanity_check_heatmap.png true pH | prediction | |error|, for one val sample
+history.json             full per-epoch train/val MAE and R²
+```
+
+---
+
 ## Why this isn't circular
 
 pH does not map directly to reflectance. pH acts only on **scattering**.
@@ -235,6 +274,8 @@ Say the second line out loud before the panel asks.
 | `LIGTAS_calibration.ipynb` | **Start here.** Filling in parameters, checking physics, making figures. |
 | `generate_dataset.py` | Edit the `PARAMS` table here. Run from terminal to build the 400 samples. |
 | `extract_sensor_params.py` | Once, on a downloaded NHSI cube, to measure sensor noise. |
+| `train_crn.py` | Once a dataset exists. Trains the CRN — see Step 5. |
+| `docs/TEAM_LOG.md` | Before touching the CRN or dataset params — check what's actually settled vs. still open. |
 
 The notebook imports the script, so the physics lives in one place only.
 Edit `PARAMS` in the `.py`, then **restart the notebook kernel** to pick

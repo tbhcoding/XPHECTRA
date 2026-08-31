@@ -13,6 +13,16 @@ work on our own synthetic data" -- not architecture quality. This is
 deliberately a small U-Net: two downsamples, two upsamples, skip
 connections. Get this crude version training end-to-end before spending
 time on anything fancier.
+
+NOTE on BatchNorm (see TEAM_LOG.md): this was the first suspected cause
+of the wild val-set instability found after the initial training run --
+BatchNorm's running stats can be noisy with a small batch size (8) and
+few iterations/epoch. Diagnosed with an isolated learning-rate test
+before touching this architecture, per explicit instruction not to
+change it until the cause was understood. Learning rate (1e-3 -> 1e-4,
+see train_crn.py) turned out to be the dominant cause instead, so
+BatchNorm was kept as-is. Revisit GroupNorm only if instability
+resurfaces after the LR fix.
 """
 
 import torch

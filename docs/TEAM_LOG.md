@@ -50,6 +50,18 @@ Template:
   behavior change unless passed) to support a diagnostic run.
 - Added `train_r2`/`val_r2` to the per-epoch `history.json` record
   (previously only MAE was stored there).
+- Changed `train_crn.py`'s `--lr` default from `1e-3` to `1e-4` (see
+  Decided below — confirmed stable over a full 50-epoch run, not just
+  the 15-epoch diagnostic). Added a docstring note explaining why.
+- Added a note to `crn_model.py`'s docstring on why BatchNorm was kept
+  (LR was the diagnosed cause, not architecture — see Decided below).
+- Committed `crn_outputs_lr1e4_50ep/loss_curve.png`, `sanity_check_heatmap.png`,
+  and `history.json` as the reference 50-epoch result (the `crn_best.pt`
+  checkpoint itself stays out of git, per the existing blanket `*.pt`
+  rule — model binaries aren't normally committed).
+- Added a Part-B section to `README.md` — it previously documented only
+  `generate_dataset.py`/`extract_sensor_params.py`, with no mention that
+  `crn_model.py`/`train_crn.py` existed or how to run them.
 
 **Verified (numbers, not "looks good"):**
 - Self-test after the pH-scale change: sign test **PASS** (reflectance
@@ -92,6 +104,29 @@ Template:
     pattern well. The earlier "bad" heatmap shown to the team was
     largely a reporting-bug artifact, not proof the model wasn't
     learning.
+- **50-epoch confirmation run at `lr=1e-4`** (`--out crn_outputs_lr1e4_50ep`):
+  - Epochs 1–8: warmup (val MAE 0.26→0.13 pH), expected.
+  - Epochs 9–50 (42 epochs, the real regime): val MAE range
+    **0.083–0.318 pH (spread 0.235)** — narrower than the 15-epoch
+    `lowlr` diagnostic's 0.491, i.e. it kept improving/stabilizing with
+    more epochs rather than degrading. ~86% of these 42 epochs (36/42)
+    landed in a genuinely good 0.08–0.17 pH band; the rest were
+    mediocre bumps (0.20–0.32), none catastrophic (no repeat of the
+    R²=−14 to −18 seen at `lr=1e-3`).
+  - **Best checkpoint: epoch 13, val MAE=0.083 pH, val R²=0.834.** Part
+    of a broad plateau of good epochs (9,10,12,13,15,18,21,24-26,28,29,
+    32,35,36,38-41,43,44,47,49 all R²>0.6), not an isolated fluke.
+  - Corrected heatmap (using the reloaded best checkpoint) visually
+    matches the true field's zonal structure well — error concentrated
+    at boundary/edge pixels, not spread uniformly.
+  - **Not fully resolved**: a mild uptick in epochs 45–50 (0.151→0.258
+    pH, ending on the run's second-worst epoch) — possibly early
+    overfitting starting ~epoch 40-45, possibly noise; not enough data
+    to tell yet. Also, the predicted map has a **grainy, per-pixel
+    texture** within zones at full 256 resolution that the true field's
+    smooth zones don't have — likely under-smoothing at this
+    resolution/TV-weight combination, not investigated further this
+    session.
 
 **Decided:**
 - pH field correlation length: 18px → 77px (~1.5cm). Applied and dataset
@@ -104,12 +139,12 @@ Template:
   overfitting (weight decay didn't help) and not purely a small-val-set
   metric artifact (the LR change had a real, reproducible stabilizing
   effect). No architecture change made this session.
-- Recommended new default: `--lr 1e-4` (not yet edited into the script's
-  default — still passed explicitly on the command line).
-- Started a longer confirmation run: 50 epochs (midpoint of the
-  requested 40–60 range) at `lr=1e-4`, with the checkpoint-reload fix in
-  place, logging full per-epoch val MAE/R² to both console log and
-  `history.json` — see "Context to feed next session."
+- `lr=1e-4` confirmed at a 50-epoch horizon (not just the 15-epoch
+  diagnostic) and **made the script's actual default** — no longer
+  needs `--lr 1e-4` passed explicitly.
+- Order-of-magnitude improvement over baseline (val MAE spread 0.235 vs.
+  1.006), but explicitly **not** calling this fully resolved — see the
+  late-run uptick and grainy-texture items below.
 
 **Still open:**
 - **Dataset size.** Currently 400 samples (`--n 400`) — the only number
@@ -120,14 +155,18 @@ Template:
   any team agreement. Do not treat 5000 as a target until someone
   confirms it against the actual manuscript methodology (not in this
   repo) or a team decision.
-- **CRN validation instability — cause identified (learning rate), fix
-  not yet confirmed at longer horizon.** A 50-epoch run at `lr=1e-4` was
-  started to check the fix holds beyond 15 epochs; check that run's
-  outcome before treating this as closed. Also still unaddressed: the
-  val R² metric is averaged per-batch rather than pooled globally across
-  the whole val set, which adds its own noise on top of whatever the
-  model is doing — not yet fixed, was deliberately left unchanged during
-  the diagnostic runs so every run's evaluation code was identical.
+- **CRN validation instability — significantly reduced, not fully
+  resolved.** `lr=1e-4` is now confirmed at 50 epochs (spread 0.235 vs.
+  baseline's 1.006) and is the script's default. Still open: (a) a mild
+  uptick in epochs 45–50 of the 50-epoch run — early overfitting or
+  noise, not yet distinguished; (b) grainy per-pixel texture in the
+  predicted map at full 256 resolution, not present in the true field's
+  smooth zones — possibly needs a stronger `--tv-weight` or a coarser
+  `--out-res`, not investigated; (c) the val R² metric is still averaged
+  per-batch rather than pooled globally across the whole val set, adding
+  its own noise on top of whatever the model does — deliberately left
+  unchanged through the diagnostic runs so every run's evaluation code
+  was identical, still not fixed.
 - 12 of 14 physical `PARAMS` in `generate_dataset.py` are still
   placeholders (AB's task) — the dataset and this CRN run are on
   placeholder physics, not yet citable.
@@ -138,9 +177,6 @@ Template:
   scoped and agreed but not built. Was blocked on a trained CRN existing;
   that's now crudely true, so it's unblocked, but still needs the actual
   photo(s) from the team.
-- CRN files, pH-scale change, and requirements/.gitignore updates from
-  this session are **not yet committed** — pending confirmation before
-  commit + push (commit `1d43b48` is the only thing pushed so far).
 
 **Context to feed next session:**
 - Dataset on disk right now uses the NEW pH scale (~1.5cm). If you see
@@ -149,11 +185,13 @@ Template:
 - `crn_outputs/`, `crn_outputs_lowlr/`, `crn_outputs_wd/` (all gitignored,
   not committed) are the 3 diagnostic runs from the LR investigation —
   each has a `history.json` with full per-epoch train/val MAE and R².
-- A 50-epoch run at `lr=1e-4` (`--out crn_outputs_lr1e4_50ep`) was
-  started at the end of this session to confirm the LR fix holds over a
-  longer horizon than the 15-epoch diagnostics. **Check that folder's
-  `history.json`/log for the actual outcome before assuming `lr=1e-4` is
-  a settled default** — it was recommended, not yet proven at 50 epochs
-  or hardcoded into the script.
+- `crn_outputs_lr1e4_50ep/` (loss curve, heatmap, history.json committed;
+  checkpoint not) is the 50-epoch confirmation run — treat it as the
+  current reference result, not the earlier 15-epoch runs.
+- `lr=1e-4` is now the script's default (was `1e-3`). If you see old
+  numbers/screenshots quoting wild val swings, they're from before this
+  fix — don't assume that's still current behavior, but also don't
+  assume the model is fully stable either (see the late-run uptick and
+  grainy-texture items above).
 - Don't re-introduce "5000 samples" as a target without a real source —
   see "Still open" above.

@@ -29,6 +29,17 @@ Do NOT add a dataset-size ablation (400/800/1600/3200) here -- that is a
 follow-up experiment after this crude version trains successfully, not
 part of this pass.
 
+LEARNING RATE (see TEAM_LOG.md): the original default of 1e-3 caused
+wild epoch-to-epoch val instability (val MAE swinging ~0.06-1.17 pH,
+R2 swinging -18.7 to +0.93). Diagnosed against weight decay (didn't
+help -- ruled out overfitting) and a repeated baseline (confirmed
+reproducible, not a fluke). Lowering to 1e-4 -- now the default --
+roughly halved the swing at 15 epochs and held up over a 50-epoch
+confirmation run (val MAE mostly 0.08-0.17 pH from epoch ~9 onward,
+best epoch R2=0.834). Not fully resolved: a mild late-run uptick
+(epochs 45-50 of the 50-epoch run) and grainy per-pixel texture at
+full 256 resolution (vs. the true field's smooth zones) are still open.
+
 Usage:
     python train_crn.py --data ligtas_synthetic_dataset --epochs 15
     python train_crn.py --out-res 32 --n-points 4   # coarse-grid variant
@@ -235,7 +246,10 @@ def main():
     ap.add_argument("--data", default="ligtas_synthetic_dataset")
     ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--batch-size", type=int, default=8)
-    ap.add_argument("--lr", type=float, default=1e-3)
+    ap.add_argument("--lr", type=float, default=1e-4,
+                     help="default was 1e-3, changed after diagnosis found "
+                          "it caused val instability -- see module docstring "
+                          "and TEAM_LOG.md")
     ap.add_argument("--weight-decay", type=float, default=0.0,
                      help="L2 weight decay on Adam; 0.0 = none (current default, "
                           "no regularization beyond the TV term)")
