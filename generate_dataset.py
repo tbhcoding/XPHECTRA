@@ -35,6 +35,8 @@ Usage:
 
 import os
 import json
+import shutil
+import tempfile
 import argparse
 import numpy as np
 
@@ -388,12 +390,16 @@ def self_test():
     print("A linear fit on raw pixels should do POORLY. If R^2 is near 1,")
     print("the CNN is redundant and the result proves nothing.\n")
 
+    tmp_dir = tempfile.mkdtemp(prefix="ligtas_selftest_")
     X, y = [], []
-    for i in range(40):
-        cube, ph, mask = generate_sample(f"tmp_{i}", "/tmp", rng)
-        idx = rng.choice(np.flatnonzero(mask), 400, replace=False)
-        X.append(cube.reshape(-1, 6)[idx])
-        y.append(ph.reshape(-1)[idx])
+    try:
+        for i in range(40):
+            cube, ph, mask = generate_sample(f"tmp_{i}", tmp_dir, rng)
+            idx = rng.choice(np.flatnonzero(mask), 400, replace=False)
+            X.append(cube.reshape(-1, 6)[idx])
+            y.append(ph.reshape(-1)[idx])
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
     X = np.vstack(X); y = np.concatenate(y)
     Xa = np.c_[X, np.ones(len(X))]
     coef, *_ = np.linalg.lstsq(Xa, y, rcond=None)
@@ -407,10 +413,6 @@ def self_test():
     else:
         print("  GOOD: a linear model cannot solve this. Report this number")
         print("  in Chapter 4 as your baseline -- the CNN must beat it.")
-
-    for f in os.listdir("/tmp"):
-        if f.startswith("tmp_"):
-            os.remove(os.path.join("/tmp", f))
 
 
 def main():
