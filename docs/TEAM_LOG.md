@@ -195,3 +195,110 @@ Template:
   grainy-texture items above).
 - Don't re-introduce "5000 samples" as a target without a real source —
   see "Still open" above.
+
+---
+
+## 2026-09-03 — Bless (parameter / forward-model track, via Claude session)
+
+**Changed:**
+- Commit `40c6724`, pushed to `origin/main`. Touched `generate_dataset.py`,
+  `extract_sensor_params.py`, `README.md`.
+- Merged the team Parameterized Data Sheet into `generate_dataset.py` PARAMS:
+  - **Table A (myoglobin eps)** now DECADIC millimolar extinction coefficients
+    (mM^-1 cm^-1) from **Tang, Faustman & Hoagland 2004**, J. Food Sci.
+    69(9):C717-C720, Table 2, p.C718, read from the primary PDF (not digitized
+    off Piao et al. 2025). 525 nm = 7.60 for all three forms (isosbestic, one
+    shared literature value); 573 nm linearly interpolated from Tang's 557/582
+    rows (deoxy 9.96 / oxy 12.61 / met 3.56); **481 & 600 nm = PROVISIONAL
+    rescaled placeholders**, flagged PARTIAL, NOT citations; 730/970 nm = 0.
+  - `c_Mb_mean` 2.2 -> **0.87 mg/g**, `c_Mb_sd` 0.4 -> **0.12 mg/g**
+    (Cross et al. 2018, Meat & Muscle Biology 2(1):189-196, n=599 LTL; SD
+    back-calculated SE*sqrt(n)).
+  - `denat_midpoint` 5.70 -> **CITED (proxy)** = Cross et al. 2018 population
+    mean ultimate pH used as denaturation-onset midpoint.
+  - `sensor_sigma` 0.015 -> **0.0054** (MEASURED).
+  - `texture_amplitude` kept **0.030** (ASSUMED).
+  - Added `mu_a_baseline` = 0.3 cm^-1 (TUNED, uncited).
+- **Unit reconciliation in `mu_a()`** (was missing/wrong before):
+  1. `MB_DECADIC_TO_NAPIERIAN = ln(10)` applied to the myoglobin term --
+     Kubelka-Munk's K = 2*mu_a needs a Napierian coefficient; Tang's eps is
+     decadic. Factor was absent before this session.
+  2. `c_Mb` mg/g -> mM via `MUSCLE_DENSITY_G_PER_CM3 = 1.06` (BioNumbers BNID
+     111214), `MB_MOLAR_MASS_G_PER_MOL = 17000`, `CM3_PER_L = 1000`.
+  - **Bug caught & fixed:** first attempt computed 0.87*1.06/17000 = 5.4e-5 and
+    used it as mM -- 1000x too small (that value is mol/L). `CM3_PER_L` bridge
+    now applied.
+- `check_params()`: PARTIAL now counts as blocking.
+- Kept from `main` two fixes the working draft had reverted: `make_ph_field`
+  scale = 77.0 (not 18.0), `self_test()` on `tempfile.mkdtemp` (not `/tmp`).
+- `extract_sensor_params.py`: rewrote the texture block to measure FINE-scale
+  structure -- normalized-convolution high-pass detrend at sigma in {15,25,40}
+  px, median over bands, sensor-noise floor removed in quadrature -- instead of
+  raw whole-region std. Docstrings + README updated with the synthetic-pivot
+  framing and a parameter-status table.
+
+**Verified (numbers):**
+- `generate_dataset.py --selftest`: TEST 1 (sign) PASS -- reflectance falls
+  with pH in all 6 bands. TEST 2: linear-baseline **R^2 = 0.58**, MAE = 0.166
+  pH (was 0.39 / 0.20 before `sensor_sigma` dropped -- real sensor noise is
+  ~3x below the old 0.015 assumption). Still < 0.9. `check_params()` = 8
+  blocking params.
+- Reflectance now physical: visible ~0.49-0.66, 573 nm dip ~0.50 (Q-band),
+  730 nm plateau ~0.70, 970 nm ~0.54.
+- `c_Mb` conversion: 0.87 mg/g -> 0.05425 mM (target 0.0542). mu_a(573) =
+  1.62 cm^-1 (Q-band peak), mu_a(730) = 0.32 cm^-1 -- hand-recomputed from
+  PARAMS, match code output.
+- NHSI `mat_data/01.mat` (v7.3, 551x811x431, calibrated 0-1): `sensor_sigma`
+  0.0054; fine-scale texture 0.42-0.47 (still macro-dominated -- NOT adopted);
+  smooth 24x24 patch residual ~0.005 (~= sensor noise); **970 nm real mean
+  0.19** (p5-p95 0.06-0.39) vs simulated ~0.54.
+
+**Decided:**
+- Pivot confirmed with adviser: synthetic dataset, objectives unchanged,
+  "system" scoped as the software pipeline. Settled -- do not re-litigate.
+- eps units = decadic mM^-1 cm^-1 (Tang convention); Napierian factor (x ln10)
+  on the myoglobin term only (`mua_water` already Napierian).
+- `sensor_sigma` = 0.0054 MEASURED, adopted (cube is calibrated reflectance,
+  no rescaling caveat).
+- `texture_amplitude` stays 0.030 ASSUMED -- NHSI cubes (whole aged muscle,
+  NIR-heavy) are the wrong source for a trimmed-chop fine texture; anchored
+  to the ~0.005 smooth-patch floor. Cosmetic nuisance term, lower bar.
+- `c_Mb` conversion needs the cm^3->L (x1000) bridge -- now in code.
+
+**Still open (blocks a defensible / reportable dataset):**
+- **`eps` at 481 & 600 nm** -- invented. These are the manuscript's diagnostic
+  bands (481 deoxyMb, 600 metMb). Need **Bowen 1949** (J Biol Chem
+  179:235-245) full spectrum, rescaled onto Tang's scale at a shared
+  wavelength (525 or 557 nm). **#1 blocker.**
+- **`mua_water`** -- Hale & Querry 1973 values verified (970 nm = 0.45 exact,
+  730 nm ~= 0.018) but NOT yet wired into code (still the placeholder). Also
+  read the four visible-band values (all ~= 0) for completeness.
+- **`water_fraction`** 0.75 -- confirm exact Honikel 1998 figure/page.
+- **`denat_amplitude`** -- must be SWEPT (0.2/0.4/0.6/0.8), Ch. 4 sensitivity
+  result, not pinned. **`denat_width`** 0.22 still unsourced.
+- **970 nm external reality check FAILS** -- sim ~0.54 vs real NHSI ~0.19.
+  Decision needed: (a) tune the NIR before generating (`scatter_a` has ~54%
+  relative SD -- lower NIR-specific value or higher water/`mu_a_baseline`
+  closes it), or (b) keep values and report as a stated Ch. 5 limitation on
+  the one external validation. Explicit decision required.
+- Optional insensitivity sweeps before locking: `mu_a_baseline` (0.2/0.3/0.4),
+  `texture_amplitude` (0.02/0.03/0.05).
+- Second person to eyeball Tang 2004 Table 2 (p. C718) vs the hand-read eps
+  (7.60 @ 525; 9.96/12.61/3.56 @ 573).
+- `c_Mb_sd`: confirm Cross et al.'s "+/- 0.005" is SE not SD (SE assumption
+  gives CV ~14%).
+
+**Context to feed next session:**
+- The dataset on disk (`ligtas_synthetic_dataset/`, 400 samples) is STALE --
+  predates every parameter change above. Do NOT train on it or quote any
+  number from it. Regenerate only after the blockers close, then re-run
+  `--selftest`.
+- Do NOT quote a final linear-baseline R^2 or run reported CRN experiments
+  yet -- R^2 moved 0.39 -> 0.58 on one parameter change and will move again
+  with eps 481/600 + water.
+- The Parameterized Data Sheet (Google Sheet) is the source of truth for
+  parameter provenance; `generate_dataset.py` PARAMS mirrors it -- keep in
+  sync. `check_params()` prints the live blocking list.
+- Forward-model structure (KM, pH -> scattering only, myoglobin as an
+  independent nuisance) is unchanged and sound. This session was parameter
+  values + units only, no architecture change.
