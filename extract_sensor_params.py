@@ -2,17 +2,27 @@
 Extract measurable parameters from the NHSI-meat-overtime dataset
 ==================================================================
 
-Turns three PLACEHOLDER entries in generate_dataset.py into measured,
-citable values:
+Pulls three things out of an NHSI pork cube:
 
-    sensor_sigma       -> measured read noise
-    texture amplitude  -> measured muscle-fibre spatial variation
-    970 nm reflectance -> external sanity check on your simulated band
+    sensor_sigma       -> measured additive read noise  (USED: 0.0054)
+    texture amplitude  -> fine-scale surface structure  (see caveat below)
+    970 nm reflectance -> external reality check on the simulated 970 nm band
+
+TEXTURE CAVEAT (2026-09-03): the whole-region spatial std of these cubes is
+~0.45-0.60, but that is fat seams / muscle groups / surface geometry / drip
+on a rough, aged, whole muscle imaged at 900-1700 nm -- NOT the fine
+marbling/fibre mottle that generate_dataset.py's texture_amplitude models,
+and not the surface a trimmed 5x5x2.5 cm chop presents. Within a genuinely
+uniform 24x24 patch, residual variation is ~0.005 relative -- essentially
+sensor noise. So texture_amplitude is kept at 0.030 as an ASSUMED value
+anchored to that smooth-patch floor, not set from the numbers below.
+
+970 nm CHECK (2026-09-03): real NHSI mean ~0.19 vs simulated ~0.54 -- a ~3x
+gap, still unresolved. See the Parameterized Data Sheet.
 
 Dataset: Wang, Tang, Li & Chen (2026), NHSI-meat-overtime.
-Cubes are NOT in the GitHub repo -- download from the Baidu Pan or
-Google Drive link in the README. Get ONE pork timepoint first and
-check the file size before pulling the whole set.
+Cubes are NOT in the GitHub repo -- download separately. Get ONE pork
+timepoint first and check the file size before pulling the whole set.
 
 Usage:
     python extract_sensor_params.py path/to/pork_cube.mat
@@ -151,24 +161,56 @@ def main():
     print('              Wang et al. 2026"')
     print()
 
-    # --- 2. TEXTURE AMPLITUDE ----------------------------------------------
-    # Larger-scale variation across the whole meat region, minus the noise
-    # floor, is real muscle structure.
+    # --- 2. TEXTURE AMPLITUDE (fine-scale) --------------------------------
+    # texture_amplitude in generate_sample() is the FRACTIONAL multiplicative
+    # std of FINE surface structure (muscle fibre / marbling, ~1 mm), applied
+    # band-independently. The whole-region std ("macro" below) is the WRONG
+    # quantity -- it is dominated by fat seams, muscle groups, surface
+    # geometry and drip pooling, which the generator already models
+    # separately (pH field + illumination). So we high-pass each band by a
+    # normalized-convolution detrend (Gaussian, scale = sigma px), take the
+    # residual std / mean, and remove the sensor-noise floor in quadrature.
+    # Reported at several sigmas so the scale sensitivity is visible, and as
+    # a median over bands (the generator's texture term is band-flat).
+    from scipy.ndimage import gaussian_filter, binary_erosion
+
     band_mid = B // 2
-    meat_vals = cube[:, :, band_mid][mask]
-    total_rel = meat_vals.std() / meat_vals.mean()
-    noise_rel = sigmas[band_mid] / meat_vals.mean()
-    texture_rel = np.sqrt(max(total_rel**2 - noise_rel**2, 0))
+    mid_meat = cube[:, :, band_mid][mask]
+    noise_rel = sigmas[band_mid] / mid_meat.mean()
+    total_rel = mid_meat.std() / mid_meat.mean()
+    m = mask.astype(np.float64)
+    band_step = max(B // 20, 1)
 
     print("=" * 62)
-    print("2. TEXTURE AMPLITUDE")
+    print("2. TEXTURE AMPLITUDE  (fine-scale surface structure)")
     print("=" * 62)
-    print(f"  total spatial variation : {total_rel:.4f}")
-    print(f"  noise floor             : {noise_rel:.4f}")
-    print(f"  structure (quadrature)  : {texture_rel:.4f}")
+    print(f"  whole-region std/mean (MACRO -- not what you want) : {total_rel:.4f}")
+    print(f"  sensor-noise floor                                 : {noise_rel:.4f}")
     print()
-    print(f"  -> in generate_sample(), replace the hardcoded 0.03 with")
-    print(f"     {texture_rel:.4f}  and cite Wang et al. 2026")
+    print("  high-pass residual std/mean, noise removed in quadrature:")
+    results = {}
+    for sig in (15.0, 25.0, 40.0):
+        denom = gaussian_filter(m, sig)
+        denom[denom < 1e-6] = 1e-6
+        ev = binary_erosion(mask, iterations=int(sig))
+        if ev.sum() < 1000:
+            ev = mask
+        fr = []
+        for b in range(0, B, band_step):
+            img = cube[:, :, b]
+            resid = img - gaussian_filter(img * m, sig) / denom
+            fr.append(resid[ev].std() / img[mask].mean())
+        fine_denoised = float(np.sqrt(max(np.median(fr) ** 2 - noise_rel ** 2, 0.0)))
+        results[sig] = fine_denoised
+        print(f"    sigma = {sig:4.0f} px  ->  {fine_denoised:.4f}")
+    print()
+    print(f"  -> texture_amplitude value: {results[25.0]:.4f}   (sigma=25 px row;")
+    print(f"     use the sigma that best matches your fibre/marbling scale)")
+    print('     status: "MEASURED (fine-scale, high-pass)"')
+    print('     source: "Fine-scale surface texture, NHSI-meat-overtime pork')
+    print('              cube (Wang et al. 2026): median-over-bands high-pass')
+    print('              residual std/mean, Gaussian detrend sigma=25 px,')
+    print('              sensor-noise floor removed in quadrature."')
     print()
 
     # --- 3. 970 nm ANCHOR ---------------------------------------------------

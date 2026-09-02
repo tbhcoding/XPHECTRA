@@ -3,12 +3,50 @@
 Physics-based generator for 6-band multispectral pork images with
 pixel-wise pH ground truth.
 
+## Why this exists (read first)
+
+The hardware acquisition rig short-circuited before data collection, so the
+real pork MSI dataset could not be built. With the adviser's approval, the
+project pivoted to a **literature-constrained synthetic dataset**: same
+objectives, same CRN experiment, "system" now scoped as the software
+pipeline rather than a physical scanner. Every physical constant in the
+forward model must trace to a published measurement — the running record of
+that is the **Parameterized Data Sheet** (Google Sheet, team drive), which
+`generate_dataset.py`'s `PARAMS` mirrors. Keep the two in sync.
+
+## Current status — 2026-09-03
+
+Forward model runs end-to-end and passes both self-tests (sign check, and
+linear-baseline R² = 0.58, i.e. non-trivial). Roughly half the physics is
+cited; the rest is not yet. **Do not generate the final dataset or run any
+CRN experiment you intend to report** until the blockers below are closed —
+every reported number will move.
+
+| Parameter | State |
+|---|---|
+| `eps_*` @ 525, 573 nm | CITED / interpolated — Tang, Faustman & Hoagland 2004 Table 2 |
+| `eps_*` @ 481, 600 nm | **PROVISIONAL invented values** — need Bowen 1949, rescaled to Tang. These are the manuscript's diagnostic bands. #1 blocker. |
+| `eps_*` @ 730, 970 nm | 0 (AMSA/Krzywicki convention) |
+| `c_Mb_mean` 0.87, `c_Mb_sd` 0.12 mg/g | CITED — Cross et al. 2018 (n=599); SD back-calculated from SE |
+| unit reconciliation (decadic→Napierian, mg/g→mM) | IMPLEMENTED in `mu_a()`; a real 1000× units bug was caught and fixed here |
+| `scatter_a` 18.9, `scatter_b` 1.286 | CITED — Jacques 2013 (soft-tissue avg; ~54% relative SD on `scatter_a`) |
+| `denat_midpoint` 5.70 | CITED (proxy) — Cross et al. 2018 ultimate pH |
+| `denat_amplitude`, `denat_width` | OPEN — amplitude must be **swept** (Ch. 4 result); width unsourced |
+| `mua_water` | PLACEHOLDER — verified Hale & Querry 1973 values not yet wired into code |
+| `water_fraction` 0.75 | OPEN — confirm Honikel 1998 figure/page |
+| `sensor_sigma` 0.0054 | MEASURED — `extract_sensor_params.py` on NHSI cube `01.mat` |
+| `texture_amplitude` 0.030 | ASSUMED — anchored to ~0.005 smooth-patch floor; NHSI whole-muscle cubes are the wrong source for a trimmed-chop texture |
+| `mu_a_baseline` 0.3 | TUNED, uncited nuisance term (documented limitation) |
+| **970 nm external reality check** | **FAILING** — sim ~0.54 vs real NHSI ~0.19. Decide: tune NIR terms, or report as a stated Ch. 5 limitation. |
+
+`python generate_dataset.py --selftest` prints the live blocking list.
+
 ## Files
 
 | File | What it does |
 |---|---|
-| `generate_dataset.py` | Builds the dataset. Contains the parameter table. |
-| `extract_sensor_params.py` | Measures sensor noise + texture from the NHSI cubes. |
+| `generate_dataset.py` | Builds the dataset. `PARAMS` mirrors the Parameterized Data Sheet. |
+| `extract_sensor_params.py` | Measures `sensor_sigma` + fine-scale texture + the 970 nm anchor from the NHSI cubes. |
 | `crn_model.py` | The CRN (`CrudeCRN`) — a small U-Net predicting a dense pH map from the 6-band cube. |
 | `train_crn.py` | Trains the CRN on the 4 sparse points + a smoothness prior. See Step 5. |
 | `requirements.txt` | Dependencies (now includes `torch`, `matplotlib`). |
@@ -41,11 +79,20 @@ that's step 1 below.
 
 ---
 
-## Step 1 — Fill in the parameter table (this is week 1)
+## Step 1 — Fill in the parameter table
+
+> **Status note (2026-09-03):** this step is partly done — see *Current
+> status* above and the Parameterized Data Sheet for the authoritative
+> record. Myoglobin extinction coefficients now come from **Tang, Faustman
+> & Hoagland 2004** Table 2 (decadic mM⁻¹cm⁻¹), read directly from the
+> primary PDF, not digitized from Piao et al. 2025. The `c_Mb`, scattering,
+> `denat_midpoint` and `sensor_sigma` rows are done. Still open: `eps` at
+> 481/600 nm (Bowen 1949), `mua_water`, `water_fraction`, the
+> `denat_amplitude` sweep, `denat_width`, and the 970 nm gap.
 
 Open `generate_dataset.py` and find the `PARAMS` dictionary near the top.
 Each entry has a `value`, a `status`, and a `source`. Your job is to turn
-every `PLACEHOLDER` and `ASSUMED` into `CITED` or `MEASURED`.
+every `PLACEHOLDER`, `ASSUMED` and `PARTIAL` into `CITED` or `MEASURED`.
 
 ### 1a. Myoglobin extinction coefficients — from Piao et al. (2025)
 
@@ -159,6 +206,12 @@ Measured numbers with stated caveats still beat invented ones.
 ---
 
 ## Step 3 — Generate
+
+> **Do not run this for the reported dataset yet (2026-09-03).** The
+> parameter table still has provisional/uncited entries (see *Current
+> status*). The 400-sample dataset currently on disk predates all of the
+> September parameter work and must not be trained on or quoted. Regenerate
+> only after the blockers are closed, then re-run Step 4.
 
 ```bash
 python generate_dataset.py --n 400 --out ligtas_synthetic_dataset

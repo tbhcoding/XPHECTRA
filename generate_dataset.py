@@ -24,9 +24,9 @@ that the CNN is doing real work.
 
 BEFORE YOU DEFEND THIS
 ----------------------
-Every entry in PARAMS below marked status="PLACEHOLDER" must be replaced
-with a cited value. The script prints a loud warning while any remain.
-That warning is your week-1 to-do list.
+Every entry in PARAMS below marked status "PLACEHOLDER", "ASSUMED" or
+"PARTIAL" must be replaced with a cited or measured value. The script
+prints a loud warning while any remain. That warning is your to-do list.
 
 Usage:
     python generate_dataset.py            # generate 400 samples
@@ -47,8 +47,10 @@ except ImportError:
     HAVE_CV2 = False
 
 # ============================================================================
-# PARAMETER TABLE  --  this IS your week-1 spreadsheet, in code form.
-# Replace every PLACEHOLDER with a cited value and change status to "CITED".
+# PARAMETER TABLE  --  this IS your parameter spreadsheet, in code form.
+# Replace every PLACEHOLDER / ASSUMED / PARTIAL entry with a cited or
+# measured value and update its status. See the "XpHectra Parameterized
+# Data Sheet" for the running record of sources.
 # ============================================================================
 
 WAVELENGTHS = np.array([481.0, 525.0, 573.0, 600.0, 730.0, 970.0])
@@ -56,43 +58,77 @@ WAVELENGTHS = np.array([481.0, 525.0, 573.0, 600.0, 730.0, 970.0])
 PARAMS = {
 
     # ---- Table A: myoglobin molar extinction coefficients -------------------
-    # Units: relative (any consistent scale; only ratios matter after
-    # c_Mb is fitted). Source: derive from the modified Krzywicki equations
-    # in Piao et al. (2025), Meat and Muscle Biology 9(1):18338, open access.
-    # Krzywicki isosbestic points are 474/525/572/610 nm -- your 481/525/573/600
-    # bands sit on or beside them, so the published coefficients transfer.
+    # Units: DECADIC millimolar extinction coefficients, mM^-1 cm^-1, taken
+    # from the primary source (not digitized from a figure):
+    #   Tang, Faustman & Hoagland (2004), J. Food Sci. 69(9):C717-C720,
+    #   Table 2, p.C718.
+    # Band order: [481, 525, 573, 600, 730, 970] nm.
+    #   525 nm  -- read directly from Table 2 (isosbestic; all 3 forms = 7.60,
+    #              itself sourced by Tang to Bowen 1949 / Krzywicki 1982 --
+    #              ONE shared literature value, not three independent
+    #              measurements that happened to agree).
+    #   573 nm  -- Tang measured 557 and 582 nm but not 573. Value below is
+    #              LINEARLY INTERPOLATED between those two rows (573 sits 64%
+    #              of the way from 557 to 582). Replaces an earlier flat copy
+    #              of the 582 nm value.
+    #   481, 600 nm -- STILL OPEN, NOT a citation. Tang's 4 measured points
+    #              (503/525/557/582) don't reach either band closely enough
+    #              to call "nearest value." The numbers below are the OLD
+    #              arbitrary-scale placeholders, rescaled by 7.60/0.62 (new
+    #              cited 525 nm value over the old placeholder's 525 nm value)
+    #              so they sit at the right ORDER OF MAGNITUDE next to the
+    #              cited bands and don't silently corrupt self_test(). This is
+    #              a provisional stand-in for pipeline testing only -- NOT
+    #              defensible for the actual thesis dataset. Next source:
+    #              Bowen (1949), J Biol Chem 179:235-245, full spectrum,
+    #              rescaled onto Tang's scale at a shared wavelength.
+    #   730, 970 nm -- myoglobin does not meaningfully absorb here; 0 is the
+    #              standard AMSA/Krzywicki convention.
     "eps_deoxy": {
-        "value": np.array([0.55, 0.62, 0.80, 0.30, 0.0, 0.0]),
-        "status": "PLACEHOLDER",
-        "source": "TODO: Piao et al. 2025, Table of extinction coefficients",
+        "value": np.array([6.74, 7.60, 9.96, 3.68, 0.0, 0.0]),
+        "status": "PARTIAL",
+        "source": "Tang et al. 2004, Table 2, p.C718 (525 cited, 573 interpolated). "
+                   "481, 600 nm are PROVISIONAL rescaled placeholders, not citations.",
     },
     "eps_oxy": {
-        "value": np.array([0.60, 0.62, 1.05, 0.18, 0.0, 0.0]),
-        "status": "PLACEHOLDER",
-        "source": "TODO: Piao et al. 2025",
+        "value": np.array([7.35, 7.60, 12.61, 2.21, 0.0, 0.0]),
+        "status": "PARTIAL",
+        "source": "Tang et al. 2004, Table 2, p.C718 (525 cited, 573 interpolated). "
+                   "481, 600 nm are PROVISIONAL rescaled placeholders, not citations.",
     },
     "eps_met": {
-        "value": np.array([0.85, 0.62, 0.45, 0.42, 0.0, 0.0]),
-        "status": "PLACEHOLDER",
-        "source": "TODO: Piao et al. 2025",
+        "value": np.array([10.42, 7.60, 3.56, 5.15, 0.0, 0.0]),
+        "status": "PARTIAL",
+        "source": "Tang et al. 2004, Table 2, p.C718 (525 cited, 573 interpolated). "
+                   "481, 600 nm are PROVISIONAL rescaled placeholders, not citations.",
     },
-    # NOTE: 525 nm is an isosbestic point -- all three forms should be EQUAL
-    # there. That is a built-in sanity check on whatever numbers you enter.
-    # 730 and 970 nm are outside the myoglobin bands; zero is defensible,
-    # and 730 nm as a scattering baseline is the AMSA/Krzywicki convention.
+    # NOTE: 525 nm is an isosbestic point -- all three forms must be EQUAL
+    # there. Built-in sanity check. CONFIRMED PASSING: 7.60 == 7.60 == 7.60
+    # (was 7.97 for MetMb in an earlier figure-digitized version -- a ~5%
+    # reading error).
+    #
+    # eps values above are DECADIC (Beer-Lambert, base-10). Kubelka-Munk's
+    # K = 2*mu_a term expects a NAPIERIAN (natural-log) absorption
+    # coefficient. See MB_DECADIC_TO_NAPIERIAN below and its use in mu_a().
 
     "c_Mb_mean": {
-        "value": 2.2,
-        "status": "PLACEHOLDER",
-        "source": "TODO: pork Longissimus myoglobin concentration, mg/g",
+        "value": 0.87,
+        "status": "CITED",
+        "source": "Cross, King, Shackelford, Wheeler, Nonneman, Keel & Rohrer (2018). "
+                   "Genome-wide association of myoglobin concentrations in pork loins. "
+                   "Meat and Muscle Biology 2(1):189-196. doi:10.22175/mmb2017.08.0042. "
+                   "n=599 pigs, Longissimus thoracis et lumborum, mean 0.87 mg/g tissue.",
     },
     "c_Mb_sd": {
-        "value": 0.4,
-        "status": "PLACEHOLDER",
-        "source": "TODO: between-animal variation",
+        "value": 0.12,
+        "status": "CITED / BACK-CALCULATED",
+        "source": "Same source as c_Mb_mean. Paper reports 0.87 +/- 0.005 mg/g; "
+                   "back-calculated SD = SE * sqrt(n) = 0.005 * sqrt(599) = 0.12 mg/g "
+                   "(CV ~14%, biologically plausible). The paper's own '+/-' label "
+                   "(SE vs SD) was not directly confirmable -- flag this inference in Ch.3.",
     },
 
-    # ---- Table B: scattering ------------------------------------------------
+    # ---- Table B: scattering ----------------------------------------------
     # mu_s'(lambda) = a * (lambda/500)^(-b)
     # Jacques (2013) Phys Med Biol 58:R37, Table 2, "other soft tissues".
     # CSV: omlc.org/news/dec14/Jacques_PMB2013/table2_JacquesPMB2013.csv
@@ -108,12 +144,12 @@ PARAMS = {
         "source": "Jacques 2013 PMB 58:R37 Table 2, other soft tissues",
     },
 
-    # ---- The pH -> scattering link : YOUR WEAKEST ASSUMPTION ----------------
-    # Low pH near the isoelectric point (~5.4) denatures sarcoplasmic proteins,
-    # raising mu_s'. That is why PSE meat is pale. Direction is well established;
-    # the exact magnitude and shape are not.
-    # DO NOT hide this. Sweep it (see sweep_denaturation.py idea in the docstring)
-    # and report the sweep as a sensitivity analysis in Chapter 4.
+    # ---- The pH -> scattering link : YOUR WEAKEST ASSUMPTION --------------
+    # Low pH near the isoelectric point (~5.4) denatures sarcoplasmic
+    # proteins, raising mu_s'. That is why PSE meat is pale. Direction is
+    # well established; the exact magnitude and shape are not.
+    # DO NOT hide this. Sweep denat_amplitude (0.2-0.8) and report the sweep
+    # as a sensitivity analysis in Chapter 4.
     "denat_amplitude": {
         "value": 0.45,
         "status": "PLACEHOLDER",
@@ -121,57 +157,117 @@ PARAMS = {
     },
     "denat_midpoint": {
         "value": 5.70,
-        "status": "PLACEHOLDER",
-        "source": "TODO: pH at half-maximal denaturation effect",
+        "status": "CITED (PROXY)",
+        "source": "Cross et al. (2018), Meat and Muscle Biology 2(1):189-196 -- same "
+                   "599-pig population as c_Mb_mean. Reports ultimate pH 5.70 +/- 0.006. "
+                   "Used as the denaturation-onset midpoint: this is a PROXY (population "
+                   "mean ultimate pH, not a directly measured sigmoid midpoint). Flag as "
+                   "a modeling assumption in Ch.3.",
     },
     "denat_width": {
         "value": 0.22,
         "status": "PLACEHOLDER",
-        "source": "TODO: steepness of the transition",
+        "source": "TODO: steepness of the transition; or derive from the sweep results",
     },
 
-    # ---- Table C: water -----------------------------------------------------
+    # ---- Table C: water --------------------------------------------------
     "mua_water": {
         "value": np.array([0.0, 0.0, 0.0, 0.0, 0.02, 0.45]),
         "status": "PLACEHOLDER",
-        "source": "TODO: omlc.org tabulated water absorption (cm^-1) at 6 bands",
+        "source": "TODO: Hale & Querry 1973 via omlc.org tabulated water absorption "
+                   "(cm^-1) at all 6 bands. 970 nm confirmed 0.45; 730 nm ~0.018.",
     },
     "water_fraction": {
         "value": 0.75,
         "status": "PLACEHOLDER",
-        "source": "TODO: pork loin water content, ~0.75 by mass",
+        "source": "TODO: pork loin water content ~0.75 by mass; confirm exact figure/page "
+                   "in Honikel 1998 (manuscript ref [6]) before citing.",
     },
 
-    # ---- Sensor and tissue texture -----------------------------------------
-    # BOTH of these can be MEASURED from the NHSI-meat-overtime cubes.
-    # Run extract_sensor_params.py on a downloaded pork cube and paste the
-    # numbers here. That converts two assumptions into cited measurements.
+    # ---- Sensor and tissue texture --------------------------------------
+    # BOTH can be MEASURED from the NHSI-meat-overtime cubes (Wang et al.
+    # 2026). Run extract_sensor_params.py on a downloaded pork cube and
+    # paste the numbers here. Watch the ">1.0 = raw sensor counts, not
+    # calibrated reflectance" caveat from the README.
     "sensor_sigma": {
-        "value": 0.015,
-        "status": "ASSUMED",
-        "source": "TODO: measure via extract_sensor_params.py (Wang et al. 2026)",
+        "value": 0.0054,
+        "status": "MEASURED",
+        "source": "Measured from NHSI-meat-overtime pork cube 01.mat (Wang et al. 2026) via "
+                   "extract_sensor_params.py: additive noise std relative to signal = 0.0054, "
+                   "on a calibrated reflectance cube (values 0-1). Ch.5 caveats: different "
+                   "camera (not the intended Arducam OV9281), NIR sensor, their illumination "
+                   "and working distance -- transfers only approximately.",
     },
     "texture_amplitude": {
         "value": 0.030,
         "status": "ASSUMED",
-        "source": "TODO: measure via extract_sensor_params.py (Wang et al. 2026)",
+        "source": "extract_sensor_params.py on NHSI 01.mat (Wang et al. 2026): within a "
+                   "genuinely uniform 24x24 (~6 mm) meat patch, spatial residual std is "
+                   "~0.005 relative -- indistinguishable from sensor noise, i.e. smooth meat "
+                   "surface has negligible fine texture. Whole-region and high-pass std are "
+                   "~0.45-0.60, but that is fat/fascia/geometry boundaries on a rough aged "
+                   "whole muscle imaged at 900-1700 nm -- not the marbling/fibre mottle this "
+                   "term models, and those boundaries are trimmed away in the 5x5x2.5 cm "
+                   "chop protocol. 0.03 sits just above the measured smooth-surface floor to "
+                   "give mild visible mottle. Document as an assumption anchored to the "
+                   "smooth-patch measurement.",
+    },
+
+    # ---- Non-myoglobin baseline absorption ------------------------------
+    # Without this term, mu_a at 730/970 nm is ~0 (myoglobin eps=0 there,
+    # water is tiny) and Kubelka-Munk returns ~90-92% reflectance in the
+    # NIR -- far above the ~50-70% real pork loin shows (manuscript Fig. 6,
+    # and the NHSI 970 nm reality-check in Ch.4). Stands in for everything
+    # else that absorbs a little light in real tissue. Wavelength-independent
+    # by construction (does not touch the pH sign test). TUNED, not cited --
+    # state that plainly in Ch.3/Ch.5 and consider sweeping it (0.2/0.3/0.4)
+    # alongside the denat_amplitude sweep.
+    "mu_a_baseline": {
+        "value": 0.3,
+        "status": "TUNED -- NOT CITED, documented limitation",
+        "source": "Chosen so 730 nm reflectance lands near realistic pork loin values "
+                   "instead of ~0.90-0.92 with no baseline. Fitted nuisance term.",
     },
 }
 
+# Kubelka-Munk's K = 2*mu_a term expects a NAPIERIAN (natural-log)
+# absorption coefficient. Tang's extinction coefficients are DECADIC
+# (Beer-Lambert, base-10): mu_a(decadic) = eps * c. Standard conversion is
+# mu_a(Napierian) = ln(10) * mu_a(decadic). Applied to the myoglobin term
+# ONLY -- mua_water (Hale & Querry 1973 via omlc.org) is already tabulated
+# as a physical/Napierian coefficient and does NOT get this factor.
+MB_DECADIC_TO_NAPIERIAN = np.log(10.0)  # ~2.303
+
+# c_Mb_mean/c_Mb_sd are in mg myoglobin per g tissue (Cross et al. 2018).
+# eps is in mM^-1 cm^-1, so c_Mb must be converted from a mass fraction to
+# a molar concentration in mM before it can multiply eps:
+#   c_Mb [mg/g] * density [g/cm^3] / MW [g/mol]  ->  mmol/cm^3
+#   * 1000 cm^3/L                                ->  mmol/L = mM
+#   0.87 * 1.06 / 17000 * 1000 = 0.0542 mM
+# The *1000 (CM3_PER_L) is the bridge people forget: eps is per mole-per-
+# LITRE, the concentration above is built per cm^3.
+MUSCLE_DENSITY_G_PER_CM3 = 1.06     # BioNumbers BNID 111214, mammalian skeletal muscle
+MB_MOLAR_MASS_G_PER_MOL = 17000.0   # myoglobin MW ~17 kDa -- cite a species-specific
+                                     # value (e.g. UniProt pig myoglobin) in Ch.3
+CM3_PER_L = 1000.0                    # unit bridge, mmol/cm^3 -> mmol/L (mM)
+
 
 def check_params():
-    """Print the citation status. This is your week-1 progress bar."""
-    todo = [k for k, v in PARAMS.items() if v["status"] in ("PLACEHOLDER", "ASSUMED")]
+    """Print the citation status. This is your progress bar."""
+    blocking_statuses = ("PLACEHOLDER", "ASSUMED", "PARTIAL")
+    todo = [k for k, v in PARAMS.items() if v["status"] in blocking_statuses]
     print("-" * 70)
     print("PARAMETER CITATION STATUS")
     print("-" * 70)
+    mark_map = {"CITED": "  OK  ", "MEASURED": " MEAS ",
+                "ASSUMED": " TODO ", "PLACEHOLDER": " TODO ", "PARTIAL": " PART "}
     for k, v in PARAMS.items():
-        mark = {"CITED": "  OK  ", "MEASURED": " MEAS ", "ASSUMED": " TODO ", "PLACEHOLDER": " TODO "}[v["status"]]
-        print(f"[{mark}] {k:20s} {v['source']}")
+        mark = mark_map.get(v["status"], " note ")
+        print(f"[{mark}] {k:20s} {v['status']:32s} {v['source'][:52]}")
     if todo:
         print()
-        print(f"!! {len(todo)} parameter(s) still uncited. Do not present results")
-        print("!! from this dataset until each has a source. This is week 1.")
+        print(f"!! {len(todo)} parameter(s) still uncited/unmeasured. Do not present")
+        print("!! results from this dataset until each has a source.")
     print("-" * 70)
     print()
     return len(todo)
@@ -208,17 +304,28 @@ def mu_s_prime(pH):
 
 def mu_a(f_deoxy, f_oxy, f_met, c_Mb):
     """
-    Absorption coefficient, cm^-1. Shape (6,).
+    Absorption coefficient, cm^-1 (Napierian). Shape (6,).
 
-    Note: NO pH term here. Absorption is set by myoglobin state, which is
+    No pH term here. Absorption is set by myoglobin state, which is
     independent of pH in this model. That independence is what stops the
     forward model from being a one-to-one pH -> reflectance lookup.
+
+    Unit handling (see PARAMS / module constants for citations):
+      1. c_Mb arrives in mg/g and is converted to mM (mmol/L) -- including
+         the cm^3 -> L factor -- before multiplying the mM^-1cm^-1 eps.
+      2. eps * c_Mb is a DECADIC absorption coefficient; * ln(10) converts
+         it to the Napierian coefficient Kubelka-Munk expects.
+      3. mua_water is already Napierian -- no conversion applied.
+      4. mu_a_baseline is a tuned, uncited nuisance term -- see PARAMS.
     """
-    mb = c_Mb * (f_deoxy * P("eps_deoxy")
-                 + f_oxy * P("eps_oxy")
-                 + f_met * P("eps_met"))
+    c_Mb_mM = (c_Mb * MUSCLE_DENSITY_G_PER_CM3 / MB_MOLAR_MASS_G_PER_MOL) * CM3_PER_L
+    mb_decadic = c_Mb_mM * (f_deoxy * P("eps_deoxy")
+                             + f_oxy * P("eps_oxy")
+                             + f_met * P("eps_met"))
+    mb = mb_decadic * MB_DECADIC_TO_NAPIERIAN
     water = P("water_fraction") * P("mua_water")
-    return mb + water
+    baseline = P("mu_a_baseline")
+    return mb + water + baseline
 
 
 def kubelka_munk(mu_a_v, mu_s_v):
