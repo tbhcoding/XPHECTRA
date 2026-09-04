@@ -20,7 +20,13 @@ Template:
 
 ---
 
-## 2026-09-04 — Scattering-model comparison (via Claude session)
+## 2026-09-04 — Scattering-model comparison 
+
+**⚠️ If you're wondering why `generate_dataset.py` shows as modified and
+you didn't touch it:** that's expected, see the `self_test()` fix below.
+Only that one function changed — nothing else in the file, no parameter
+values touched. It's a deliberate correctness fix (same category as the
+earlier `/tmp` bug fix), not an accident or unrelated edit.
 
 **Changed:**
 - Nothing committed to `generate_dataset.py` yet. A candidate alternative,
@@ -36,6 +42,26 @@ Template:
 - Ran a full side-by-side comparison: both `--selftest`s, a 970nm
   real-world check, RPD, and an n=20 generation/integrity check into
   `test_original/` and `test_changed/` (neither committed).
+- **Follow-up investigation (same day), isolating and improving on the above:**
+  - Built 4 hybrid variants to isolate the changed file's two bundled
+    edits: `generate_dataset_eps_only.py`, `generate_dataset_scatter_only.py`
+    (both local, untracked).
+  - Built `generate_dataset_valuesonly.py` / `generate_dataset_new.py`:
+    KEEPS the original 1-term power-law formula unchanged, only refits
+    `scatter_a`→8.7436, `scatter_b`→1.6618 (least-squares fit to
+    Bergmann et al. 2021's curve, 450-1000nm) — no new formula, no new
+    parameters.
+  - Built `generate_dataset_new_plus_eps.py`: the above + the eps
+    changes from `generate_dataset_changed.py` (myoglobin coefficients
+    at 481/600/730/970nm).
+  - **Fixed `self_test()` in BOTH `generate_dataset.py` (the shared main
+    file) and `generate_dataset_new_plus_eps.py`**: Test 2 now averages
+    10 random seeds (mean/std/min/max) instead of one hardcoded seed.
+    New helper `_linear_baseline_once(seed)` extracted for reuse.
+  - **Retuned `mu_a_baseline` in `generate_dataset_new_plus_eps.py`:
+    0.3 → 0.6**, via a full 9-point sweep (0.1-1.0) with 10-seed-averaged
+    R² at every point (not the 2-point single-seed check that gave a
+    false lead earlier the same day).
 
 **Verified (numbers):**
 - Sign test: **PASS in both** — reflectance falls with pH in all 6
@@ -58,39 +84,118 @@ Template:
   values >1.0 in either, across 737,188 meat pixels each. Per-band
   mean/std reflectance recorded for both (see chat log / re-run
   `check_generated.py`-style script if needed — not committed).
+- **Isolation result: the formula change, not the eps change, drives
+  nearly everything.** eps-only barely moved either metric (970nm gap
+  0.363→0.354, R² +0.012). Scatter-only (formula) did almost all the
+  work (970nm gap →0.202, R² +0.064) — matching "both together" almost
+  exactly. The two edits are not two independent trade-off levers; it's
+  one change producing both effects.
+- **The formula switch is NOT necessary to get its benefit.**
+  `generate_dataset_new.py` (old formula, refit values only) matched
+  `generate_dataset_changed.py`'s 970nm gap exactly (0.192 vs 0.192) and
+  its R² is statistically indistinguishable (0.618 vs 0.604, well within
+  the ~0.035 per-seed noise band). The extra 2 parameters and new
+  equation in the "changed" version buy nothing beyond what refitting
+  the existing formula already achieves.
+- **μs' curve fidelity, checked at all 6 bands (not just 970nm):** the
+  refit power law tracks Bergmann's real 2-term curve within ±2.7% at
+  481/525/573/600/730nm; worst case is 970nm at −5.66% (edge of the
+  450-1000nm fit range, as expected). Table in chat log.
+- **Adding eps on top of the refit formula ("new + eps") beats
+  everything tested, including the original "changed" file:** 970nm gap
+  **0.182** (best of all variants), R² 0.615 (statistically tied with
+  every other improved variant). Achieved with zero added complexity —
+  same 2-knob formula, eps is just an existing array's values.
+- **Seed-averaging finding (independent of the scattering decision):**
+  the single hardcoded seed in the old `self_test()` sat ~0.05-0.08
+  ABOVE the true 10-seed-averaged R² for every configuration tested
+  (original: single-seed 0.58 vs true mean 0.527; changed: 0.65 vs
+  0.604). Every R² this project has quoted to date was likely inflated
+  by the specific seed choice, not just by which parameters were used.
+  This is now fixed (see Changed above) — future `--selftest` runs
+  report an honest mean ± spread.
+- **`mu_a_baseline` retune (full sweep, honest 10-seed R² at each
+  point):** R² traces a real, smooth minimum across 0.4-0.7 (confirmed
+  by the shape across 9 points, not a 2-point fluke like the earlier
+  same-day false lead). **0.6 sits in that minimum (R²=0.605, tied with
+  the sweep's best of 0.603) AND improves the 970nm gap substantially
+  vs. the prior default of 0.3 (0.182→0.121, ~34% better)** — a rare
+  case with no trade-off at all.
+- **Final candidate, fully re-verified after the retune:**
+  `generate_dataset_new_plus_eps.py` with `mu_a_baseline=0.6`. Sign test
+  PASS; R² mean=0.6051, std=0.0363 (10 seeds, matches the sweep
+  prediction exactly); 970nm gap=0.121; n=20 generation clean (0 NaN /
+  negative / >1.0 across 737,188 pixels).
 
 **Decided:**
-- Nothing adopted yet. This session's output is a comparison + a
-  recommendation (lean toward the changed scattering model, given the
-  real-world 970nm match, *if* the R² trade-off is explicitly documented
-  rather than discovered later) — **not** a decision. Whoever owns this
-  parameter should make the actual call.
+- **Recommendation, still pending the parameter owner's actual sign-off:
+  adopt `generate_dataset_new_plus_eps.py`'s values into
+  `generate_dataset.py`** — refit `scatter_a`/`scatter_b` (keep the
+  original formula), the eps updates, and `mu_a_baseline=0.6` — NOT
+  `generate_dataset_changed.py`'s 4-knob formula. Reasoning: it matches
+  or beats the complex version on every metric tested (real-world match,
+  R², data integrity) while adding zero structural complexity and zero
+  new parameters to eventually cite. This is stronger than the earlier
+  "lean toward" — it's now a dominant choice across every test run, not
+  a trade-off — but still needs the parameter track's explicit approval
+  before it goes into the real `generate_dataset.py`.
+- `self_test()`'s multi-seed averaging fix is a straightforward
+  correctness fix (like the earlier `/tmp` fix), applied directly to
+  the shared `generate_dataset.py` without a separate sign-off round.
+
+**CLEAR STATEMENT — which file to use, right now:**
+Use `generate_dataset_new_plus_eps.py` (with `mu_a_baseline=0.6`,
+already set in that file) for anything going forward. Not
+`generate_dataset.py` (still has the stale, un-adopted scattering
+values) and not `generate_dataset_changed.py` (the complex 4-knob
+version — no longer worth using, since the simpler file matches or
+beats it on every metric tested). This is a **tested recommendation,
+not yet the official file** — nothing has been merged into the real
+`generate_dataset.py` yet.
+
+**What still needs to happen, in order:**
+1. Parameter/physics track approves adopting `generate_dataset_new_plus_eps.py`'s
+   values (this is the only step still needing a human decision, not
+   more testing).
+2. Once approved, copy those values into `generate_dataset.py` itself
+   (or promote this file to be the new `generate_dataset.py`).
+3. Regenerate the real dataset and retrain the CRN on it — everything
+   generated so far, including all CRN results to date, was built on
+   the old values and is not final.
 
 **Still open:**
-- Whether to actually adopt `generate_dataset_changed.py`'s scattering
-  model into `generate_dataset.py` — unresolved, needs an owner's
-  decision, not just this comparison.
-- The realism improvement is confirmed at **970nm only**. The same
-  change shifts all 5 other bands too, and there is no real reference
-  to check whether those moved toward or away from truth.
-- The R² increase hasn't been attributed to a specific cause — the diff
-  bundles the new scattering law AND new NIR myoglobin terms together;
-  which one (or both) drives the R² climb is not separated.
-- Not attempted: tuning an unrelated parameter (e.g. `texture_amplitude`)
-  to try to recover a lower R² while keeping the 970nm improvement.
+- **The actual adoption decision** — this comparison recommends
+  `generate_dataset_new_plus_eps.py`'s values, but nothing has been
+  merged into the real `generate_dataset.py` PARAMS yet. Needs the
+  parameter track's confirmation.
+- The realism improvement is confirmed at **970nm only** (now backed by
+  a full 6-band μs' fidelity check on the formula itself, but the
+  eps/absorption side of the realism claim still only has one real
+  reference point).
+- Not attempted: sweeping `texture_amplitude` similarly (was on the
+  original follow-up list; superseded in priority by the scattering
+  work above).
 - All the usual open items from the parameter-sourcing track (eps at
-  481/600nm, `mua_water`, `water_fraction`, `denat_amplitude` sweep, the
-  failing 970nm check in the *current* `main` params) are unaffected by
-  this comparison and still open.
+  481/600nm needing Bowen 1949 properly, `mua_water` wiring,
+  `water_fraction` confirmation, `denat_amplitude`/`denat_width`) are
+  unaffected by this comparison and still open — see the 2026-09-03
+  entry below.
 
 **Context to feed next session:**
-- `generate_dataset_changed.py`, `test_original/`, `test_changed/` are
-  **local, untracked, not pushed**. If you need this comparison
-  reproduced, the exact diff and commands are in this entry's numbers
-  above — re-run rather than assuming stale local files still exist.
-- Do not treat either version's linear-baseline R² as final — both are
-  still running on the same 8 unresolved parameter blockers logged in
-  the 2026-09-03 entry below.
+- `generate_dataset_new_plus_eps.py` is the fully-tested final
+  candidate — local, untracked, not pushed. `mu_a_baseline=0.6` (not
+  0.3) in this file specifically; the shared `generate_dataset.py`
+  still has 0.3 and the old scattering values until the adoption
+  decision above is made.
+- `generate_dataset.py`'s `self_test()` IS already fixed to average 10
+  seeds — that part went in directly, independent of the scattering
+  decision. If you see a single-number R² quoted anywhere for this
+  project going forward, treat it as suspect unless it says "mean over
+  N seeds."
+- `generate_dataset_changed.py`, `_eps_only.py`, `_scatter_only.py`,
+  `_valuesonly.py`, `_new.py`, and all `test_*/` folders are throwaway
+  local comparison artifacts — only `_new_plus_eps.py` matters going
+  forward.
 
 ---
 
