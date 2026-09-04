@@ -198,20 +198,13 @@ PARAMS = {
                    "camera (not the intended Arducam OV9281), NIR sensor, their illumination "
                    "and working distance -- transfers only approximately.",
     },
-    "texture_amplitude": {
-        "value": 0.030,
-        "status": "ASSUMED",
-        "source": "extract_sensor_params.py on NHSI 01.mat (Wang et al. 2026): within a "
-                   "genuinely uniform 24x24 (~6 mm) meat patch, spatial residual std is "
-                   "~0.005 relative -- indistinguishable from sensor noise, i.e. smooth meat "
-                   "surface has negligible fine texture. Whole-region and high-pass std are "
-                   "~0.45-0.60, but that is fat/fascia/geometry boundaries on a rough aged "
-                   "whole muscle imaged at 900-1700 nm -- not the marbling/fibre mottle this "
-                   "term models, and those boundaries are trimmed away in the 5x5x2.5 cm "
-                   "chop protocol. 0.03 sits just above the measured smooth-surface floor to "
-                   "give mild visible mottle. Document as an assumption anchored to the "
-                   "smooth-patch measurement.",
-    },
+    # texture_amplitude (muscle-fibre/marbling mottle) was CUT -- was an
+    # ASSUMED, uncited multiplicative nuisance term. extract_sensor_params.py
+    # on NHSI 01.mat measured only ~0.005 relative residual on genuinely
+    # smooth meat patches (indistinguishable from sensor noise); the term
+    # added no mechanistic value over what sensor_sigma already provides, so
+    # it was removed from generate_sample() rather than left as a floating
+    # uncited knob. See docs/TEAM_LOG.md for the decision record.
 
     # ---- Non-myoglobin baseline absorption ------------------------------
     # Without this term, mu_a at 730/970 nm is ~0 (myoglobin eps=0 there,
@@ -409,16 +402,12 @@ def generate_sample(sample_id, out_dir, rng, size=256):
     scatter = mu_s_prime(ph_true)                        # (H, W, 6)
     R = kubelka_munk(absorb[None, None, :], scatter)     # (H, W, 6)
 
-    # Muscle fibre / marbling texture: multiplicative, same across bands
-    texture = 1.0 + P("texture_amplitude") * smooth_field((H, W), scale=6.0,
-                                                          rng=rng)[..., None]
-
     # Illumination falloff from the LED ring
     yy, xx = np.mgrid[0:H, 0:W]
     illum = 1.0 - 0.10 * (((yy - H / 2) / H) ** 2 + ((xx - W / 2) / W) ** 2) * 4
     illum = illum[..., None]
 
-    cube = R * texture * illum
+    cube = R * illum
     cube = cube + rng.normal(0, P("sensor_sigma"), cube.shape)
     cube = np.clip(cube, 0.0, 1.0).astype(np.float32)
 

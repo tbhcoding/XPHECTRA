@@ -20,6 +20,70 @@ Template:
 
 ---
 
+## 2026-09-05 — Cut `texture_amplitude`; kept `denat_width` as-is (via Claude session)
+
+**Changed:**
+- `generate_dataset.py`: removed the `texture_amplitude` parameter from
+  `PARAMS` and the multiplicative texture term from `generate_sample()`.
+  Cube composition is now `R * illum` (was `R * texture * illum`). Left a
+  comment in `PARAMS` pointing here for the decision record.
+- No other parameters touched. `mu_a_baseline` and `denat_width` were both
+  considered as cut candidates and explicitly rejected — see below.
+
+**Verified (numbers):**
+- Ran a joint `denat_amplitude` (0.2/0.4/0.6/0.8) x `denat_width`
+  (0.15/0.22/0.30) grid using the same linear-baseline methodology as
+  `self_test()` TEST 2 (n=40 samples, 400 px/sample, seed 0), via a
+  throwaway script, not committed. `denat_width` moves R² by **0.07-0.10**
+  at every amplitude level, monotonically (narrower width -> higher R²) —
+  comparable in size to the scattering-model swap logged 2026-09-04
+  (+0.069). **Not safe to treat as inert; not cut.**
+- After cutting `texture_amplitude`: `--selftest` TEST 1 (sign) still
+  PASS. TEST 2 linear-baseline R² moved **0.5839 -> 0.5660** (-0.018,
+  MAE 0.166 -> 0.170) — a small move, in line with the parameter sheet's
+  own prediction that this term "barely moves" R²/CRN performance.
+  `check_params()` blocking count dropped **8 -> 7**.
+
+**Decided:**
+- Cut `texture_amplitude`: it was ASSUMED/uncited, self-flagged as
+  cosmetic (doesn't encode the pH mechanism, unlike `eps_*`/`scatter_*`/
+  `denat_*`), and its removal changed R² by only ~0.02 — confirmed
+  empirically, not just predicted. One fewer uncited nuisance parameter
+  to defend in Ch.3/Ch.5, no meaningful loss.
+- Did NOT cut `mu_a_baseline`: it exists specifically to hold 730nm
+  reflectance near realistic pork values (~0.70 instead of ~0.90-0.92).
+  Removing it would push NIR reflectance brighter, worsening the
+  already-failing 970nm real-world check (sim ~0.53 vs real ~0.19) rather
+  than helping it. Left in place, still flagged TUNED/uncited.
+- Did NOT fold `denat_width` into the `denat_amplitude` sweep as a
+  "checked, doesn't matter" justification — the grid above shows it does
+  matter. It stays a separate open TODO (find a PSE-transition-steepness
+  citation, or report it as its own sensitivity axis in Ch.4 alongside
+  amplitude).
+
+**Still open:**
+- `denat_width` still needs either a literature source or an explicit
+  Ch.4 write-up as a second sensitivity axis (not yet written up either
+  way).
+- Parameterized Data Sheet (Google Sheet) not yet updated to mark
+  `texture_amplitude` as CUT — do that alongside this entry so the sheet
+  and code don't drift.
+- All other open items from prior entries (eps 481/600nm, `mua_water`
+  wiring, `water_fraction` citation, `denat_amplitude` sweep writeup,
+  failing 970nm check) are unaffected by this session and still open.
+
+**Context to feed next session:**
+- `texture_amplitude` no longer exists in `generate_dataset.py` — don't
+  re-add it without re-running the same before/after R² check done here.
+- The `denat_amplitude` x `denat_width` sweep script used above was a
+  throwaway, not committed. Re-run rather than assuming it still exists
+  if this needs reproducing.
+- Do not quote a final linear-baseline R² yet — still moving with the
+  usual open blockers (eps 481/600, `mua_water`, `water_fraction`,
+  `denat_width`).
+
+---
+
 ## 2026-09-04 — Scattering-model comparison (via Claude session)
 
 **Changed:**
