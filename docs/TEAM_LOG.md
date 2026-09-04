@@ -20,6 +20,80 @@ Template:
 
 ---
 
+## 2026-09-04 — Scattering-model comparison (via Claude session)
+
+**Changed:**
+- Nothing committed to `generate_dataset.py` yet. A candidate alternative,
+  `generate_dataset_changed.py` (not yet tracked in git), replaces the
+  Jacques 2013 generic "other soft tissues" scattering power law
+  (`scatter_a`/`scatter_b`) with a **tissue-specific two-term
+  Rayleigh+Mie model from Bergmann et al. 2021** (porcine muscle
+  specifically) — adds `scatter_c`, `scatter_lambda0`. Also gives the
+  myoglobin coefficients small non-zero values at 730/970nm (were flat
+  0.0). Rewrote `mu_s_prime()` accordingly. Everything else (KM
+  equations, pH→scattering causal link, myoglobin nuisance logic,
+  texture, sensor noise) is untouched.
+- Ran a full side-by-side comparison: both `--selftest`s, a 970nm
+  real-world check, RPD, and an n=20 generation/integrity check into
+  `test_original/` and `test_changed/` (neither committed).
+
+**Verified (numbers):**
+- Sign test: **PASS in both** — reflectance falls with pH in all 6
+  bands, both versions.
+- **970nm reflectance vs. the real NHSI reference (~0.19):** original
+  avg 0.553 (gap 0.363), changed avg 0.382 (gap **0.192, ~half**).
+  Changed is meaningfully closer to the one real external check this
+  project has.
+- **Linear-baseline non-triviality test:** R² 0.5839→**0.6532**
+  (+0.069, MAE 0.1663→0.1514 pH). RPD (same self-test sample,
+  RMSE-derived) 1.550→1.698. **R² is climbing further** on the trend
+  already being watched (~0.45 pre-parameterization → 0.58 → 0.65 now)
+  — still safely under the 0.9 "too easy" alarm, but the direction is
+  unfavorable for the "the CRN has non-trivial work to do" argument.
+  Note: RPD "weak" (<2) in both is *expected and desired* here — that
+  literature bar (2.5–3 = strong) judges a deployed model's calibration,
+  not this deliberately-dumb linear strawman. It belongs on the CRN's
+  own eventual RPD, not this baseline.
+- **Data integrity:** n=20 generated with each, 0 NaN / 0 negative / 0
+  values >1.0 in either, across 737,188 meat pixels each. Per-band
+  mean/std reflectance recorded for both (see chat log / re-run
+  `check_generated.py`-style script if needed — not committed).
+
+**Decided:**
+- Nothing adopted yet. This session's output is a comparison + a
+  recommendation (lean toward the changed scattering model, given the
+  real-world 970nm match, *if* the R² trade-off is explicitly documented
+  rather than discovered later) — **not** a decision. Whoever owns this
+  parameter should make the actual call.
+
+**Still open:**
+- Whether to actually adopt `generate_dataset_changed.py`'s scattering
+  model into `generate_dataset.py` — unresolved, needs an owner's
+  decision, not just this comparison.
+- The realism improvement is confirmed at **970nm only**. The same
+  change shifts all 5 other bands too, and there is no real reference
+  to check whether those moved toward or away from truth.
+- The R² increase hasn't been attributed to a specific cause — the diff
+  bundles the new scattering law AND new NIR myoglobin terms together;
+  which one (or both) drives the R² climb is not separated.
+- Not attempted: tuning an unrelated parameter (e.g. `texture_amplitude`)
+  to try to recover a lower R² while keeping the 970nm improvement.
+- All the usual open items from the parameter-sourcing track (eps at
+  481/600nm, `mua_water`, `water_fraction`, `denat_amplitude` sweep, the
+  failing 970nm check in the *current* `main` params) are unaffected by
+  this comparison and still open.
+
+**Context to feed next session:**
+- `generate_dataset_changed.py`, `test_original/`, `test_changed/` are
+  **local, untracked, not pushed**. If you need this comparison
+  reproduced, the exact diff and commands are in this entry's numbers
+  above — re-run rather than assuming stale local files still exist.
+- Do not treat either version's linear-baseline R² as final — both are
+  still running on the same 8 unresolved parameter blockers logged in
+  the 2026-09-03 entry below.
+
+---
+
 ## 2026-08-31 — Harvey & Raymond (model/data track, via Claude session)
 
 **Changed:**
