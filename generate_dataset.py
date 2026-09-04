@@ -467,8 +467,29 @@ def generate_sample(sample_id, out_dir, rng, size=256):
 # SELF-TESTS  --  run these before you trust anything
 # ============================================================================
 
-def self_test():
-    rng = np.random.default_rng(0)
+def _linear_baseline_once(seed):
+    """One draw of Test 2's sampling + linear fit. Returns (r2, mae)."""
+    rng = np.random.default_rng(seed)
+    tmp_dir = tempfile.mkdtemp(prefix="ligtas_selftest_")
+    X, y = [], []
+    try:
+        for i in range(40):
+            cube, ph, mask = generate_sample(f"tmp_{i}", tmp_dir, rng)
+            idx = rng.choice(np.flatnonzero(mask), 400, replace=False)
+            X.append(cube.reshape(-1, 6)[idx])
+            y.append(ph.reshape(-1)[idx])
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+    X = np.vstack(X); y = np.concatenate(y)
+    Xa = np.c_[X, np.ones(len(X))]
+    coef, *_ = np.linalg.lstsq(Xa, y, rcond=None)
+    pred = Xa @ coef
+    r2 = 1 - ((y - pred) ** 2).sum() / ((y - y.mean()) ** 2).sum()
+    mae = np.abs(y - pred).mean()
+    return r2, mae
+
+
+def self_test(n_seeds=10):
     print("=" * 70)
     print("TEST 1 -- sign of the pH / reflectance relationship")
     print("=" * 70)
@@ -490,31 +511,26 @@ def self_test():
     print("TEST 2 -- is the problem trivially invertible?")
     print("=" * 70)
     print("A linear fit on raw pixels should do POORLY. If R^2 is near 1,")
-    print("the CNN is redundant and the result proves nothing.\n")
-
-    tmp_dir = tempfile.mkdtemp(prefix="ligtas_selftest_")
-    X, y = [], []
-    try:
-        for i in range(40):
-            cube, ph, mask = generate_sample(f"tmp_{i}", tmp_dir, rng)
-            idx = rng.choice(np.flatnonzero(mask), 400, replace=False)
-            X.append(cube.reshape(-1, 6)[idx])
-            y.append(ph.reshape(-1)[idx])
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-    X = np.vstack(X); y = np.concatenate(y)
-    Xa = np.c_[X, np.ones(len(X))]
-    coef, *_ = np.linalg.lstsq(Xa, y, rcond=None)
-    pred = Xa @ coef
-    r2 = 1 - ((y - pred) ** 2).sum() / ((y - y.mean()) ** 2).sum()
-    print(f"  Linear baseline R^2  = {r2:.4f}")
-    print(f"  Linear baseline MAE  = {np.abs(y - pred).mean():.4f} pH units")
+    print("the CNN is redundant and the result proves nothing.")
     print()
-    if r2 > 0.9:
+    print(f"  Averaged over {n_seeds} random seeds -- a single fixed seed was")
+    print("  found to sit ~0.05-0.08 above the true average (see TEAM_LOG.md),")
+    print("  so a single-draw number is not trustworthy on its own.\n")
+
+    results = [_linear_baseline_once(s) for s in range(n_seeds)]
+    r2s = np.array([r for r, _ in results])
+    maes = np.array([m for _, m in results])
+
+    print(f"  Linear baseline R^2   mean={r2s.mean():.4f}  std={r2s.std():.4f}  "
+          f"min={r2s.min():.4f}  max={r2s.max():.4f}")
+    print(f"  Linear baseline MAE   mean={maes.mean():.4f}  std={maes.std():.4f}  "
+          f"pH units")
+    print()
+    if r2s.mean() > 0.9:
         print("  WARNING: too easy. Widen the myoglobin nuisance ranges.")
     else:
-        print("  GOOD: a linear model cannot solve this. Report this number")
-        print("  in Chapter 4 as your baseline -- the CNN must beat it.")
+        print("  GOOD: a linear model cannot solve this. Report the MEAN")
+        print("  (not a single seed) in Chapter 4 -- the CNN must beat it.")
 
 
 def main():
