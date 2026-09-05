@@ -20,6 +20,105 @@ Template:
 
 ---
 
+## 2026-09-06 — Five parameter citation updates + tracker fix (via Claude session)
+
+**Changed:**
+- Applied 5 confirmed edits identically to BOTH `generate_dataset.py` (official)
+  and `generate_dataset_new_plus_eps.py` (candidate):
+  1. `water_fraction`: `0.75` -> **0.732**, `PLACEHOLDER` -> `CITED`
+     (Wojtasik-Kalinowska et al. 2016, LWT-Food Sci Technol 67:112-117 --
+     mean across 4 dietary treatment groups, n=24 pigs, pork *Longissimus
+     dorsi*; groups differed in supplementation, not expected to affect
+     baseline water content).
+  2. `eps_deoxy`/`eps_oxy`/`eps_met`: **values unchanged**. Status
+     `PARTIAL` -> `CITED -- adjacent species (horse), field-standard
+     practice`. Citation chain added: Piao et al. (2025) -> Piao et al.
+     (2022) -> Tang, Faustman & Hoagland (2004) -> underlying coefficients
+     originate from HORSE myoglobin, not pork/beef -- documented as
+     standard practice across the meat-color literature (Krzywicki
+     1979/1982 and downstream), not a thesis-specific shortcut.
+  3. `c_Mb_sd`: value unchanged (0.12). Status -> `BACKCALCULATED --
+     justified`. Reasoning documented: a raw SD of 0.005 mg/g across 599
+     genetically distinct pigs is biologically implausible (near-zero
+     variance for a real trait), so the reported "+/-" is almost
+     certainly SE, not SD -- back-calculated SD = SE*sqrt(599) ~= 0.12.
+  4. `MB_MOLAR_MASS_G_PER_MOL` (module constant, 17000): value unchanged.
+     Comment updated -- now doubly-sourced: standard biochemistry
+     reference value, AND independently used by Cross et al. (2018) in
+     their own pork myoglobin extraction methodology.
+  5. `denat_midpoint`: value unchanged (5.70). Added caveat: the Cross et
+     al. (2018) source cohort was explicitly non-PSE by the paper's own
+     description ("none displayed the pale, soft, and exudative
+     condition") -- reasonable sigmoid-center proxy, but the underlying
+     data has no low-pH/high-denaturation tail examples.
+- **Found and fixed a tracker bug caused by item 2 above.** Changing
+  `eps_deoxy`/`eps_oxy`/`eps_met`'s status to a `CITED` variant silently
+  dropped them from `check_params()`'s blocking count, even though 481nm
+  and 600nm inside those arrays are STILL unverified provisional
+  placeholders -- only the citation *framing* (horse-myoglobin sourcing)
+  was resolved, not those two specific wavelength values. A single
+  `status` string can't represent "framing settled, 2 of 6 values still
+  pending". Fixed by adding a new `pending_wavelengths` field (`[481.0,
+  600.0]`) to those three PARAMS entries, and rewriting `check_params()`
+  in BOTH files so a parameter with pending wavelengths is flagged as
+  blocking (marked `PART`, printed as e.g. `CITED -- ... -- 481/600nm
+  STILL PENDING`) regardless of what its own `status` string says.
+
+**Verified (numbers):**
+- Blocking parameter count is now **6** (was 8 before any of today's
+  edits; briefly, incorrectly, 3 immediately after item 2 above before
+  the tracker fix; correctly 6 after the fix) -- `denat_amplitude`,
+  `denat_width`, `mua_water`, and `eps_deoxy`/`eps_oxy`/`eps_met` (each
+  flagged specifically for their 481/600nm gap, not as a whole).
+- Both files re-ran clean after every edit: sign test **PASS** in both.
+- `generate_dataset.py`: R² (10-seed mean) = **0.587**; 970nm real-world
+  gap = **0.365**.
+- `generate_dataset_new_plus_eps.py`: R² (10-seed mean) = **0.691**;
+  970nm real-world gap = **0.184**.
+- Both changed only marginally from their pre-`water_fraction`-update
+  numbers (as expected -- `water_fraction` only multiplies `mua_water`,
+  which is near-zero outside 730/970nm, so a 0.75->0.732 change is a
+  small nudge, not a structural shift).
+- Data integrity: n=20 generated with each, 732,743 meat pixels each,
+  **0 NaN / 0 negative / 0 values >1.0** in both.
+
+**Decided:**
+- All 5 parameter edits above are adopted in both files, not just
+  proposed -- verified working end-to-end after each one.
+- The `pending_wavelengths` tracking mechanism is the standing pattern
+  going forward for any parameter where citation/framing gets resolved
+  before every sub-value does (not unique to eps -- reusable if another
+  array-valued parameter hits the same situation).
+
+**Still open:**
+- The real remaining blockers, unchanged in substance by this session:
+  481nm/600nm digitized myoglobin values (needs Bowen 1949 or equivalent),
+  `denat_width` (no citation, confirmed to have a real, sizable effect on
+  R² per the 2026-09-05 entry), `mua_water` (values already found per
+  earlier entries, still not wired into code), and the `denat_amplitude`
+  sweep (plan already agreed, not yet executed/written up).
+- The 970nm real-world match, even in the better candidate file, is
+  still ~2x off from the real measured value (0.184 gap on a ~0.19
+  target) -- "improved" is not "close." Not further investigated this
+  session.
+- Neither file is presentable/final -- 6 genuine gaps remain, per the
+  count above.
+
+**Context to feed next session:**
+- Both `generate_dataset.py` and `generate_dataset_new_plus_eps.py` now
+  have IDENTICAL treatment of these 5 parameters -- they only differ in
+  the scattering model, eps NIR values, `mu_a_baseline`, and (candidate
+  only) the `texture_amplitude` cut inherited from the 2026-09-05 entry.
+- If you add a citation that resolves framing but not every sub-value
+  for some OTHER array parameter, use the same `pending_wavelengths`
+  pattern (see `check_params()` docstring in either file) rather than
+  overloading `status` -- that's exactly the bug this session fixed.
+- Run `check_params()` (or `--selftest`, which calls it) to see the live
+  count -- don't assume 6, 7, or 8 without re-running it, since this
+  number has changed twice in two days.
+
+---
+
 ## 2026-09-05 — Cut `texture_amplitude` (via Claude session) — CORRECTED, see below
 
 **⚠️ Correction within this same entry:** the "Verified" numbers below were
