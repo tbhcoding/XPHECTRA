@@ -86,21 +86,48 @@ PARAMS = {
     #              standard AMSA/Krzywicki convention.
     "eps_deoxy": {
         "value": np.array([6.74, 7.60, 9.96, 3.68, 0.0, 0.0]),
-        "status": "PARTIAL",
-        "source": "Tang et al. 2004, Table 2, p.C718 (525 cited, 573 interpolated). "
-                   "481, 600 nm are PROVISIONAL rescaled placeholders, not citations.",
+        "status": "CITED -- adjacent species (horse), field-standard practice",
+        "pending_wavelengths": [481.0, 600.0],
+        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
+                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
+                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
+                   "interpolated) -> underlying extinction coefficients originate from "
+                   "horse (not pork or beef) myoglobin, consistent with essentially the "
+                   "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
+                   "Documented standard practice in meat spectral modeling, not a "
+                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
+                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
+                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     "eps_oxy": {
         "value": np.array([7.35, 7.60, 12.61, 2.21, 0.0, 0.0]),
-        "status": "PARTIAL",
-        "source": "Tang et al. 2004, Table 2, p.C718 (525 cited, 573 interpolated). "
-                   "481, 600 nm are PROVISIONAL rescaled placeholders, not citations.",
+        "status": "CITED -- adjacent species (horse), field-standard practice",
+        "pending_wavelengths": [481.0, 600.0],
+        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
+                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
+                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
+                   "interpolated) -> underlying extinction coefficients originate from "
+                   "horse (not pork or beef) myoglobin, consistent with essentially the "
+                   "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
+                   "Documented standard practice in meat spectral modeling, not a "
+                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
+                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
+                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     "eps_met": {
         "value": np.array([10.42, 7.60, 3.56, 5.15, 0.0, 0.0]),
-        "status": "PARTIAL",
-        "source": "Tang et al. 2004, Table 2, p.C718 (525 cited, 573 interpolated). "
-                   "481, 600 nm are PROVISIONAL rescaled placeholders, not citations.",
+        "status": "CITED -- adjacent species (horse), field-standard practice",
+        "pending_wavelengths": [481.0, 600.0],
+        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
+                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
+                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
+                   "interpolated) -> underlying extinction coefficients originate from "
+                   "horse (not pork or beef) myoglobin, consistent with essentially the "
+                   "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
+                   "Documented standard practice in meat spectral modeling, not a "
+                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
+                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
+                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     # NOTE: 525 nm is an isosbestic point -- all three forms must be EQUAL
     # there. Built-in sanity check. CONFIRMED PASSING: 7.60 == 7.60 == 7.60
@@ -121,11 +148,13 @@ PARAMS = {
     },
     "c_Mb_sd": {
         "value": 0.12,
-        "status": "CITED / BACK-CALCULATED",
-        "source": "Same source as c_Mb_mean. Paper reports 0.87 +/- 0.005 mg/g; "
-                   "back-calculated SD = SE * sqrt(n) = 0.005 * sqrt(599) = 0.12 mg/g "
-                   "(CV ~14%, biologically plausible). The paper's own '+/-' label "
-                   "(SE vs SD) was not directly confirmable -- flag this inference in Ch.3.",
+        "status": "BACKCALCULATED -- justified",
+        "source": "Same source as c_Mb_mean. Paper reports 0.87 +/- 0.005 mg/g without "
+                   "labeling the +/- term. A raw SD of 0.005 mg/g across 599 genetically "
+                   "distinct pigs is biologically implausible (near-zero variance for a "
+                   "real biological trait), so this is almost certainly SE, not SD. "
+                   "Back-calculated SD = SE * sqrt(599) ~= 0.12 mg/g (CV ~14%, "
+                   "biologically plausible) stands as the justified figure.",
     },
 
     # ---- Table B: scattering ----------------------------------------------
@@ -162,7 +191,12 @@ PARAMS = {
                    "599-pig population as c_Mb_mean. Reports ultimate pH 5.70 +/- 0.006. "
                    "Used as the denaturation-onset midpoint: this is a PROXY (population "
                    "mean ultimate pH, not a directly measured sigmoid midpoint). Flag as "
-                   "a modeling assumption in Ch.3.",
+                   "a modeling assumption in Ch.3. CAVEAT: the source cohort was "
+                   "explicitly non-PSE -- 'All loins included in the present study had "
+                   "normal color and water holding characteristics, and none displayed "
+                   "the pale, soft, and exudative condition.' Reasonable sigmoid-center "
+                   "proxy, but the source data itself contains no low-pH/high-"
+                   "denaturation tail examples.",
     },
     "denat_width": {
         "value": 0.22,
@@ -178,10 +212,13 @@ PARAMS = {
                    "(cm^-1) at all 6 bands. 970 nm confirmed 0.45; 730 nm ~0.018.",
     },
     "water_fraction": {
-        "value": 0.75,
-        "status": "PLACEHOLDER",
-        "source": "TODO: pork loin water content ~0.75 by mass; confirm exact figure/page "
-                   "in Honikel 1998 (manuscript ref [6]) before citing.",
+        "value": 0.732,
+        "status": "CITED",
+        "source": "Wojtasik-Kalinowska et al. (2016), LWT - Food Science and Technology "
+                   "67:112-117. Value is the mean across the study's 4 dietary treatment "
+                   "groups (C, L1, L2, L3; n=24 pigs total, pork Longissimus dorsi). "
+                   "Groups differed in linseed oil/vitamin E/selenium supplementation, "
+                   "not expected to materially affect baseline tissue water content.",
     },
 
     # ---- Sensor and tissue texture --------------------------------------
@@ -240,27 +277,52 @@ MB_DECADIC_TO_NAPIERIAN = np.log(10.0)  # ~2.303
 # The *1000 (CM3_PER_L) is the bridge people forget: eps is per mole-per-
 # LITRE, the concentration above is built per cm^3.
 MUSCLE_DENSITY_G_PER_CM3 = 1.06     # BioNumbers BNID 111214, mammalian skeletal muscle
-MB_MOLAR_MASS_G_PER_MOL = 17000.0   # myoglobin MW ~17 kDa -- cite a species-specific
-                                     # value (e.g. UniProt pig myoglobin) in Ch.3
+MB_MOLAR_MASS_G_PER_MOL = 17000.0   # myoglobin MW ~17 kDa. Doubly-sourced: standard
+                                     # biochemistry reference value, AND independently
+                                     # used by Cross et al. (2018) in their own pork
+                                     # myoglobin extraction methodology (same 599-pig
+                                     # study as c_Mb_mean/c_Mb_sd above).
 CM3_PER_L = 1000.0                    # unit bridge, mmol/cm^3 -> mmol/L (mM)
 
 
 def check_params():
-    """Print the citation status. This is your progress bar."""
+    """
+    Print the citation status. This is your progress bar.
+
+    A single "status" string can only say "resolved" or "not resolved" for
+    a whole parameter -- it can't represent "citation/framing is settled,
+    but 2 of this array's 6 wavelength values are still provisional"
+    (e.g. eps_deoxy/oxy/met: the horse-myoglobin sourcing is now cited,
+    but the 481/600nm entries specifically are still rescaled placeholders,
+    not digitized values). PARAMS entries that need that distinction carry
+    an extra "pending_wavelengths" field; check_params() keeps flagging
+    those as blocking regardless of the parent "status" string, and prints
+    which wavelengths specifically are still open.
+    """
     blocking_statuses = ("PLACEHOLDER", "ASSUMED", "PARTIAL")
-    todo = [k for k, v in PARAMS.items() if v["status"] in blocking_statuses]
     print("-" * 70)
     print("PARAMETER CITATION STATUS")
     print("-" * 70)
     mark_map = {"CITED": "  OK  ", "MEASURED": " MEAS ",
                 "ASSUMED": " TODO ", "PLACEHOLDER": " TODO ", "PARTIAL": " PART "}
+    todo = []
     for k, v in PARAMS.items():
-        mark = mark_map.get(v["status"], " note ")
-        print(f"[{mark}] {k:20s} {v['status']:32s} {v['source'][:52]}")
+        pending_wl = v.get("pending_wavelengths")
+        if pending_wl:
+            mark = " PART "
+            wl_str = "/".join(f"{int(w)}" for w in pending_wl)
+            status_line = f"{v['status']} -- {wl_str}nm STILL PENDING"
+            todo.append(k)
+        else:
+            mark = mark_map.get(v["status"], " note ")
+            status_line = v["status"]
+            if v["status"] in blocking_statuses:
+                todo.append(k)
+        print(f"[{mark}] {k:20s} {status_line:32s} {v['source'][:52]}")
     if todo:
         print()
-        print(f"!! {len(todo)} parameter(s) still uncited/unmeasured. Do not present")
-        print("!! results from this dataset until each has a source.")
+        print(f"!! {len(todo)} parameter(s) still uncited/unmeasured/incomplete.")
+        print("!! Do not present results from this dataset until each has a source.")
     print("-" * 70)
     print()
     return len(todo)

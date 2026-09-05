@@ -20,7 +20,110 @@ Template:
 
 ---
 
-## 2026-09-06 — Five parameter citation updates + tracker fix (via Claude session)
+## 2026-09-06 (night) — CRN retrain on updated dataset + instability follow-up (via Claude session)
+
+**⚠️ HANDOFF NOTE: session ended here for the night, not finished. If
+nobody has re-tested this by the time you read it, the "still open"
+section below is exactly where to pick up.**
+
+**Changed:**
+- Regenerated a fresh 400-sample dataset (`ligtas_synthetic_dataset_v2/`,
+  local only, gitignored) from the CURRENT state of
+  `generate_dataset_new_plus_eps.py` -- i.e. reflecting this session's 5
+  parameter citation updates (see the earlier 2026-09-06 entry above/below)
+  plus everything from the 2026-09-05 `texture_amplitude` cut.
+- Retrained the CRN from scratch (`train_crn.py`, NO architecture or
+  hyperparameter changes) on this fresh dataset. Then ran exactly ONE
+  stabilization attempt (learning rate halved, 1e-4 -> 5e-5, otherwise
+  identical) after validation instability showed up, per explicit
+  instruction to try one bounded fix and stop -- not iterate.
+- Neither retrain's checkpoint/output folders
+  (`crn_outputs_v2_retrain/`, `crn_outputs_v2_lr5e5/`) nor the fresh
+  dataset are committed -- all local only, easy to regenerate from the
+  commands below if needed.
+
+**Verified (numbers):**
+- Linear baseline on the REAL materialized fresh dataset (not just
+  self-test's throwaway sampling): **R²=0.679** (300 train samples,
+  120,000 sampled pixels) -- matches the candidate file's self-test mean
+  of 0.691 within normal seed-to-seed noise. Confirms the dataset
+  generated correctly and consistently with expectations.
+- **CRN retrain #1 (lr=1e-4, unchanged default), best epoch (30):
+  val R²=0.767, val MAE=0.087 pH.** Beats the linear baseline by a real
+  margin at its best.
+- **But last-10-epoch (41-50) stats tell a different story:**
+  val R² mean=0.680 std=0.053 (min 0.573, max 0.758); val MAE mean=0.111
+  std=0.016 (min 0.091, max 0.141). Mean val R² (0.680) is essentially
+  TIED with the linear baseline (0.679/0.691) -- the CRN's advantage
+  over the dumb baseline exists only at its best epoch, not typically.
+  About 18 of 50 epochs had a val MAE bump above 0.15 (some to
+  0.19-0.27) -- more volatile than the equivalent 50-epoch run on the
+  PREVIOUS dataset (before `texture_amplitude` cut + eps/water_fraction
+  updates), which had ~86% of epochs in a good 0.08-0.17 band.
+- **Stabilization attempt (lr=5e-5) FAILED -- made it WORSE, not
+  better:** last-10-epoch val R² mean dropped to 0.605 (std TRIPLED to
+  0.165); val MAE mean rose to 0.131 (std DOUBLED to 0.034). Best single
+  epoch stayed about the same (R²=0.766 vs 0.767) -- so halving LR didn't
+  help the peak and hurt the typical/consistency numbers. Likely
+  explanation, NOT confirmed: a smaller LR may need more than 50 epochs
+  to converge and this run just hadn't gotten there yet -- pure
+  speculation, not tested.
+- Per explicit instruction, did NOT attempt a second stabilization fix.
+  This instability is being reported honestly, as-is, not resolved.
+
+**Decided:**
+- Report the instability plainly in whatever writeup uses these numbers:
+  the CRN's best-epoch result is real and worth reporting, but the
+  TYPICAL result on this dataset does not yet clearly beat a plain
+  linear fit -- that distinction matters and should not be papered over
+  by only quoting the best epoch.
+- One cheap, bounded fix (halved LR) was tried and explicitly did not
+  work -- do not re-try the same fix expecting a different result.
+
+**Still open (pick up here):**
+- **The core problem is unresolved.** Root cause of the increased
+  volatility on THIS dataset (vs. the previous one) is not identified --
+  candidates not yet tested: (a) `texture_amplitude`'s removal took away
+  a noise source that may have been incidentally regularizing training,
+  (b) the combined scattering/eps/water_fraction shifts changed the
+  input distribution enough to matter, (c) something dataset-generation-
+  specific to `generate_dataset_new_plus_eps.py` vs. the plain official
+  file. Not distinguished from each other yet.
+- **Untried ideas for next session, in rough order of cost:**
+  1. Re-run the ORIGINAL lr=1e-4 config once more with a different
+     random seed to check if THIS specific run's instability was itself
+     just an unlucky draw (cheapest check, doesn't require code changes).
+  2. Try MORE epochs (e.g. 80-100) at lr=5e-5 to test the "just needed
+     longer to converge" theory above -- currently pure speculation.
+  3. Revisit the BatchNorm-vs-GroupNorm question shelved back on
+     2026-08-31 -- that was set aside because the LR fix resolved
+     instability THEN, on the old dataset. It may be worth reopening now
+     that a plain LR change isn't fixing it on the new dataset.
+  4. Check whether the val R² metric's known per-batch-averaging issue
+     (still unfixed, flagged repeatedly since 2026-08-31) is exaggerating
+     the apparent volatility -- pool residuals across the whole val set
+     once, globally, before concluding the model itself is unstable.
+- Exact commands to reproduce, if picking this up fresh:
+  ```
+  python generate_dataset_new_plus_eps.py --n 400 --out ligtas_synthetic_dataset_v2
+  python train_crn.py --data ligtas_synthetic_dataset_v2 --epochs 50 --batch-size 8 --out crn_outputs_v2_retrain
+  ```
+
+**Context to feed next session:**
+- This is a genuine, not-yet-understood regression in training stability
+  relative to the previous dataset -- do not assume it's already fixed,
+  and do not assume the earlier LR fix (2026-08-31/09-01) still applies
+  unmodified to this dataset; it was tested here and made things worse.
+- If someone re-tests this before you read it, check git log / this file
+  for a newer entry before repeating the work above.
+- All artifacts from tonight (`ligtas_synthetic_dataset_v2/`,
+  `crn_outputs_v2_retrain/`, `crn_outputs_v2_lr5e5/`) are LOCAL ONLY,
+  not pushed -- regenerate with the commands above rather than looking
+  for them in the repo.
+
+---
+
+## 2026-09-06 — Five parameter citation updates + tracker fix 
 
 **Changed:**
 - Applied 5 confirmed edits identically to BOTH `generate_dataset.py` (official)
