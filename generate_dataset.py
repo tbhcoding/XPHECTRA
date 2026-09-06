@@ -204,9 +204,17 @@ PARAMS = {
                    "denaturation tail examples.",
     },
     "denat_width": {
-        "value": 0.22,
+        "value": 0.28,
         "status": "PLACEHOLDER",
-        "source": "TODO: steepness of the transition; or derive from the sweep results",
+        "source": "DERIVED ESTIMATE, not a directly cited value. Central value 0.28 from "
+                   "two independent published transitions: MacDougall & Jones (1981) "
+                   "scattering-coefficient doubling over ~1.1 pH units, and the "
+                   "myofilament lattice-spacing transition over pH ~5.2-6.4 (~1.2 pH "
+                   "units). Each maps to a logistic scale parameter ~0.25-0.27 "
+                   "(10-90% span = 2*ln(9)*width ~= 4.39*width). REPORT AS A SWEEP "
+                   "(0.20 / 0.28 / 0.40 / 0.50) alongside denat_amplitude -- do not "
+                   "pin. CAVEAT: MacDougall & Jones (1981) primary not yet "
+                   "independently verified; treat as a proxy in Ch.3.",
     },
 
     # ---- Table E: water ------------------------------------------------
