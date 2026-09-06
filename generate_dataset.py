@@ -219,15 +219,19 @@ PARAMS = {
 
     # ---- Table E: water ------------------------------------------------
     "mua_water": {
-        "value": np.array([0.00025, 0.00032, 0.00079, 0.0023, 0.016, 0.45]),
+        "value": np.array([0.000248, 0.00032, 0.000763, 0.0023, 0.0179, 0.45]),
         "status": "CITED",
         "source": "Hale, G.M. & Querry, M.R. (1973), Appl. Opt. 12(3):555-563, via the "
-                   "omlc.org-hosted data file (omlc.org/spectra/water/data/hale73.dat). "
-                   "Napierian absorption coefficient (cm^-1), read at the nearest "
-                   "tabulated wavelength to each band [481/525/573/600/730/970 nm]. "
-                   "970 nm = 0.45 exact; the visible bands are ~1e-4 to 2e-3 "
-                   "(negligible next to myoglobin). Primary paper not independently "
-                   "obtained -- values from the omlc data file; state this in Ch.3.",
+                   "omlc.org-hosted data file (omlc.org/spectra/water/data/hale73.dat), "
+                   "which is tabulated on a 25 nm grid in the visible. Napierian "
+                   "absorption coefficient (cm^-1). 525, 600 and 970 nm are EXACT "
+                   "listed values (0.00032 / 0.0023 / 0.45). 481, 573 and 730 nm are "
+                   "LINEARLY INTERPOLATED between the bracketing grid points: "
+                   "481 in [475=0.000247, 500=0.00025]; 573 in [550=0.00045, "
+                   "575=0.00079]; 730 in [725=0.0159, 750=0.026]. Visible bands are "
+                   "~1e-4 to 8e-4 (negligible next to myoglobin); 730 nm ~= 0.018. "
+                   "Primary paper not independently obtained -- values from the omlc "
+                   "data file; state this in Ch.3.",
     },
     "water_fraction": {
         "value": 0.732,
