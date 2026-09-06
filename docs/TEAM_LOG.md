@@ -20,6 +20,99 @@ Template:
 
 ---
 
+## 2026-09-06 (cont. 2) — Scattering "DECISION" resolved; eps NIR values adopted (via Claude session)
+
+**Changed:**
+- Resolved the `"DECISION"`-status blocker on `scatter_a`/`scatter_b` in
+  `generate_dataset.py`: `18.9`/`1.286` (Jacques 2013, generic soft
+  tissue) → `8.7436`/`1.6618` (same power-law formula, re-fit to
+  approximate Bergmann et al. 2021's porcine-muscle-specific curve).
+  This is exactly the item `CLAUDE.md` tracked as the single
+  highest-leverage open item. Status → `FITTED`.
+- Separately, adopted the `eps_deoxy`/`eps_oxy`/`eps_met` NIR (730/970nm)
+  values: `0.0, 0.0` → `[0.21, 0.29]` / `[0.175, 0.35]` / `[0.09, 0.10]`
+  respectively. NOT a citation change (still not sourced to anything) —
+  a small tuned/empirical adjustment, tested and adopted separately from
+  the scattering merge, not bundled in without justification.
+- Deliberately did **not** merge the eps NIR values in the same step as
+  scattering, even though both came from the same exploratory candidate
+  file — scattering was the tracked team decision; eps NIR was not, and
+  earlier isolation testing (2026-09-04/05) found it moves almost
+  nothing on its own. Tested it separately, on its own merits, after
+  scattering landed.
+- Rebuilt `generate_dataset_new_plus_eps.py` to match — it had drifted
+  out of sync with the team's `mua_water`/`denat_width` updates (was
+  built before those landed). Now functionally identical to
+  `generate_dataset.py` (confirmed via diff — only comment text differs).
+  **This file has fully served its purpose and is now redundant** — see
+  Still Open.
+
+**Verified (numbers, each tested in isolation before being applied,
+confirmed twice — once on a throwaway copy, once on the real file — with
+identical results both times):**
+
+*Step 1 — scattering only, before any eps NIR change:*
+| | Before | After |
+|---|---|---|
+| Sign test | PASS | PASS |
+| Linear baseline R² (10-seed mean) | 0.530 ± 0.020 | 0.647 ± 0.018 |
+| 970nm real-world gap | 0.366 | 0.195 |
+| Blocking parameter count | 7 | 5 |
+| Data integrity (732,743 px) | — | 0 NaN/negative/>1.0 |
+
+*Step 2 — eps NIR added on top of the now-merged scattering:*
+| | Without eps NIR | With eps NIR (adopted) |
+|---|---|---|
+| Linear baseline R² (10-seed mean) | 0.6471 ± 0.0179 | 0.6433 ± 0.0185 (within noise, not a real change) |
+| 970nm real-world gap | 0.1950 | **0.1853** (real, deterministic improvement) |
+| Blocking count | 5 | 5 (unchanged — not a citation either way) |
+| Sign test / integrity | PASS / clean | PASS / clean |
+
+**Final combined state, generate_dataset.py, right now:** sign PASS,
+linear baseline R²=0.6433±0.0185, 970nm gap=0.1853, blocking count=5,
+data integrity clean.
+
+**Decided:**
+- Adopted `scatter_a`/`scatter_b` refit — resolves the tracked
+  `"DECISION"` item. Explicit, disclosed trade-off: R² rose from 0.530
+  to 0.647 (a real cost, not hidden), in exchange for closing ~47% of
+  the gap on the project's one real-world check and dropping 2 blocking
+  parameters. Judged net-better, not a free win — see the objective
+  verdict given to the team alongside this entry.
+- Adopted the eps NIR values on top — small, real, no measurable cost.
+  Documented in-code as NOT a citation (see the updated comment block
+  above `eps_deoxy` in `generate_dataset.py`) with 0.0 (the AMSA/
+  Krzywicki convention) named as the explicit fallback if this stops
+  being defensible.
+- Full parameter table (all 14 values + status) was shared with the team
+  for review before this commit, per explicit request.
+
+**Still open:**
+- **`generate_dataset_new_plus_eps.py` is now redundant** (functionally
+  identical to `generate_dataset.py`, confirmed by diff) — proposed for
+  retirement, matching how `generate_dataset_changed.py` was retired
+  once superseded. Not yet deleted — flagging for the team, same as the
+  earlier retirement was flagged before acting.
+- The 5 remaining blocking parameters are unchanged by this entry: eps
+  @481/600nm (×3, the real #1 blocker), `denat_amplitude` (sweep planned,
+  not run), `denat_width` (derived estimate, not a citation).
+- 970nm gap improved (0.366→0.185) but is not closed — still an open
+  decision: tune further, or document as a stated Ch.5 limitation.
+
+**Context to feed next session:**
+- `generate_dataset.py` now has NO remaining scattering/eps-NIR decisions
+  pending — both were resolved and merged this session, not just
+  proposed.
+- If `generate_dataset_new_plus_eps.py` is retired, update any docs still
+  pointing to it (`SYSTEM_ARCHITECTURE.md`, `CLAUDE.md`, `README.md` all
+  reference it as "the candidate, not yet adopted" — that framing is now
+  stale and needs a pass regardless of whether the file itself is
+  deleted).
+- Re-run `check_params()` before quoting the blocking count — it's 5 as
+  of this entry, but has changed three times in two days.
+
+---
+
 ## 2026-09-06 (cont.) — Independent 5-seed replication + a correction to both sessions above (via Claude session)
 
 **⚠️ CORRECTION to this same day's earlier "5-seed" entry above and its

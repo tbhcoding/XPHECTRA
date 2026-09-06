@@ -82,10 +82,19 @@ PARAMS = {
     #              defensible for the actual thesis dataset. Next source:
     #              Bowen (1949), J Biol Chem 179:235-245, full spectrum,
     #              rescaled onto Tang's scale at a shared wavelength.
-    #   730, 970 nm -- myoglobin does not meaningfully absorb here; 0 is the
-    #              standard AMSA/Krzywicki convention.
+    #   730, 970 nm -- SMALL NON-ZERO values (was flat 0.0, the standard
+    #              AMSA/Krzywicki convention). NOT a citation -- these are
+    #              small tuned/empirical values, adopted after isolated
+    #              testing (in the current PARAMS context, post scatter_a/b
+    #              adoption) showed a real, non-noise improvement to the
+    #              970nm external reality check (gap 0.195->0.185) with no
+    #              statistically distinguishable cost to the linear-baseline
+    #              R^2 (0.6471 vs 0.6433, within the ~0.018 seed-to-seed
+    #              noise band). See TEAM_LOG.md for the full comparison.
+    #              If this stops being defensible, 0.0 (the AMSA/Krzywicki
+    #              convention) is the documented fallback.
     "eps_deoxy": {
-        "value": np.array([6.74, 7.60, 9.96, 3.68, 0.0, 0.0]),
+        "value": np.array([3.92, 7.60, 9.96, 1.4, 0.21, 0.29]),
         "status": "CITED -- adjacent species (horse), field-standard practice",
         "pending_wavelengths": [481.0, 600.0],
         "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
@@ -100,7 +109,7 @@ PARAMS = {
                    "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     "eps_oxy": {
-        "value": np.array([7.35, 7.60, 12.61, 2.21, 0.0, 0.0]),
+        "value": np.array([7.35, 7.60, 12.61, 2.21, 0.175, 0.35]),
         "status": "CITED -- adjacent species (horse), field-standard practice",
         "pending_wavelengths": [481.0, 600.0],
         "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
@@ -115,7 +124,7 @@ PARAMS = {
                    "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     "eps_met": {
-        "value": np.array([10.42, 7.60, 3.56, 5.15, 0.0, 0.0]),
+        "value": np.array([9.0, 7.60, 3.56, 6.0, 0.09, 0.10]),
         "status": "CITED -- adjacent species (horse), field-standard practice",
         "pending_wavelengths": [481.0, 600.0],
         "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
@@ -164,18 +173,23 @@ PARAMS = {
     # CSV: omlc.org/news/dec14/Jacques_PMB2013/table2_JacquesPMB2013.csv
     # LIMITATION for Chapter 5: skeletal muscle is not broken out separately.
     "scatter_a": {
-        "value": 18.9,
-        "status": "DECISION",
-        "source": "Jacques 2013 PMB 58:R37 Table 2, other soft tissues (cm^-1). PENDING "
-                   "TEAM SIGN-OFF: porcine-muscle refit (approx. Bergmann et al. 2021, "
-                   "Photonics 8(9):365) tested in generate_dataset_new_plus_eps.py "
-                   "(scatter_a=8.7436), not yet adopted here.",
+        "value": 8.7436,
+        "status": "FITTED",
+        "source": "Same power-law FORMULA as Jacques 2013, but re-fit (least squares, "
+                   "450-1000nm) to approximate the Bergmann et al. 2021 (Photonics "
+                   "8(9):365) porcine-muscle-specific curve -- values-only swap, formula "
+                   "unchanged. DECISION resolved: adopted after isolated verification "
+                   "(scattering change alone, no eps NIR bundling) -- see TEAM_LOG.md. "
+                   "Blocking count 7->5, 970nm gap 0.366->0.195, linear-baseline R^2 "
+                   "0.530->0.647 (10-seed means, disclosed trade-off).",
     },
     "scatter_b": {
-        "value": 1.286,
-        "status": "DECISION",
-        "source": "Jacques 2013 PMB 58:R37 Table 2, other soft tissues. PENDING TEAM "
-                   "SIGN-OFF -- see scatter_a (candidate scatter_b=1.6618).",
+        "value": 1.6618,
+        "status": "FITTED",
+        "source": "Same power-law FORMULA as Jacques 2013, but re-fit (least squares, "
+                   "450-1000nm) to approximate the Bergmann et al. 2021 porcine-specific "
+                   "curve -- values-only swap, formula unchanged. See scatter_a for the "
+                   "adoption numbers.",
     },
 
     # ---- Table D: the pH -> scattering link : YOUR WEAKEST ASSUMPTION -----

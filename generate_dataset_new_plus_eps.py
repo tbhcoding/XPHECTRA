@@ -138,6 +138,7 @@ PARAMS = {
     # K = 2*mu_a term expects a NAPIERIAN (natural-log) absorption
     # coefficient. See MB_DECADIC_TO_NAPIERIAN below and its use in mu_a().
 
+    # ---- Table B: pigment concentration ---------------------------------
     "c_Mb_mean": {
         "value": 0.87,
         "status": "CITED",
@@ -157,7 +158,7 @@ PARAMS = {
                    "biologically plausible) stands as the justified figure.",
     },
 
-    # ---- Table B: scattering ----------------------------------------------
+    # ---- Table C: scattering ---------------------------------------------
     # mu_s'(lambda) = a * (lambda/500)^(-b)
     # Jacques (2013) Phys Med Biol 58:R37, Table 2, "other soft tissues".
     # CSV: omlc.org/news/dec14/Jacques_PMB2013/table2_JacquesPMB2013.csv
@@ -166,18 +167,20 @@ PARAMS = {
         "value": 8.7436,
         "status": "FITTED",
         "source": "Same power-law FORMULA as Jacques 2013, but re-fit (least squares, "
-                   "450-1000nm) to approximate the Bergmann et al. 2021 porcine-specific "
-                   "curve -- values-only comparison, formula unchanged.",
+                   "450-1000nm) to approximate the Bergmann et al. 2021 (Photonics "
+                   "8(9):365) porcine-muscle-specific curve -- values-only swap, formula "
+                   "unchanged. This IS the candidate referenced by generate_dataset.py's "
+                   "former DECISION status -- adopted here.",
     },
     "scatter_b": {
         "value": 1.6618,
         "status": "FITTED",
         "source": "Same power-law FORMULA as Jacques 2013, but re-fit (least squares, "
                    "450-1000nm) to approximate the Bergmann et al. 2021 porcine-specific "
-                   "curve -- values-only comparison, formula unchanged.",
+                   "curve -- values-only swap, formula unchanged.",
     },
 
-    # ---- The pH -> scattering link : YOUR WEAKEST ASSUMPTION --------------
+    # ---- Table D: the pH -> scattering link : YOUR WEAKEST ASSUMPTION -----
     # Low pH near the isoelectric point (~5.4) denatures sarcoplasmic
     # proteins, raising mu_s'. That is why PSE meat is pale. Direction is
     # well established; the exact magnitude and shape are not.
@@ -203,17 +206,34 @@ PARAMS = {
                    "denaturation tail examples.",
     },
     "denat_width": {
-        "value": 0.22,
+        "value": 0.28,
         "status": "PLACEHOLDER",
-        "source": "TODO: steepness of the transition; or derive from the sweep results",
+        "source": "DERIVED ESTIMATE, not a directly cited value. Central value 0.28 from "
+                   "two independent published transitions: MacDougall & Jones (1981) "
+                   "scattering-coefficient doubling over ~1.1 pH units, and the "
+                   "myofilament lattice-spacing transition over pH ~5.2-6.4 (~1.2 pH "
+                   "units). Each maps to a logistic scale parameter ~0.25-0.27 "
+                   "(10-90% span = 2*ln(9)*width ~= 4.39*width). REPORT AS A SWEEP "
+                   "(0.20 / 0.28 / 0.40 / 0.50) alongside denat_amplitude -- do not "
+                   "pin. CAVEAT: MacDougall & Jones (1981) primary not yet "
+                   "independently verified; treat as a proxy in Ch.3.",
     },
 
-    # ---- Table C: water --------------------------------------------------
+    # ---- Table E: water ------------------------------------------------
     "mua_water": {
-        "value": np.array([0.0, 0.0, 0.0, 0.0, 0.02, 0.45]),
-        "status": "PLACEHOLDER",
-        "source": "TODO: Hale & Querry 1973 via omlc.org tabulated water absorption "
-                   "(cm^-1) at all 6 bands. 970 nm confirmed 0.45; 730 nm ~0.018.",
+        "value": np.array([0.000248, 0.00032, 0.000763, 0.0023, 0.0179, 0.45]),
+        "status": "CITED",
+        "source": "Hale, G.M. & Querry, M.R. (1973), Appl. Opt. 12(3):555-563, via the "
+                   "omlc.org-hosted data file (omlc.org/spectra/water/data/hale73.dat), "
+                   "which is tabulated on a 25 nm grid in the visible. Napierian "
+                   "absorption coefficient (cm^-1). 525, 600 and 970 nm are EXACT "
+                   "listed values (0.00032 / 0.0023 / 0.45). 481, 573 and 730 nm are "
+                   "LINEARLY INTERPOLATED between the bracketing grid points: "
+                   "481 in [475=0.000247, 500=0.00025]; 573 in [550=0.00045, "
+                   "575=0.00079]; 730 in [725=0.0159, 750=0.026]. Visible bands are "
+                   "~1e-4 to 8e-4 (negligible next to myoglobin); 730 nm ~= 0.018. "
+                   "Primary paper not independently obtained -- values from the omlc "
+                   "data file; state this in Ch.3.",
     },
     "water_fraction": {
         "value": 0.732,
@@ -225,7 +245,7 @@ PARAMS = {
                    "not expected to materially affect baseline tissue water content.",
     },
 
-    # ---- Sensor and tissue texture --------------------------------------
+    # ---- Table F: sensor ----------------------------------------------
     # BOTH can be MEASURED from the NHSI-meat-overtime cubes (Wang et al.
     # 2026). Run extract_sensor_params.py on a downloaded pork cube and
     # paste the numbers here. Watch the ">1.0 = raw sensor counts, not
@@ -247,7 +267,7 @@ PARAMS = {
     # it was removed from generate_sample() rather than left as a floating
     # uncited knob. See docs/TEAM_LOG.md for the decision record.
 
-    # ---- Non-myoglobin baseline absorption ------------------------------
+    # ---- Table G: tuned nuisance term (non-myoglobin baseline absorption) --
     # Without this term, mu_a at 730/970 nm is ~0 (myoglobin eps=0 there,
     # water is tiny) and Kubelka-Munk returns ~90-92% reflectance in the
     # NIR -- far above the ~50-70% real pork loin shows (manuscript Fig. 6,
@@ -259,13 +279,8 @@ PARAMS = {
     "mu_a_baseline": {
         "value": 0.3,
         "status": "TUNED -- NOT CITED, documented limitation",
-        "source": "Re-swept (10-seed averaged) against the refit scattering values AND "
-                   "the texture_amplitude cut together -- see TEAM_LOG.md. The earlier "
-                   "0.6 recommendation was tuned WITH texture_amplitude present and does "
-                   "NOT reproduce now that it's removed -- R^2 now climbs monotonically "
-                   "past ~0.3, so 0.6 costs real R^2 margin for a smaller realism gain. "
-                   "0.3 (unchanged from the pre-investigation default) sits at the sweep's "
-                   "lowest R^2 while already capturing most of the 970nm improvement.",
+        "source": "Chosen so 730 nm reflectance lands near realistic pork loin values "
+                   "instead of ~0.90-0.92 with no baseline. Fitted nuisance term.",
     },
 }
 
@@ -308,12 +323,19 @@ def check_params():
     those as blocking regardless of the parent "status" string, and prints
     which wavelengths specifically are still open.
     """
-    blocking_statuses = ("PLACEHOLDER", "ASSUMED", "PARTIAL")
+    # "DECISION" blocks too: the value sits in code uncited pending a team
+    # sign-off (e.g. scatter_a/b: Jacques 2013 generic vs. a porcine refit).
+    # It must not print [ OK ] just because a number is present.
+    blocking_statuses = ("PLACEHOLDER", "ASSUMED", "PARTIAL", "DECISION")
     print("-" * 70)
     print("PARAMETER CITATION STATUS")
     print("-" * 70)
     mark_map = {"CITED": "  OK  ", "MEASURED": " MEAS ",
-                "ASSUMED": " TODO ", "PLACEHOLDER": " TODO ", "PARTIAL": " PART "}
+                "ASSUMED": " TODO ", "PLACEHOLDER": " TODO ", "PARTIAL": " PART ",
+                "DECISION": " DEC  ",
+                "CITED (PROXY)": "  OK  ",
+                "BACKCALCULATED -- justified": "  OK  ",
+                "TUNED -- NOT CITED, documented limitation": " NOTE "}
     todo = []
     for k, v in PARAMS.items():
         pending_wl = v.get("pending_wavelengths")
