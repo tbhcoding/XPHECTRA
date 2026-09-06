@@ -29,13 +29,12 @@ every reported number will move.
 | `eps_*` @ 730, 970 nm | 0 (AMSA/Krzywicki convention) |
 | `c_Mb_mean` 0.87, `c_Mb_sd` 0.12 mg/g | CITED — Cross et al. 2018 (n=599); SD back-calculated from SE |
 | unit reconciliation (decadic→Napierian, mg/g→mM) | IMPLEMENTED in `mu_a()`; a real 1000× units bug was caught and fixed here |
-| `scatter_a` 18.9, `scatter_b` 1.286 | CITED — Jacques 2013 (soft-tissue avg; ~54% relative SD on `scatter_a`) |
+| `scatter_a` 18.9, `scatter_b` 1.286 | DECISION — Jacques 2013 (soft-tissue avg) in code; porcine refit (approx. Bergmann 2021) tested in `generate_dataset_new_plus_eps.py`, pending team sign-off |
 | `denat_midpoint` 5.70 | CITED (proxy) — Cross et al. 2018 ultimate pH |
 | `denat_amplitude`, `denat_width` | OPEN — amplitude must be **swept** (Ch. 4 result); width unsourced |
-| `mua_water` | PLACEHOLDER — verified Hale & Querry 1973 values not yet wired into code |
-| `water_fraction` 0.75 | OPEN — confirm Honikel 1998 figure/page |
+| `mua_water` | CITED — Hale & Querry 1973 via omlc.org, wired in (970 nm = 0.45 exact) |
+| `water_fraction` 0.732 | CITED — Wojtasik-Kalinowska et al. 2016 (LWT 67:112-117), mean of 4 diet groups |
 | `sensor_sigma` 0.0054 | MEASURED — `extract_sensor_params.py` on NHSI cube `01.mat` |
-| `texture_amplitude` 0.030 | ASSUMED — anchored to ~0.005 smooth-patch floor; NHSI whole-muscle cubes are the wrong source for a trimmed-chop texture |
 | `mu_a_baseline` 0.3 | TUNED, uncited nuisance term (documented limitation) |
 | **970 nm external reality check** | **FAILING** — sim ~0.54 vs real NHSI ~0.19. Decide: tune NIR terms, or report as a stated Ch. 5 limitation. |
 
@@ -116,12 +115,11 @@ Set `status` to `"CITED"` and put the real citation in `source`.
 
 ### 1b. Water absorption — from omlc.org
 
-Download the tabulated water absorption spectrum from omlc.org. Read off
-the absorption coefficient at each of your six wavelengths. Only 970 nm
-will be meaningfully non-zero.
-
-Fill in `mua_water`. Set `water_fraction` to pork loin water content
-(~0.75) with a citation from any meat science text.
+**Done.** `mua_water` is wired in from Hale & Querry 1973 via the
+omlc.org data file (`omlc.org/spectra/water/data/hale73.dat`), read at
+the nearest tabulated wavelength to each band. 970 nm = 0.45 exact; the
+visible bands are near-zero. `water_fraction` is `0.732`, cited to
+Wojtasik-Kalinowska et al. 2016 (LWT 67:112-117).
 
 ### 1c. Myoglobin concentration
 
@@ -139,13 +137,19 @@ and report how your results change. That sensitivity analysis IS a
 Chapter 4 result, and it's more honest than pinning a value you can't
 source.
 
-### 1e. Scattering — already done
+### 1e. Scattering — DECISION pending
 
-`scatter_a` and `scatter_b` come from Jacques (2013), *Phys. Med. Biol.*
-58:R37, Table 2, "other soft tissues". Already filled in and cited.
+`scatter_a` and `scatter_b` currently come from Jacques (2013), *Phys.
+Med. Biol.* 58:R37, Table 2, "other soft tissues" — a generic
+soft-tissue average, not porcine muscle. A porcine-muscle refit
+(approximating Bergmann et al. 2021) is tested in
+`generate_dataset_new_plus_eps.py` but **not yet adopted**. Their status
+in `PARAMS` is `"DECISION"`, so `--selftest` flags them as blocking
+until the team signs off. See the Parameterized Data Sheet's Candidate
+Diff tab.
 
 For your limitations section: skeletal muscle isn't broken out separately
-in that table, so you're using a soft-tissue average. Say so.
+in Jacques' table, so the current values are a soft-tissue average. Say so.
 
 ---
 
@@ -163,8 +167,12 @@ python extract_sensor_params.py path/to/pork_cube.mat
 The script prints three blocks:
 
 1. **Sensor noise** → paste into `sensor_sigma`, status `"MEASURED"`
-2. **Texture amplitude** → paste into `texture_amplitude`, status `"MEASURED"`
-3. **970 nm reflectance stats** → your one external reality check
+2. **970 nm reflectance stats** → your one external reality check
+
+(`extract_sensor_params.py` also reports a fine-scale texture residual,
+but `texture_amplitude` was **cut from the model** on 2026-09-05 — it was
+an uncited nuisance term indistinguishable from sensor noise on smooth
+patches. See `docs/TEAM_LOG.md`.)
 
 ### About block 3
 

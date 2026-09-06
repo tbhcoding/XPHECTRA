@@ -60,7 +60,9 @@ same pH can look different depending on myoglobin state, and vice versa
 — the network has to use the *spectral shape* across all 6 bands to
 separate the two effects, not just overall brightness. This is verified
 empirically: a plain linear regression on raw pixel values only reaches
-R²≈0.59–0.69 (well under 1.0), proving the mapping isn't trivial (see
+R²≈0.587 ± 0.020 on the current generator (`generate_dataset.py`;
+0.691 ± 0.018 on the `generate_dataset_new_plus_eps.py` candidate) —
+10-seed means, well under 1.0, proving the mapping isn't trivial (see
 §6.5 and `self_test()`).
 
 ### 3.1 Scattering — `mu_s_prime(pH)`
@@ -300,7 +302,8 @@ flagged as an assumption. See §4.
 
 **"How do you know the problem isn't trivially easy for the model?"** A
 plain linear regression on raw pixel values is run as a baseline
-(`self_test()`, Test 2) — it only reaches R²≈0.59–0.69, averaged over 10
+(`self_test()`, Test 2) — it only reaches R²≈0.587 ± 0.020 on the
+current generator (0.691 ± 0.018 on the candidate), averaged over 10
 random seeds (not a single lucky draw — this was itself a bug found and
 fixed: single-seed numbers were found to sit 0.05–0.08 above the true
 average). Well under 1.0, meaning the mapping genuinely requires

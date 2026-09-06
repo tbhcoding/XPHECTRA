@@ -1,0 +1,64 @@
+device: cpu  out_res: 256  n_points: 4  tv_weight: 0.05
+train samples: 300  val samples: 50
+
+Loss = sparse-point MSE + tv_weight * total-variation on the full
+predicted map. The 'MAE/R2 vs hidden dense map' columns are a
+SANITY CHECK only -- phtrue.npy is never used for gradients.
+
+epoch  1/50  train: sparse=0.0982 tv=0.0010  [hidden-map] MAE=0.262 R2=-0.169  |  val: sparse=0.0978 tv=0.0009 MAE=0.265 R2=-0.099
+epoch  2/50  train: sparse=0.0968 tv=0.0031  [hidden-map] MAE=0.261 R2=-0.257  |  val: sparse=0.0972 tv=0.0058 MAE=0.263 R2=-0.099
+epoch  3/50  train: sparse=0.0916 tv=0.0075  [hidden-map] MAE=0.255 R2=-0.095  |  val: sparse=0.0925 tv=0.0111 MAE=0.256 R2=-0.052
+epoch  4/50  train: sparse=0.0800 tv=0.0142  [hidden-map] MAE=0.241 R2=0.021  |  val: sparse=0.0855 tv=0.0131 MAE=0.251 R2=0.017
+epoch  5/50  train: sparse=0.0587 tv=0.0220  [hidden-map] MAE=0.209 R2=0.101  |  val: sparse=0.2079 tv=0.0354 MAE=0.405 R2=-1.576
+epoch  6/50  train: sparse=0.0400 tv=0.0271  [hidden-map] MAE=0.177 R2=0.414  |  val: sparse=0.0438 tv=0.0277 MAE=0.176 R2=0.476
+epoch  7/50  train: sparse=0.0279 tv=0.0335  [hidden-map] MAE=0.157 R2=0.524  |  val: sparse=0.0618 tv=0.0372 MAE=0.208 R2=0.223
+epoch  8/50  train: sparse=0.0206 tv=0.0393  [hidden-map] MAE=0.148 R2=0.543  |  val: sparse=0.0393 tv=0.0435 MAE=0.172 R2=0.478
+epoch  9/50  train: sparse=0.0195 tv=0.0433  [hidden-map] MAE=0.156 R2=0.417  |  val: sparse=0.0316 tv=0.0429 MAE=0.138 R2=0.635
+epoch 10/50  train: sparse=0.0122 tv=0.0436  [hidden-map] MAE=0.131 R2=0.652  |  val: sparse=0.0296 tv=0.0438 MAE=0.132 R2=0.650
+epoch 11/50  train: sparse=0.0112 tv=0.0418  [hidden-map] MAE=0.128 R2=0.658  |  val: sparse=0.1386 tv=0.0490 MAE=0.343 R2=-0.885
+epoch 12/50  train: sparse=0.0113 tv=0.0462  [hidden-map] MAE=0.137 R2=0.591  |  val: sparse=0.0628 tv=0.0433 MAE=0.211 R2=0.255
+epoch 13/50  train: sparse=0.0100 tv=0.0475  [hidden-map] MAE=0.136 R2=0.588  |  val: sparse=0.1905 tv=0.0596 MAE=0.417 R2=-1.678
+epoch 14/50  train: sparse=0.0125 tv=0.0497  [hidden-map] MAE=0.147 R2=0.454  |  val: sparse=0.3073 tv=0.0515 MAE=0.535 R2=-3.122
+epoch 15/50  train: sparse=0.0096 tv=0.0489  [hidden-map] MAE=0.139 R2=0.538  |  val: sparse=0.0504 tv=0.0469 MAE=0.190 R2=0.394
+epoch 16/50  train: sparse=0.0067 tv=0.0483  [hidden-map] MAE=0.127 R2=0.673  |  val: sparse=0.0371 tv=0.0491 MAE=0.170 R2=0.519
+epoch 17/50  train: sparse=0.0058 tv=0.0463  [hidden-map] MAE=0.123 R2=0.699  |  val: sparse=0.0281 tv=0.0460 MAE=0.138 R2=0.665
+epoch 18/50  train: sparse=0.0058 tv=0.0471  [hidden-map] MAE=0.129 R2=0.653  |  val: sparse=0.0310 tv=0.0465 MAE=0.133 R2=0.654
+epoch 19/50  train: sparse=0.0081 tv=0.0487  [hidden-map] MAE=0.142 R2=0.484  |  val: sparse=0.0937 tv=0.0480 MAE=0.280 R2=-0.179
+epoch 20/50  train: sparse=0.0061 tv=0.0492  [hidden-map] MAE=0.136 R2=0.593  |  val: sparse=0.0230 tv=0.0488 MAE=0.104 R2=0.752
+epoch 21/50  train: sparse=0.0056 tv=0.0480  [hidden-map] MAE=0.134 R2=0.622  |  val: sparse=0.0218 tv=0.0480 MAE=0.110 R2=0.754
+epoch 22/50  train: sparse=0.0064 tv=0.0500  [hidden-map] MAE=0.147 R2=0.523  |  val: sparse=0.0212 tv=0.0501 MAE=0.099 R2=0.778
+epoch 23/50  train: sparse=0.0046 tv=0.0476  [hidden-map] MAE=0.130 R2=0.666  |  val: sparse=0.0237 tv=0.0467 MAE=0.113 R2=0.739
+epoch 24/50  train: sparse=0.0047 tv=0.0471  [hidden-map] MAE=0.136 R2=0.607  |  val: sparse=0.0237 tv=0.0477 MAE=0.108 R2=0.749
+epoch 25/50  train: sparse=0.0044 tv=0.0474  [hidden-map] MAE=0.132 R2=0.666  |  val: sparse=0.0233 tv=0.0473 MAE=0.104 R2=0.756
+epoch 26/50  train: sparse=0.0044 tv=0.0477  [hidden-map] MAE=0.141 R2=0.595  |  val: sparse=0.0660 tv=0.0465 MAE=0.220 R2=0.208
+epoch 27/50  train: sparse=0.0046 tv=0.0466  [hidden-map] MAE=0.138 R2=0.615  |  val: sparse=0.0645 tv=0.0459 MAE=0.212 R2=0.233
+epoch 28/50  train: sparse=0.0041 tv=0.0478  [hidden-map] MAE=0.144 R2=0.558  |  val: sparse=0.0763 tv=0.0471 MAE=0.240 R2=0.075
+epoch 29/50  train: sparse=0.0034 tv=0.0469  [hidden-map] MAE=0.140 R2=0.587  |  val: sparse=0.0329 tv=0.0446 MAE=0.136 R2=0.630
+epoch 30/50  train: sparse=0.0040 tv=0.0471  [hidden-map] MAE=0.144 R2=0.553  |  val: sparse=0.0458 tv=0.0497 MAE=0.188 R2=0.416
+epoch 31/50  train: sparse=0.0039 tv=0.0480  [hidden-map] MAE=0.146 R2=0.523  |  val: sparse=0.0600 tv=0.0457 MAE=0.226 R2=0.195
+epoch 32/50  train: sparse=0.0037 tv=0.0465  [hidden-map] MAE=0.142 R2=0.537  |  val: sparse=0.0390 tv=0.0456 MAE=0.154 R2=0.554
+epoch 33/50  train: sparse=0.0042 tv=0.0493  [hidden-map] MAE=0.150 R2=0.533  |  val: sparse=0.0235 tv=0.0507 MAE=0.106 R2=0.748
+epoch 34/50  train: sparse=0.0046 tv=0.0500  [hidden-map] MAE=0.162 R2=0.295  |  val: sparse=0.0916 tv=0.0488 MAE=0.253 R2=-0.094
+epoch 35/50  train: sparse=0.0033 tv=0.0500  [hidden-map] MAE=0.157 R2=0.457  |  val: sparse=0.0350 tv=0.0469 MAE=0.137 R2=0.624
+epoch 36/50  train: sparse=0.0027 tv=0.0471  [hidden-map] MAE=0.146 R2=0.574  |  val: sparse=0.0458 tv=0.0465 MAE=0.168 R2=0.477
+epoch 37/50  train: sparse=0.0026 tv=0.0469  [hidden-map] MAE=0.150 R2=0.551  |  val: sparse=0.0482 tv=0.0469 MAE=0.174 R2=0.452
+epoch 38/50  train: sparse=0.0024 tv=0.0462  [hidden-map] MAE=0.147 R2=0.544  |  val: sparse=0.0376 tv=0.0474 MAE=0.145 R2=0.589
+epoch 39/50  train: sparse=0.0024 tv=0.0449  [hidden-map] MAE=0.146 R2=0.572  |  val: sparse=0.0423 tv=0.0468 MAE=0.180 R2=0.454
+epoch 40/50  train: sparse=0.0027 tv=0.0468  [hidden-map] MAE=0.153 R2=0.514  |  val: sparse=0.0273 tv=0.0448 MAE=0.118 R2=0.715
+epoch 41/50  train: sparse=0.0027 tv=0.0453  [hidden-map] MAE=0.154 R2=0.544  |  val: sparse=0.0317 tv=0.0452 MAE=0.136 R2=0.646
+epoch 42/50  train: sparse=0.0030 tv=0.0467  [hidden-map] MAE=0.159 R2=0.440  |  val: sparse=0.0353 tv=0.0485 MAE=0.148 R2=0.595
+epoch 43/50  train: sparse=0.0031 tv=0.0484  [hidden-map] MAE=0.167 R2=0.330  |  val: sparse=0.0313 tv=0.0458 MAE=0.141 R2=0.626
+epoch 44/50  train: sparse=0.0023 tv=0.0458  [hidden-map] MAE=0.155 R2=0.543  |  val: sparse=0.0272 tv=0.0486 MAE=0.121 R2=0.703
+epoch 45/50  train: sparse=0.0028 tv=0.0464  [hidden-map] MAE=0.163 R2=0.435  |  val: sparse=0.0335 tv=0.0480 MAE=0.143 R2=0.614
+epoch 46/50  train: sparse=0.0020 tv=0.0450  [hidden-map] MAE=0.156 R2=0.530  |  val: sparse=0.0297 tv=0.0465 MAE=0.132 R2=0.664
+epoch 47/50  train: sparse=0.0020 tv=0.0444  [hidden-map] MAE=0.156 R2=0.522  |  val: sparse=0.0320 tv=0.0464 MAE=0.135 R2=0.646
+epoch 48/50  train: sparse=0.0015 tv=0.0445  [hidden-map] MAE=0.152 R2=0.573  |  val: sparse=0.0356 tv=0.0446 MAE=0.142 R2=0.605
+epoch 49/50  train: sparse=0.0016 tv=0.0427  [hidden-map] MAE=0.153 R2=0.549  |  val: sparse=0.0330 tv=0.0420 MAE=0.140 R2=0.629
+epoch 50/50  train: sparse=0.0018 tv=0.0443  [hidden-map] MAE=0.160 R2=0.453  |  val: sparse=0.0291 tv=0.0447 MAE=0.135 R2=0.650
+Saved loss curve to crn_outputs_repro50/loss_curve.png
+/Users/blessiefaithbongalos/Desktop/Projects/XPHECTRA/train_crn.py:208: UserWarning: You passed an edgecolor/edgecolors ('black') for an unfilled marker ('x').  Matplotlib is ignoring the edgecolor in favor of the facecolor.  This behavior may change in the future.
+  ax[1].scatter(cc, rr, c="white", edgecolors="black", s=30, marker="x")
+Saved heatmap comparison to crn_outputs_repro50/sanity_check_heatmap.png
+
+Done. Best val MAE (hidden-map check) = 0.099 pH units.
+Checkpoint, loss curve, heatmap, history in crn_outputs_repro50/
