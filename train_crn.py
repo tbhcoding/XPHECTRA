@@ -266,7 +266,23 @@ def main():
                           "required because a handful of points alone "
                           "underdetermine a dense map")
     ap.add_argument("--out", default="crn_outputs")
+    ap.add_argument("--seed", type=int, default=None,
+                     help="torch.manual_seed for model init + DataLoader "
+                          "shuffling, for reproducible independent runs. "
+                          "Unset = whatever the process's default RNG state "
+                          "gives (still effectively random, just unlogged).")
+    ap.add_argument("--patience", type=int, default=None,
+                     help="early-stopping patience in epochs, monitoring "
+                          "VALIDATION LOSS (val_sparse + tv_weight*val_tv -- "
+                          "the actual training objective on val data, NOT "
+                          "val_mae/val_r2, which stay sanity-check-only and "
+                          "never drive any decision). Unset (default) = no "
+                          "early stopping, runs the full --epochs, "
+                          "checkpoints on val_mae -- unchanged prior behavior.")
     args = ap.parse_args()
+
+    if args.seed is not None:
+        torch.manual_seed(args.seed)
 
     if args.n_points > MAX_AVAILABLE_POINTS:
         print(f"WARNING: --n-points={args.n_points} requested, but the "
@@ -299,19 +315,49 @@ def main():
 
     history = []
     best_val_mae = float("inf")
+    best_val_r2 = float("nan")
+    best_val_loss = float("inf")
+    best_epoch = 0
+    epochs_since_improve = 0
+    stopped_epoch = args.epochs
     for epoch in range(1, args.epochs + 1):
         tr_sparse, tr_tv, tr_mae, tr_r2 = run_epoch(model, train_loader, opt, device, args, train=True)
         val_sparse, val_tv, val_mae, val_r2 = run_epoch(model, val_loader, opt, device, args, train=False)
+        val_loss = val_sparse + args.tv_weight * val_tv
         print(f"epoch {epoch:2d}/{args.epochs}  "
               f"train: sparse={tr_sparse:.4f} tv={tr_tv:.4f}  "
               f"[hidden-map] MAE={tr_mae:.3f} R2={tr_r2:.3f}  |  "
-              f"val: sparse={val_sparse:.4f} tv={val_tv:.4f} MAE={val_mae:.3f} R2={val_r2:.3f}")
+              f"val: sparse={val_sparse:.4f} tv={val_tv:.4f} loss={val_loss:.4f} "
+              f"MAE={val_mae:.3f} R2={val_r2:.3f}")
         history.append(dict(epoch=epoch, train_sparse=tr_sparse, val_sparse=val_sparse,
-                             train_mae=tr_mae, val_mae=val_mae,
+                             val_loss=val_loss, train_mae=tr_mae, val_mae=val_mae,
                              train_r2=tr_r2, val_r2=val_r2))
-        if val_mae < best_val_mae:
-            best_val_mae = val_mae
-            torch.save(model.state_dict(), os.path.join(args.out, "crn_best.pt"))
+
+        if args.patience is not None:
+            # Early-stopping mode: checkpoint criterion is VALIDATION LOSS
+            # (the actual training objective on val data), never val_mae/
+            # val_r2 -- those stay sanity-check-only per the module docstring.
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_val_mae = val_mae  # for reporting only, not the criterion
+                best_val_r2 = val_r2
+                best_epoch = epoch
+                epochs_since_improve = 0
+                torch.save(model.state_dict(), os.path.join(args.out, "crn_best.pt"))
+            else:
+                epochs_since_improve += 1
+                if epochs_since_improve >= args.patience:
+                    stopped_epoch = epoch
+                    print(f"  Early stopping: val_loss hasn't improved in "
+                          f"{args.patience} epochs (best={best_val_loss:.4f}).")
+                    break
+        else:
+            # Unchanged prior behavior: no early stopping, checkpoint on val_mae.
+            if val_mae < best_val_mae:
+                best_val_mae = val_mae
+                best_val_r2 = val_r2
+                best_epoch = epoch
+                torch.save(model.state_dict(), os.path.join(args.out, "crn_best.pt"))
 
     save_loss_curve(history, os.path.join(args.out, "loss_curve.png"))
 
@@ -325,7 +371,12 @@ def main():
     with open(os.path.join(args.out, "history.json"), "w") as f:
         json.dump(history, f, indent=2)
 
-    print(f"\nDone. Best val MAE (hidden-map check) = {best_val_mae:.3f} pH units.")
+    print(f"\nDone. Stopped after epoch {stopped_epoch}/{args.epochs}"
+          f"{' (early stop)' if stopped_epoch < args.epochs else ''}.")
+    print(f"Selected checkpoint: epoch {best_epoch}"
+          f"{' (lowest val_loss)' if args.patience is not None else ' (lowest val_mae)'}"
+          f" -- val_R2={best_val_r2:.4f}  val_MAE={best_val_mae:.4f} pH units "
+          f"(hidden-map check, sanity only).")
     print(f"Checkpoint, loss curve, heatmap, history in {args.out}/")
 
 

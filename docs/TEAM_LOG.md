@@ -20,6 +20,96 @@ Template:
 
 ---
 
+## 2026-09-06 (cont.) — Independent 5-seed replication + a correction to both sessions above (via Claude session)
+
+**⚠️ CORRECTION to this same day's earlier "5-seed" entry above and its
+own uncertainty about dataset differences -- read this before trusting
+that entry's "not guaranteed bit-identical" caveat.**
+
+**Changed:**
+- Made `--patience` and `--seed` PERMANENT flags in the shared
+  `train_crn.py` (not a scratch script) -- `--patience` enables early
+  stopping (checkpoint on lowest val_loss = val_sparse + tv_weight*val_tv,
+  computed from the 4 sparse val points only, never the hidden field;
+  stops after N epochs with no improvement); `--seed` calls
+  `torch.manual_seed()` for reproducible init/shuffling. Unset (the
+  default for both) reproduces the exact prior behavior -- nothing
+  changed for existing callers.
+- Ran the same bounded experiment independently: 5 seeded runs (0-4),
+  lr=1e-4, patience=10, cap 50 epochs, against `ligtas_synthetic_dataset_v2/`
+  (generated earlier the same day, same generator script state as the
+  entry above's `ligtas_dataset_new_plus_eps/`).
+- Committed the per-seed results (`crn_5seed_s0`.."s4"/ -- history.json,
+  loss_curve.png, sanity_check_heatmap.png; checkpoints excluded per the
+  existing blanket `*.pt` rule) alongside this entry, matching the
+  existing-entry's precedent.
+
+**Verified (numbers):**
+- Per-seed: seed0 R²=0.7055/MAE=0.1091, seed1 R²=0.8434/MAE=0.0802,
+  seed2 R²=0.7045/MAE=0.1124, seed3 R²=0.7932/MAE=0.0881, seed4
+  R²=0.8922/MAE=0.0560.
+- Mean +/- std: **R²=0.7878 +/- 0.0745, MAE=0.0892 +/- 0.0206** -- vs.
+  the entry above's R²=0.8070 +/- 0.0763, MAE=0.0840 +/- 0.0191. Means
+  agree within one std of each other; pattern shape does NOT replicate
+  cleanly -- their run shows 4 seeds tightly clustered (0.82-0.87) +1
+  clear outlier (0.66); ours shows 2 seeds low together (~0.70-0.71) and
+  the other 3 more spread out (0.79/0.84/0.89), not a single outlier.
+- **Dataset-identity check, resolving the entry-above's stated
+  uncertainty:** the generator's `main()` uses a HARDCODED seed (42),
+  not a random one. Regenerated a 4-sample dataset fresh and confirmed
+  `sample_001_msi.npy` and `sample_001_phtrue.npy` are byte-identical
+  (`np.array_equal`) to what's already in `ligtas_synthetic_dataset_v2/`
+  -- confirming dataset generation is fully deterministic given the same
+  script version. Since the entry-above's dataset was generated from the
+  same committed script state (their own log confirms this via
+  `check_params()` output), **their `ligtas_dataset_new_plus_eps/` and
+  our `ligtas_synthetic_dataset_v2/` were almost certainly the SAME
+  data, not different RNG draws as previously assumed.**
+
+**Decided:**
+- The "different dataset" explanation for the per-seed pattern mismatch
+  is very likely WRONG -- correcting that assumption in both this entry
+  and (by reference) the entry above's stated uncertainty. The two
+  experiments were run on effectively identical data.
+- Given that, the mismatch is better explained by either (a) genuine
+  sensitivity of this still-unstable model to small seed differences, or
+  (b) environment-level non-determinism (different machine/PyTorch
+  build) that `torch.manual_seed()` does not fully eliminate across
+  environments -- NOT distinguished from each other, not investigated
+  further here (bounded experiment, not iterating).
+- `--patience`/`--seed` are now permanent, reusable `train_crn.py`
+  features -- this resolves the entry-above's open item asking whether
+  early stopping should become a committed CLI feature. It should, and
+  now does.
+
+**Still open:**
+- Whether the per-seed mismatch is model sensitivity or cross-environment
+  non-determinism is unresolved -- would need same-machine, same-process
+  reruns to distinguish, not attempted here.
+- The AGGREGATE conclusion (CRN with early-stopping-selected checkpoint
+  clearly beats the ~0.68 linear baseline) is now supported by two
+  independent 5-seed samples landing within noise of each other -- treat
+  this as reasonably solid. The exact per-seed reproducibility is not.
+- All the usual parameter-citation blockers and the deeper instability
+  root-cause (untested ideas: more epochs, GroupNorm, the val-R²
+  per-batch-averaging issue) remain open, unaffected by this entry.
+
+**Context to feed next session:**
+- `train_crn.py --patience N --seed N` is now the standard way to run
+  this kind of experiment -- don't reconstruct a scratch script, the
+  capability is permanent and committed.
+- Do not re-litigate "were the two datasets different" -- verified same,
+  see above. If re-deriving this dataset for any reason, expect it to be
+  byte-identical to both `ligtas_synthetic_dataset_v2/` and
+  `ligtas_dataset_new_plus_eps/` as long as `generate_dataset_new_plus_eps.py`
+  hasn't changed.
+- Two independent 5-seed results now exist (`crn_5seed_new_plus_eps/`
+  from the entry above, `crn_5seed_s0`.."s4"/` here) -- both legitimate,
+  neither supersedes the other; read both before assuming either is "the"
+  result.
+
+---
+
 ## 2026-09-06 — 5-seed CRN early-stopping experiment on generate_dataset_new_plus_eps.py (via Claude session)
 
 **Relation to the entry directly below (the "(night)" CRN retrain):** this
