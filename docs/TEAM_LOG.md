@@ -20,6 +20,142 @@ Template:
 
 ---
 
+## 2026-09-06 — 5-seed CRN early-stopping experiment on generate_dataset_new_plus_eps.py (via Claude session)
+
+**Relation to the entry directly below (the "(night)" CRN retrain):** this
+is a separate session, run against the current (post-4f879dd) state of
+`generate_dataset_new_plus_eps.py` -- confirmed via `check_params()`
+output at generation time (water_fraction CITED, eps citation chain
+present, matching the 5 parameter updates already logged). It uses its
+OWN freshly generated dataset (`ligtas_dataset_new_plus_eps/`, local
+only, not the entry below's `ligtas_synthetic_dataset_v2/`) and a
+different evaluation design (5 seeds + early stopping, vs. one 50-epoch
+run's last-10-epoch stats). Read both; don't conflate the two datasets
+or treat one as superseding the other.
+
+**Changed:**
+- Generated a fresh 400-sample dataset (300/50/50 split) from
+  `generate_dataset_new_plus_eps.py` at its current committed state:
+  `python generate_dataset_new_plus_eps.py --n 400 --out ligtas_dataset_new_plus_eps`.
+  Local only, not committed (regenerable from the command above).
+- Ran ONE bounded experiment, per explicit instruction ("no further
+  tuning after this"): 5 independent CRN training runs, identical
+  architecture and hyperparameters (lr=1e-4, tv_weight=0.05, batch=8,
+  in_res=out_res=256, n_points=4), varying only the seed (0-4) that
+  controls model weight init and training-data shuffle order -- the
+  dataset itself is held fixed across all 5 runs.
+- Added early stopping and per-seed checkpointing via a standalone
+  script (NOT committed -- ran from a local scratch path, reuses
+  `train_crn.py`'s existing `SparseLIGTASDataset` / `run_epoch` /
+  `CrudeCRN` building blocks rather than modifying the shared file):
+  patience = 10 epochs with no improvement, hard cap 50 epochs per run.
+- **Explicit design choice, not yet reconciled with `train_crn.py`'s own
+  convention:** "validation loss" for checkpoint selection and early
+  stopping = val_sparse_MSE + tv_weight*val_TV (the actual optimized
+  quantity, computed from the 4 sparse val points only) -- NOT the
+  hidden-field val_MAE that `train_crn.py`'s own checkpointing currently
+  uses. Chosen so model selection never touches `phtrue.npy`, consistent
+  with the project's "hidden field is eval-only" rule. Flagged for the
+  team to confirm or override, not silently adopted as the new default.
+- Outputs (best checkpoint, loss curve, sanity-check heatmap, per-epoch
+  history, `summary.json`) saved per seed under
+  `crn_5seed_new_plus_eps/seed_{0-4}/` in the repo -- untracked so far.
+
+**Verified (numbers):**
+- All 5 runs completed; ~85s/epoch on CPU (no GPU in this environment),
+  113.5 min total wall time.
+- Confirmed by reading `full_field_eval()` in `train_crn.py`: reported
+  val R²/MAE are computed against the FULL HIDDEN DENSE pH field (all
+  meat pixels), not just the 4 sparse points. Checkpoint selection/early
+  stopping used val_loss (sparse+TV on the 4 sparse val points only,
+  see above) -- the two are deliberately different signals.
+- Per-seed early-stopped results:
+  | seed | best epoch | stopped at | val R² | val MAE (pH) |
+  |---|---|---|---|---|
+  | 0 | 11 | 21 | 0.6596 | 0.1199 |
+  | 1 | 14 | 24 | 0.8663 | 0.0706 |
+  | 2 | 16 | 26 | 0.8280 | 0.0765 |
+  | 3 | 10 | 20 | 0.8162 | 0.0860 |
+  | 4 | 10 | 20 | 0.8650 | 0.0668 |
+- Mean +/- std across the 5 selected checkpoints: **val R² = 0.8070 +/-
+  0.0763** (min 0.6596, max 0.8663); **val MAE = 0.0840 +/- 0.0191 pH**
+  (min 0.0668, max 0.1199).
+- Seed 0 is a clear low outlier (R²=0.66) versus the other four
+  (clustering 0.82-0.87) -- pulls the mean down and inflates the std;
+  flag the spread, don't just quote the mean.
+- Every seed's per-epoch log shows the same qualitative pattern: sharp
+  swings to strongly negative val R² (e.g. seed 3 epoch 8 R²=-2.45,
+  seed 4 epoch 19 R²=-2.79) interleaved with good epochs, before
+  stabilizing enough to trigger early stopping -- consistent with, and
+  now shown across 5 seeds rather than 1, the instability the
+  2026-08-31 and the entry-below sessions already documented at
+  lr=1e-4.
+- **Cross-reference to the entry below's open item #1** ("re-run
+  lr=1e-4 with a different seed to check if instability was an unlucky
+  draw"): this experiment does exactly that across 5 seeds, though on a
+  separately-generated dataset and using early-stopping-by-val_loss
+  rather than watching a fixed run's last-10 epochs -- not a strict
+  controlled replication, so treat as suggestive, not conclusive. Result:
+  with early stopping at the point of lowest val_loss, 4 of 5 seeds land
+  at R²=0.82-0.87, clearly beating the ~0.68-0.69 linear baseline the
+  entry below reports; only seed 0 lands closer to that baseline range.
+  This suggests picking the right EPOCH (via early stopping) may matter
+  as much as the instability itself -- worth testing directly against
+  their exact `ligtas_synthetic_dataset_v2/` before concluding anything
+  stronger.
+
+**Decided:**
+- Scoped and run as one bounded experiment; results reported as-is, no
+  further tuning attempted per instruction.
+- No decision made here on adopting `generate_dataset_new_plus_eps.py`
+  into the official `generate_dataset.py` -- that sign-off is still the
+  2026-09-04 entry's open item, unaffected by this session.
+
+**Still open:**
+- The val_loss-vs-hidden-field-val_MAE checkpoint-selection discrepancy
+  between this experiment's script and `train_crn.py`'s own convention
+  (see Changed above) is unreconciled -- needs a team decision on which
+  convention `train_crn.py` itself should use, and whether early
+  stopping should become a permanent, committed CLI feature there
+  instead of living in an uncommitted scratch script.
+- The underlying epoch-to-epoch instability is NOT diagnosed further by
+  this session -- it adds evidence (5 seeds instead of 1) but doesn't
+  test any of the entry-below's untried ideas (more epochs, GroupNorm,
+  the val R² per-batch-averaging issue).
+- The 5-seed script itself is not committed -- if this capability
+  (seeded reruns + early stopping) is wanted again, it should be written
+  into `train_crn.py` or a new tracked script, with review, rather than
+  re-run from scratch each time.
+- Did not test this exact methodology (5 seeds, early-stopping-by-
+  val_loss) against the entry-below's `ligtas_synthetic_dataset_v2/` --
+  the two datasets should be close (same generator, same recent
+  parameter state) but were generated separately and are not guaranteed
+  bit-identical (different RNG draws). A same-dataset comparison would
+  be needed to properly settle whether early stopping resolves, or just
+  masks, the instability question raised below.
+- All the usual parameter-citation blockers (481/600nm eps, mua_water
+  wiring, denat_width, denat_amplitude sweep, 970nm gap) are unaffected
+  by this session and still open.
+
+**Context to feed next session:**
+- Dataset: `ligtas_dataset_new_plus_eps/` (400 samples, 300/50/50,
+  generation seed 42 default), built from `generate_dataset_new_plus_eps.py`
+  at its current (post-4f879dd) state -- regenerate if PARAMS change
+  again, don't assume it matches the entry-below's `_v2` dataset exactly.
+  Reported result: **val R² mean=0.8070, std=0.0763; val MAE
+  mean=0.0840, std=0.0191 pH**, across seeds 0-4 -- quote the mean+std
+  and the seed-0 outlier together, not a single number.
+- To reproduce: same `CrudeCRN` (base=16, in_res=out_res=256), same
+  hyperparameters (lr=1e-4, tv_weight=0.05, batch=8, n_points=4), seeds
+  0-4, patience=10 on val_loss (sparse+TV, not val_MAE), cap 50 epochs.
+- If picking up the entry-below's instability investigation, consider
+  running this same 5-seed/early-stopping design directly on their
+  `ligtas_synthetic_dataset_v2/` (regenerate via their logged command)
+  for a true apples-to-apples comparison before drawing conclusions from
+  either session's numbers alone.
+
+---
+
 ## 2026-09-06 (night) — CRN retrain on updated dataset + instability follow-up (via Claude session)
 
 **⚠️ HANDOFF NOTE: session ended here for the night, not finished. If
