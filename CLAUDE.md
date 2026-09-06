@@ -47,8 +47,7 @@ confirmed with adviser... Settled — do not re-litigate").
 
 | File | What it is |
 |---|---|
-| `generate_dataset.py` | The simulator. Contains `PARAMS` — the forward model's physical constants, each tagged with a citation status. This dict **mirrors the Parameterized Data Sheet** and must be kept in sync with it. Also has `--selftest`, which runs two sanity checks (see below). |
-| `generate_dataset_new_plus_eps.py` | A tested-but-not-yet-adopted candidate replacement for part of `generate_dataset.py`'s `PARAMS` (see "Open decision: scattering values" below). Not the file actually used to generate data yet. |
+| `generate_dataset.py` | The simulator — **the only generator now.** Contains `PARAMS` — the forward model's physical constants, each tagged with a citation status. This dict **mirrors the Parameterized Data Sheet** and must be kept in sync with it. Also has `--selftest`, which runs two sanity checks (see below). A parallel candidate file, `generate_dataset_new_plus_eps.py`, existed 2026-09-04 through 09-07 to test scattering/eps changes in isolation before adopting them; it has since been fully merged and retired — don't look for it. |
 | `extract_sensor_params.py` | Measures real sensor noise and texture statistics from an external real dataset (NHSI pork cubes, Wang et al. 2026) — the closest thing this project has to real measurements. |
 | `crn_model.py` | The CRN (`CrudeCRN`): a small U-Net that predicts a dense pH map from a 6-band image. This is the actual model being evaluated — the thing the synthetic dataset exists to test. |
 | `train_crn.py` | Trains the CRN on 4 sparse pH points per sample (never the full dense map — that's held out as a hidden evaluation target, which is the core experimental design: can the CRN reconstruct a full field from 4 points using spectral shape alone?). |
@@ -85,8 +84,11 @@ used a single fixed random seed. That number was found to be unreliable
 either direction. `self_test()` now averages 10 seeds and reports
 mean/std. **Treat any single-number R² quoted anywhere in this project's
 older history as suspect** unless it explicitly says "mean over N
-seeds." Current honest baseline: **R² mean ≈ 0.59, std ≈ 0.02** (10
-seeds), on the current `PARAMS`.
+seeds." Current honest baseline: **R² mean ≈ 0.69, std ≈ 0.02** (10
+seeds), on the current `PARAMS` (post scatter_a/b + eps NIR + retuned
+`mu_a_baseline`) — this number has moved twice since it was 0.59 and
+will move again once the remaining 5 blockers close; always re-run
+`--selftest` rather than trust this file's snapshot.
 
 ## The Parameterized Data Sheet
 
@@ -118,58 +120,60 @@ values, they're derivations and measurements of the model's output.
 
 ### The 14 real parameters, and where they stand
 
-**Done (3):**
+**Done (6):**
 - `c_Mb_mean`, `c_Mb_sd` — myoglobin concentration (Cross et al. 2018)
 - `sensor_sigma` — measured directly from real NHSI pork cubes
+- `mua_water` — Hale & Querry 1973 via omlc.org, linearly interpolated
+- `water_fraction` — 0.732, Wojtasik-Kalinowska et al. 2016
+- `denat_midpoint` — kept 5.70 as a labelled proxy (decided, not a TODO)
+- `scatter_a`/`scatter_b` — see #1 below, now resolved
 
-**Still open, roughly in the order they should be tackled (items 1–2 now
-resolved; numbering kept so the "#1 / #3" cross-references below still
-line up):**
+**Still open (5 blocking parameters), roughly in the order they should be
+tackled:**
 
-1. ~~`mua_water`~~ — **DONE.** Wired in from Hale & Querry 1973 via the
-   omlc.org data file: `[0.00025, 0.00032, 0.00079, 0.0023, 0.016, 0.45]`
-   cm⁻¹ (970nm = 0.45 exact; visible bands near-zero). Status `CITED`.
-2. ~~`water_fraction`~~ — **DONE.** `0.732`, cited to Wojtasik-Kalinowska
-   et al. 2016 (LWT 67:112-117), mean of the study's 4 diet-treatment
-   groups, pork *Longissimus dorsi*. Honikel 1998 is no longer the source.
-3. `scatter_a` / `scatter_b` — **highest-priority item on the sheet.**
-   Status in `PARAMS` is now `"DECISION"` (blocks in `--selftest`).
-   Current values are a generic soft-tissue average (Jacques 2013); a
-   porcine-muscle-specific refit (Bergmann et al. 2021) has already been
-   tested and recommended in `generate_dataset_new_plus_eps.py` — it
-   matches or beats every alternative on every metric tried (970nm
-   match, R², data integrity) with no added complexity. This is a
-   pending sign-off, not more research. It also directly affects the
-   failing 970nm check.
-4. `denat_midpoint` — currently 5.70 (Cross et al., unselected
-   population); quality-stratified studies suggest normal-class pork
-   sits lower (5.4–5.6). Recommended Ch.3 language already drafted;
-   needs a decision.
-5. `mu_a_baseline` — tuned/uncited nuisance term. Explicitly sequenced
-   **after** #3 and #1 are resolved — it may shrink or become
-   unnecessary once real scattering and water values are in.
-6. `denat_amplitude` — not a single citable value by design; needs an
+1. `eps_oxy`/`eps_deoxy`/`eps_met` at 481/600nm — **the sheet's #1
+   blocker, unchanged for weeks.** No visible-range oxymyoglobin curve
+   exists in Bowen 1949 at all; this is a genuine research gap, not just
+   an unread table. 600nm is also the highest-weighted band in the
+   design. Two paths: keep searching for Bowen/equivalent data, or
+   adopt the haemoglobin-spectrum proxy (Prahl, omlc.org — fully
+   tabulated, spectroscopically similar to myoglobin in this range per
+   Grabtchak et al. 2014), which would close all three rows in one team
+   decision at the cost of declaring the proxy explicitly in Ch.3/Ch.5.
+2. `denat_amplitude` — not a single citable value by design; needs an
    actual sweep (0.2/0.4/0.6/0.8) run and reported as a Chapter 4
    sensitivity result. A literature-anchored ceiling exists (Offer &
-   Knight 1988 via Kim et al. 2014).
-7. `eps_oxy` at 481/600nm — **the sheet's #1 blocker.** No visible-range
-   oxymyoglobin curve exists in Bowen 1949 at all; this is a genuine
-   research gap, not just an unread table. 600nm is also the
-   highest-weighted band in the design, making this the most exposed
-   cell on the whole sheet.
-8. `eps_deoxy`, `eps_met` at 481/600nm — same underlying gap. A
-   haemoglobin-spectrum proxy (Prahl, omlc.org — fully tabulated, and
-   spectroscopically similar to myoglobin in this range per Grabtchak
-   et al. 2014) would close all three of these rows (#7, #8) in one
-   team decision, at the cost of declaring the proxy explicitly in Ch.3
-   and Ch.5.
-9. `denat_width` — genuinely unsourced after an active search. Lowest
-   priority of the remaining research gaps since there's already a
-   fallback: report it as a second sensitivity axis alongside
-   `denat_amplitude` (a joint sweep found it moves R² by 0.07–0.10, not
-   safely ignorable — that number used the old single-seed method,
-   though, and needs re-confirming with the 10-seed method before being
-   treated as final).
+   Knight 1988 via Kim et al. 2014). Plan agreed for a while, not yet
+   executed — lowest-effort real blocker left.
+3. `denat_width` — genuinely unsourced after an active search; current
+   value (0.28) is a derived central estimate from two independent
+   published transitions, not a direct citation. Report as a second
+   sensitivity axis alongside `denat_amplitude` if nothing better
+   surfaces.
+
+**Resolved since the list above was first written:**
+- `scatter_a`/`scatter_b` — **adopted** (was the `"DECISION"` blocker,
+  the former #1 item here). Jacques 2013 generic soft-tissue values
+  (18.9/1.286) → refit to approximate Bergmann et al. 2021's
+  porcine-specific curve (8.7436/1.6618), same formula. Closed ~47% of
+  the 970nm gap, dropped blocking count 7→5, at a disclosed R² cost
+  (0.530→0.647 at adoption time).
+- eps NIR values (730/970nm) — adopted separately from the scattering
+  merge (tested in isolation, not bundled). `0.0` → small non-zero
+  values. Not a citation — a tuned adjustment, documented as such in
+  code, that further improved the 970nm match at no measurable R² cost.
+- `mu_a_baseline` — re-swept fresh (0.3–0.8) against the post-scattering
+  PARAMS, as sequenced above. This time there was no free improvement —
+  a genuine trade-off across the whole range. Adopted `0.8`, prioritizing
+  the 970nm match; `0.3` remains an equally defensible alternative if
+  the team would rather keep more R² margin. Full sweep table in
+  `docs/TEAM_LOG.md`.
+- `generate_dataset_new_plus_eps.py` — retired. Fully merged into
+  `generate_dataset.py`; kept drifting out of sync with the official
+  file's ongoing updates every time it wasn't touched, which is exactly
+  the kind of confusion multiple people on the team ran into. Don't
+  recreate a parallel candidate file for future changes — test in
+  isolation on a throwaway copy instead, then merge directly.
 
 ## Recent history worth knowing about
 
@@ -192,26 +196,34 @@ line up):**
   term, R² is still safely under 0.9), but documented as a real,
   disclosed trade-off rather than a free win. Full numbers in
   `docs/TEAM_LOG.md`'s 2026-09-05 entry.
+- **2026-09-06/07:** the `"DECISION"` blocker on `scatter_a`/`scatter_b`
+  was resolved and adopted, eps NIR values were adopted separately, and
+  `mu_a_baseline` was re-swept fresh against the new state (adopted 0.8,
+  a genuine trade-off this time, not a free win like earlier sweeps
+  found). `generate_dataset_new_plus_eps.py` was retired after fully
+  merging into `generate_dataset.py`. Blocking count went 7→5. Full
+  before/after numbers for every step in `docs/TEAM_LOG.md`'s three
+  entries from this window — each change was tested in isolation on a
+  throwaway copy before being applied to the real file, confirmed
+  identical both times.
 
 ## What to actually do next
 
-1. ~~Fill in `mua_water` and `water_fraction`~~ — DONE (Hale & Querry
-   1973 via omlc.org; Wojtasik-Kalinowska et al. 2016). See the "Still
-   open" list above.
-2. Get a decision on adopting `generate_dataset_new_plus_eps.py`'s
-   `scatter_a`/`scatter_b`/`mu_a_baseline` values into `generate_dataset.py`
-   — this is the single highest-leverage open item. Their `PARAMS` status
-   is now `"DECISION"` so `--selftest` flags them as blocking.
-3. ~~Decide `denat_midpoint`~~ — DECIDED: keep 5.70 as a labelled proxy,
-   with a stated 5.4–5.7 uncertainty band in Ch.3. Status `CITED (PROXY)`.
-4. Re-test `mu_a_baseline` once #2 is in.
-5. Run and write up the `denat_amplitude` sweep as a Ch.4 result (use
-   the 10-seed method).
-6. Decide on the haemoglobin-proxy approach for `eps_oxy`/`eps_deoxy`/
-   `eps_met` at 481/600nm — this is the project's real remaining
-   research blocker, not just a TODO.
+1. ~~Fill in `mua_water` and `water_fraction`~~ — DONE.
+2. ~~Adopt `scatter_a`/`scatter_b`~~ — DONE. Resolved and merged.
+3. ~~Decide `denat_midpoint`~~ — DONE. Kept 5.70 as a labelled proxy.
+4. ~~Re-test `mu_a_baseline`~~ — DONE. Re-swept, adopted 0.8.
+5. **Run and write up the `denat_amplitude` sweep as a Ch.4 result** (use
+   the 10-seed method) — plan agreed for a while, not yet executed.
+   Lowest-effort real blocker remaining.
+6. **Decide on the haemoglobin-proxy approach for `eps_oxy`/`eps_deoxy`/
+   `eps_met` at 481/600nm** — this is the project's real remaining
+   research blocker, not just a TODO. The #1 priority item.
 7. `denat_width` — report as a sensitivity axis if no citation surfaces.
-8. Once the parameter table is fully CITED/MEASURED: regenerate the
+8. Decide on the 970nm gap: it's improved a lot (sim ~0.30 vs real
+   ~0.19, was ~0.54) but not closed. Tune further, or document as a
+   stated Ch.5 limitation.
+9. Once the parameter table is fully CITED/MEASURED: regenerate the
    dataset, re-run `--selftest`, and only then treat any R² number or
    CRN result as reportable. Nothing generated so far should be quoted
    as final — every entry in `docs/TEAM_LOG.md` says so for a reason.

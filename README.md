@@ -14,37 +14,45 @@ forward model must trace to a published measurement — the running record of
 that is the **Parameterized Data Sheet** (Google Sheet, team drive), which
 `generate_dataset.py`'s `PARAMS` mirrors. Keep the two in sync.
 
-## Current status — 2026-09-03
+## Current status — 2026-09-07
 
-Forward model runs end-to-end and passes both self-tests (sign check, and
-linear-baseline R² = 0.58, i.e. non-trivial). Roughly half the physics is
-cited; the rest is not yet. **Do not generate the final dataset or run any
-CRN experiment you intend to report** until the blockers below are closed —
-every reported number will move.
+`generate_dataset.py` is the **only** generator now — the earlier
+`generate_dataset_new_plus_eps.py` candidate was fully merged into it
+(scattering values + eps NIR values, see below) and retired. **Use
+`generate_dataset.py`, not any other file, from here on.**
+
+Forward model runs end-to-end and passes both self-tests (sign check,
+and linear-baseline R² = 0.690 ± 0.017, 10-seed mean — non-trivial).
+**Do not generate the final dataset or run any CRN experiment you intend
+to report** until the 5 blockers below are closed — every reported
+number will move.
 
 | Parameter | State |
 |---|---|
 | `eps_*` @ 525, 573 nm | CITED / interpolated — Tang, Faustman & Hoagland 2004 Table 2 |
-| `eps_*` @ 481, 600 nm | **PROVISIONAL invented values** — need Bowen 1949, rescaled to Tang. These are the manuscript's diagnostic bands. #1 blocker. |
-| `eps_*` @ 730, 970 nm | 0 (AMSA/Krzywicki convention) |
+| `eps_*` @ 481, 600 nm | **PROVISIONAL invented values** — need Bowen 1949 (or the haemoglobin-proxy alternative, see `CLAUDE.md`). These are the manuscript's diagnostic bands. #1 blocker. |
+| `eps_*` @ 730, 970 nm | Small non-zero values (was the AMSA/Krzywicki 0 convention) — tuned, not cited; adopted after isolated testing showed a real 970nm-match improvement at no R² cost |
 | `c_Mb_mean` 0.87, `c_Mb_sd` 0.12 mg/g | CITED — Cross et al. 2018 (n=599); SD back-calculated from SE |
 | unit reconciliation (decadic→Napierian, mg/g→mM) | IMPLEMENTED in `mu_a()`; a real 1000× units bug was caught and fixed here |
-| `scatter_a` 18.9, `scatter_b` 1.286 | DECISION — Jacques 2013 (soft-tissue avg) in code; porcine refit (approx. Bergmann 2021) tested in `generate_dataset_new_plus_eps.py`, pending team sign-off |
+| `scatter_a` 8.7436, `scatter_b` 1.6618 | **RESOLVED** — porcine-muscle refit (approx. Bergmann 2021) adopted, replacing the generic Jacques 2013 soft-tissue values. Formerly a `"DECISION"` blocker; now `FITTED`, not blocking. |
 | `denat_midpoint` 5.70 | CITED (proxy) — Cross et al. 2018 ultimate pH |
-| `denat_amplitude`, `denat_width` | OPEN — amplitude must be **swept** (Ch. 4 result); width unsourced |
-| `mua_water` | CITED — Hale & Querry 1973 via omlc.org, wired in (970 nm = 0.45 exact) |
+| `denat_amplitude` | OPEN — must be **swept** (0.2/0.4/0.6/0.8) and reported as a Ch. 4 result, not pinned |
+| `denat_width` 0.28 | OPEN — derived estimate (two independent published transitions), not a direct citation |
+| `mua_water` | CITED — Hale & Querry 1973 via omlc.org, wired in with linear interpolation (970 nm = 0.45 exact) |
 | `water_fraction` 0.732 | CITED — Wojtasik-Kalinowska et al. 2016 (LWT 67:112-117), mean of 4 diet groups |
 | `sensor_sigma` 0.0054 | MEASURED — `extract_sensor_params.py` on NHSI cube `01.mat` |
-| `mu_a_baseline` 0.3 | TUNED, uncited nuisance term (documented limitation) |
-| **970 nm external reality check** | **FAILING** — sim ~0.54 vs real NHSI ~0.19. Decide: tune NIR terms, or report as a stated Ch. 5 limitation. |
+| `mu_a_baseline` 0.8 | TUNED, uncited nuisance term (documented limitation) — re-swept fresh after the scattering/eps changes; this is a disclosed trade-off (closer 970nm match, real R² cost), see `docs/TEAM_LOG.md` |
+| **970 nm external reality check** | Improved but not closed — sim ~0.30 vs real NHSI ~0.19 (was ~0.54). Decide: tune further, or report as a stated Ch. 5 limitation. |
 
-`python generate_dataset.py --selftest` prints the live blocking list.
+**Current blocking count: 5** (eps @481/600nm ×3, `denat_amplitude`,
+`denat_width`). `python generate_dataset.py --selftest` prints the live
+blocking list — always trust that over this table if they disagree.
 
 ## Files
 
 | File | What it does |
 |---|---|
-| `generate_dataset.py` | Builds the dataset. `PARAMS` mirrors the Parameterized Data Sheet. |
+| `generate_dataset.py` | Builds the dataset. `PARAMS` mirrors the Parameterized Data Sheet. **The only generator — use this one.** |
 | `extract_sensor_params.py` | Measures `sensor_sigma` + fine-scale texture + the 970 nm anchor from the NHSI cubes. |
 | `crn_model.py` | The CRN (`CrudeCRN`) — a small U-Net predicting a dense pH map from the 6-band cube. |
 | `train_crn.py` | Trains the CRN on the 4 sparse points + a smoothness prior. See Step 5. |
@@ -137,19 +145,21 @@ and report how your results change. That sensitivity analysis IS a
 Chapter 4 result, and it's more honest than pinning a value you can't
 source.
 
-### 1e. Scattering — DECISION pending
+### 1e. Scattering — RESOLVED
 
-`scatter_a` and `scatter_b` currently come from Jacques (2013), *Phys.
-Med. Biol.* 58:R37, Table 2, "other soft tissues" — a generic
-soft-tissue average, not porcine muscle. A porcine-muscle refit
-(approximating Bergmann et al. 2021) is tested in
-`generate_dataset_new_plus_eps.py` but **not yet adopted**. Their status
-in `PARAMS` is `"DECISION"`, so `--selftest` flags them as blocking
-until the team signs off. See the Parameterized Data Sheet's Candidate
-Diff tab.
+`scatter_a`/`scatter_b` were originally Jacques (2013), *Phys. Med.
+Biol.* 58:R37, Table 2, "other soft tissues" — a generic soft-tissue
+average, not porcine muscle. **Now resolved**: a porcine-muscle refit
+(the same power-law formula, re-fit to approximate Bergmann et al. 2021)
+has been adopted — `scatter_a=8.7436`, `scatter_b=1.6618`, status
+`FITTED`. This closed ~47% of the 970nm real-world gap and dropped the
+blocking count by 2, at a disclosed R² cost (0.530→0.647 at the time of
+adoption). Full before/after numbers in `docs/TEAM_LOG.md`.
 
-For your limitations section: skeletal muscle isn't broken out separately
-in Jacques' table, so the current values are a soft-tissue average. Say so.
+For your limitations section: the refit approximates a porcine-specific
+study rather than being read directly from a table, and the underlying
+Jacques data still doesn't break out skeletal muscle separately — both
+worth stating plainly in Ch.3/Ch.5.
 
 ---
 

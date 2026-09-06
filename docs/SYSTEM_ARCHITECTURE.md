@@ -26,8 +26,7 @@ under a stated, physically-motivated set of assumptions."
 
 | File | Role |
 |---|---|
-| `generate_dataset.py` | The official/shared physics-based dataset generator. Contains the `PARAMS` table (see §4) and the forward-model equations. |
-| `generate_dataset_new_plus_eps.py` | A parallel candidate generator — same physics, refit scattering constants + retuned absorption baseline (see §4.6). Tested to match/exceed the official file on every metric; not yet merged into `generate_dataset.py`, pending team sign-off. |
+| `generate_dataset.py` | **The only dataset generator.** Contains the `PARAMS` table (see §4) and the forward-model equations. A parallel candidate file, `generate_dataset_new_plus_eps.py`, existed 2026-09-04 through 09-07 to test scattering/eps changes in isolation before adopting them into this file; it's now fully merged and retired. |
 | `crn_model.py` | The neural network (`CrudeCRN`) — see §5. |
 | `train_crn.py` | Training loop: data loading, loss functions, early stopping, evaluation, checkpointing — see §6. |
 | `extract_sensor_params.py` | One-off script that measures sensor noise + a spatial-texture check from a real (different-purpose) hyperspectral dataset (Wang et al. 2026, NHSI-meat-overtime) — used to source `sensor_sigma` and to reality-check the 970nm band. |
@@ -60,10 +59,11 @@ same pH can look different depending on myoglobin state, and vice versa
 — the network has to use the *spectral shape* across all 6 bands to
 separate the two effects, not just overall brightness. This is verified
 empirically: a plain linear regression on raw pixel values only reaches
-R²≈0.587 ± 0.020 on the current generator (`generate_dataset.py`;
-0.691 ± 0.018 on the `generate_dataset_new_plus_eps.py` candidate) —
-10-seed means, well under 1.0, proving the mapping isn't trivial (see
-§6.5 and `self_test()`).
+R²≈0.690 ± 0.017 on the current `generate_dataset.py` (10-seed mean,
+post scatter_a/b + eps NIR + retuned `mu_a_baseline` — this number has
+moved several times as parameters got resolved; always re-run
+`--selftest` rather than trust a snapshot), well under 1.0, proving the
+mapping isn't trivial (see §6.5 and `self_test()`).
 
 ### 3.1 Scattering — `mu_s_prime(pH)`
 
@@ -138,21 +138,23 @@ against the live output before quoting it.
 | Parameter | Value | Status | What it controls |
 |---|---|---|---|
 | `eps_deoxy/oxy/met` @ 525, 573nm | Tang et al. (2004) values | **CITED** | Myoglobin light absorption at those 2 bands |
-| `eps_deoxy/oxy/met` @ **481, 600nm** | rescaled placeholders | **⚠️ STILL PENDING** | Same, at the 2 diagnostic bands the camera setup is built around — **the #1 open blocker** |
+| `eps_deoxy/oxy/met` @ **481, 600nm** | rescaled placeholders | **⚠️ STILL PENDING — the #1 open blocker** | Same, at the 2 diagnostic bands the camera setup is built around |
+| `eps_deoxy/oxy/met` @ 730, 970nm | small non-zero values | TUNED, not cited | Was the AMSA/Krzywicki 0.0 convention; adopted after isolated testing showed a real 970nm-match improvement at no R² cost |
 | `c_Mb_mean`, `c_Mb_sd` | 0.87, 0.12 mg/g | CITED / back-calculated, justified | Myoglobin concentration (Cross et al. 2018, n=599 pigs) |
-| `scatter_a`, `scatter_b` | 8.7436, 1.6618 | FITTED | Scattering power law — refit to approximate a porcine-specific study (Bergmann et al. 2021) using the original 2-parameter formula |
-| `denat_amplitude` | 0.45 | **PLACEHOLDER** | How strongly pH affects scattering — plan: report as a sensitivity sweep (0.2–0.8), not a pinned value |
+| `scatter_a`, `scatter_b` | 8.7436, 1.6618 | **FITTED — resolved** | Scattering power law — refit to approximate a porcine-specific study (Bergmann et al. 2021) using the original 2-parameter formula. Formerly a `"DECISION"` blocker; adopted. |
+| `denat_amplitude` | 0.45 | **PLACEHOLDER** | How strongly pH affects scattering — plan: report as a sensitivity sweep (0.2–0.8), not a pinned value. Plan agreed, not yet executed. |
 | `denat_midpoint` | 5.70 | CITED (proxy) | pH at half-maximal denaturation — proxy from population mean ultimate pH; source cohort was non-PSE (caveat documented) |
-| `denat_width` | 0.22 | **PLACEHOLDER** | Steepness of the pH transition — confirmed to meaningfully affect results, not yet sourced |
-| `mua_water` | mostly 0, 0.45 @970nm | **PLACEHOLDER** | Water absorption spectrum — real values (Hale & Querry 1973) already identified, just not yet wired into code |
+| `denat_width` | 0.28 | **PLACEHOLDER** | Steepness of the pH transition — derived central estimate from two independent published transitions, not a direct citation |
+| `mua_water` | Hale & Querry 1973 values | **CITED** | Water absorption spectrum, wired in with linear interpolation between tabulated grid points |
 | `water_fraction` | 0.732 | CITED | Pork loin water content (Wojtasik-Kalinowska et al. 2016, n=24 pigs) |
 | `sensor_sigma` | 0.0054 | MEASURED | Sensor noise, measured directly from a real hyperspectral cube |
-| `mu_a_baseline` | 0.3 | TUNED, not cited (documented limitation) | Non-myoglobin absorption baseline, keeps NIR reflectance realistic; openly acknowledged as an assumption, not hidden |
+| `mu_a_baseline` | 0.8 | TUNED, not cited (documented limitation) | Non-myoglobin absorption baseline — re-swept fresh after scattering/eps changes; a disclosed trade-off (closer 970nm match, real R² cost), not a free win |
 | ~~`texture_amplitude`~~ | — | **CUT** | Removed — verified (10-seed test) that it added no mechanistic value beyond what `sensor_sigma` already provides |
 
-**Current blocking count: 6** (`eps_deoxy/oxy/met` × 3, each flagged for
-their pending 481/600nm values; `denat_amplitude`; `denat_width`;
-`mua_water`). Verified live via `check_params()`.
+**Current blocking count: 5** (`eps_deoxy/oxy/met` × 3, each flagged for
+their pending 481/600nm values; `denat_amplitude`; `denat_width`).
+Verified live via `check_params()` — this number has changed multiple
+times in the last few days, always re-run rather than trust a snapshot.
 
 ---
 
@@ -271,8 +273,6 @@ python generate_dataset.py --selftest
 
 # Generate the dataset (400 samples, 300/50/50 train/val/test split)
 python generate_dataset.py --n 400 --out ligtas_synthetic_dataset
-# or, for the candidate scattering values:
-python generate_dataset_new_plus_eps.py --n 400 --out ligtas_synthetic_dataset
 
 # Train the CRN
 python train_crn.py --data ligtas_synthetic_dataset --epochs 50

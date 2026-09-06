@@ -20,6 +20,62 @@ Template:
 
 ---
 
+## 2026-09-07 (cont.) — `generate_dataset_new_plus_eps.py` retired; docs synced (via Claude session)
+
+**Changed:**
+- Deleted `generate_dataset_new_plus_eps.py` (`git rm`). Team decision:
+  **"we are going to use `generate_dataset.py` from now"** — explicit,
+  direct instruction. The candidate file had fully served its purpose
+  (every value it proposed is now merged into the official file) and had
+  drifted out of sync twice already, which is exactly the confusion
+  multiple people on the team ran into (testing the wrong/old generator).
+- Updated the three docs that still described it as a live, pending
+  candidate: `README.md` (Current Status table + the scattering section
+  rewritten to say RESOLVED, not DECISION pending), `CLAUDE.md` (file
+  table, the 14-parameters status list restructured into Done/Still
+  open/Resolved-since sections, the recent-history log, the "what to do
+  next" checklist, and a stale R²≈0.59 baseline number corrected to
+  ≈0.69), `docs/SYSTEM_ARCHITECTURE.md` (repo structure table, §3's
+  non-triviality R² figure, §4's full parameter table, §7's run
+  commands). All three previously said "not yet adopted, pending
+  sign-off" for values that have been live in `generate_dataset.py` for
+  two commits now.
+
+**Verified:**
+- Re-ran `--selftest` on `generate_dataset.py` after all doc edits and
+  the file deletion, to confirm neither touched the actual generator:
+  sign PASS, R² mean=0.6902 std=0.0168 -- unchanged from before this
+  entry, as expected (docs/deletion don't touch physics).
+- Grepped all three updated docs for remaining references to the
+  retired file -- confirmed every remaining mention is correctly
+  past-tense ("was retired," "existed until 09-07"), not a live
+  "use this file" pointer.
+
+**Decided:**
+- `generate_dataset.py` is the one and only generator going forward.
+  This is now stated plainly in the repo structure table of all three
+  reference docs, not just implied.
+
+**Still open:**
+- Unaffected by this entry -- same 5 blocking parameters as the prior
+  two entries today: eps @481/600nm (×3), `denat_amplitude`,
+  `denat_width`. See CLAUDE.md's "What to actually do next" for the
+  current numbered priority order.
+
+**Context to feed next session:**
+- If you're looking for `generate_dataset_new_plus_eps.py`, it's gone —
+  don't recreate a parallel candidate file for future parameter
+  experiments. Test changes in isolation on a throwaway copy (pattern
+  used throughout today's three entries: copy the file, edit the copy,
+  verify, apply to the real file, re-verify identical), then discard the
+  copy once merged.
+- `README.md`, `CLAUDE.md`, and `docs/SYSTEM_ARCHITECTURE.md` should now
+  all agree with each other and with `generate_dataset.py`'s live
+  `check_params()` output. If you find a discrepancy, the live
+  `--selftest` output is the authority, not any of these docs.
+
+---
+
 ## 2026-09-07 — `mu_a_baseline` re-swept fresh against current PARAMS (via Claude session)
 
 **Changed:**
