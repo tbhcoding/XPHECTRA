@@ -20,6 +20,73 @@ Template:
 
 ---
 
+## 2026-09-07 — `mu_a_baseline` re-swept fresh against current PARAMS (via Claude session)
+
+**Changed:**
+- Re-swept `mu_a_baseline` (0.3-0.8, 10-seed averaged, same methodology
+  as every prior sweep in this log) directly against the CURRENT
+  `generate_dataset.py` -- i.e. post scatter_a/b adoption and eps NIR
+  adoption (see the two entries above). Not reused from any other file
+  or an earlier config -- loaded and swept live via `importlib`, on-disk
+  file untouched until the result was applied.
+- Updated `mu_a_baseline`: `0.3` -> `0.8`.
+
+**Verified (numbers):**
+| `mu_a_baseline` | 970nm gap | linear R² (10-seed mean) | R² std |
+|---|---|---|---|
+| 0.3 (old) | 0.185 | **0.643 (lowest in range)** | 0.0185 |
+| 0.4 | 0.162 | 0.650 | 0.0183 |
+| 0.5 | 0.141 | 0.660 | 0.0180 |
+| 0.6 | 0.123 | 0.671 | 0.0176 |
+| 0.7 | 0.107 | 0.681 | 0.0172 |
+| **0.8 (new)** | **0.093 (lowest in range)** | 0.690 | 0.0168 |
+
+**Unlike the earlier `mu_a_baseline` sweep in this log (2026-09-06,
+which found a genuine no-cost improvement on a since-superseded config),
+this sweep found NO free lunch** -- 970nm gap and linear R² trade off
+monotonically across the entire tested range, and the R² change (+0.047
+from 0.3->0.8) is well above the ~0.017-0.018 seed-noise floor, i.e. a
+real cost, not noise.
+
+Re-ran `--selftest` on the actual (now-edited) file after applying: R²
+mean=0.6902, std=0.0168 -- matches the sweep's 0.8 row exactly. n=20
+generation + integrity check: 732,743 meat pixels, 0 NaN/negative/>1.0.
+Sign test PASS.
+
+**Decided:**
+- Picked `0.8`: prioritizes the 970nm real-world match (the project's
+  only external reality check) while keeping the linear-baseline R²
+  (0.690) safely under the 0.9 "too easy" ceiling. This is a disclosed
+  value judgment, not a discovery -- the full trade-off table above is
+  the actual justification, not just the endpoint chosen. If the team
+  would rather prioritize a lower R² over a closer 970nm match, 0.3-0.5
+  are equally defensible alternatives on this same table.
+- Anti-bias note, since this came up when applying it: this parameter is
+  explicitly labeled `"TUNED -- NOT CITED, documented limitation"` in
+  code, not disguised as a citation. The full swept range (not just the
+  winning value) is preserved in this entry specifically so the choice
+  is auditable -- see the parameter's own `source` field in
+  `generate_dataset.py`, which points back here.
+
+**Still open:**
+- Same 5 blocking parameters as before this entry -- unaffected: eps
+  @481/600nm (x3), `denat_amplitude` (sweep planned, not run),
+  `denat_width` (derived estimate, not cited).
+- 970nm gap improved further (0.185->0.093) but still not closed --
+  same open decision as before: tune further, or document as a stated
+  Ch.5 limitation. Getting closer makes this decision more pressing,
+  not less.
+
+**Context to feed next session:**
+- `mu_a_baseline` is `0.8` as of this entry, not `0.3` -- if you see the
+  older value quoted anywhere (chat history, earlier log entries, a
+  teammate's notes), it's stale.
+- Don't re-sweep this again assuming a free improvement exists like the
+  2026-09-06 entry found -- confirmed here that config no longer applies;
+  this is a real trade-off now, re-litigate only with a stated reason.
+
+---
+
 ## 2026-09-06 (cont. 2) — Scattering "DECISION" resolved; eps NIR values adopted (via Claude session)
 
 **Changed:**

@@ -289,10 +289,16 @@ PARAMS = {
     # state that plainly in Ch.3/Ch.5 and consider sweeping it (0.2/0.3/0.4)
     # alongside the denat_amplitude sweep.
     "mu_a_baseline": {
-        "value": 0.3,
+        "value": 0.8,
         "status": "TUNED -- NOT CITED, documented limitation",
-        "source": "Chosen so 730 nm reflectance lands near realistic pork loin values "
-                   "instead of ~0.90-0.92 with no baseline. Fitted nuisance term.",
+        "source": "Re-swept (10-seed averaged, 0.3-0.8) fresh against the current "
+                   "PARAMS (post scatter_a/b + eps NIR adoption). NO free improvement "
+                   "this time -- unlike an earlier sweep on a since-superseded config, "
+                   "970nm gap and linear R^2 trade off monotonically across this range "
+                   "(gap 0.185->0.093, R^2 0.643->0.690, both real changes, not noise). "
+                   "0.8 chosen to prioritize the 970nm real-world match while R^2 stays "
+                   "safely under the 0.9 ceiling. See TEAM_LOG.md for the full sweep "
+                   "table and the explicit trade-off this represents.",
     },
 }
 
