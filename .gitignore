@@ -21,7 +21,8 @@ ligtas_dataset_new_plus_eps/
 *.pt
 
 # CRN training output (checkpoints, heatmaps, loss curves)
-crn_outputs/
+crn_outputs*/
+*_run.log
 
 # Downloaded NHSI cubes (large, not redistributable)
 data/
