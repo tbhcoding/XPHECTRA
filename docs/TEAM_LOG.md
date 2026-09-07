@@ -20,6 +20,244 @@ Template:
 
 ---
 
+## 2026-09-08 — eps_deoxy/eps_oxy/eps_met replaced with digitized primary-source values; DISCLOSED OVERRIDE of origin/main 188e76a (via Claude session)
+
+**Changed:**
+- Replaced all three eps arrays (`eps_deoxy`, `eps_oxy`, `eps_met`) end
+  to end. New values digitized by the team from the actual Tang (2004)
+  and Bowen (1949) figures:
+  - Provenance chain (recorded accurately, not just "digitized from
+    primary sources"): team had screenshots of the Tang/Bowen papers,
+    asked a separate Claude session what to do about wavelengths not in
+    Tang's printed table, was told to digitize the figures, did so in
+    WebPlotDigitizer. Sent the six WebPlotDigitizer screenshots to this
+    session, which:
+    1. Independently re-derived every eps value straight from the raw
+       digitizer coordinates visible in each screenshot (not from the
+       team's stated numbers) using the stated formulas -- all 10
+       cross-checked points reproduced to within 0.3%.
+    2. Visually confirmed correct curve identification in the two
+       crowded Bowen NIR charts (the 730nm/970nm met points sit on the
+       visibly lowest/highest curves respectively -- an extremal, not
+       crowded-middle, read; the 730nm/970nm oxy/deoxy points sit on
+       the correctly-labeled MbO2/Mb curves, not the lower MbCO/MMbCN
+       ones).
+    3. Renamed the six screenshots to describe their actual content and
+       committed them as the real provenance artifact at
+       `docs/digitization/`: `tang2004_fig1_deoxymb_481_600.png`,
+       `tang2004_fig1_oxymb_481_600.png`, `tang2004_fig1_metmb_481_600.png`,
+       `tang2004_fig1_573nm_all_forms.png`,
+       `bowen1949_fig1_mb_mbo2_nir_730_970.png`,
+       `bowen1949_fig2_metmb_nir_730_970.png`.
+    4. Wired each PARAMS `source` string to point at the specific file(s)
+       backing that parameter, not just a paper title.
+  - 481, 573, 600nm: Tang Fig.1, eps(lambda) = A(lambda)/0.1022,
+    calibrated against the 525nm isosbestic point (eps=7.60 mM^-1cm^-1,
+    Tang Table 2).
+  - 525nm: printed value, Tang (2004) Table 2 (unchanged).
+  - 730, 970nm (deoxy, oxy): Bowen Fig.1 (Mb, MbO2 curves).
+  - 730, 970nm (met): Bowen Fig.2, pH 5.89/6.41 curve (closest to pork
+    loin pH range).
+  - All equine myoglobin -- same field-standard substitution already
+    used elsewhere in this project.
+- **CONFLICT DISCOVERED MID-SESSION:** `origin/main` had already moved
+  one commit ahead (`188e76a`, "Close eps_oxy/eps_deoxy @ 481/600nm with
+  a declared haemoglobin-shape proxy") by the time this change was made
+  locally. That commit filled `eps_oxy`/`eps_deoxy` @ 481/600nm using
+  `eps_form(band) = 7.60 * HbX(band)/HbX(525nm)` (Prahl omlc.org
+  haemoglobin table), self-checked by reproducing the cited 573nm value
+  (0.0% error oxy, 8% error deoxy) -- fully reproducible from two public
+  tables, verified by hand in this session (recomputed their 4 values
+  from their own quoted raw Prahl numbers, exact match). It deliberately
+  left `eps_met` @ 481/600nm open (methemoglobin has no Prahl entry).
+  This change supersedes that commit's `eps_oxy`/`eps_deoxy` @ 481/600nm
+  values -- see Decided below for why, and treat this as a disclosed
+  override that the team (and 188e76a's author) should see, not a
+  silent overwrite.
+- Methodological finding recorded in code: linear interpolation between
+  Tang's tabulated columns (the prior 573nm method) was found to
+  misestimate 573nm by 9-14%, due to spectral curvature between 557 and
+  582nm. Direct digitization replaces interpolation project-wide.
+- Updated all three PARAMS entries' `status` to `"CITED -- digitized
+  from primary sources, externally validated, equine myoglobin
+  (field-standard substitution)"`. Removed `pending_wavelengths` from
+  all three (also removes 188e76a's `"CITED (525/573nm) + haemoglobin-
+  shape PROXY (481/600nm)"` status on `eps_oxy`/`eps_deoxy` and the
+  still-`pending_wavelengths`-flagged `eps_met`).
+- Extended `check_params()`'s `mark_map` to recognize the new status
+  string as `OK`.
+
+**Verified (numbers):**
+
+| param | old (pre-188e76a) -> new (481/525/573/600/730/970 nm) |
+|---|---|
+| `eps_deoxy` | 3.92, 7.60, 9.96, 1.4, 0.21, 0.29 -> 3.88, 7.60, 10.93, 4.32, 0.113, 0.176 |
+| `eps_oxy` | 7.35, 7.60, 12.61, 2.21, 0.175, 0.35 -> 7.05, 7.60, 11.26, 1.59, 0.362, 0.354 |
+| `eps_met` | 9.0, 7.60, 3.56, 6.0, 0.09, 0.10 -> 7.76, 7.60, 3.12, 2.90, 0.155, 0.885 |
+
+For reference, 188e76a's (now-superseded) values were `eps_oxy`
+481/600 = 6.44/0.79 and `eps_deoxy` 481/600 = 3.18/3.17 -- at 600nm
+specifically, the three candidates seen across old-placeholder /
+188e76a / this entry span 0.79-2.21 (oxy) and 1.4-4.32 (deoxy), a
+>2.5x spread on the single highest-weighted band in the design. That
+disagreement is itself a finding: treat 600nm as genuinely uncertain,
+not settled by either method.
+
+- Digitization arithmetic independently re-verified against the raw
+  WebPlotDigitizer coordinates in the 6 screenshots (not just the
+  team's reported numbers): all 10 cross-checked points (visible-band
+  eps via A/0.1022, NIR eps read directly) reproduced to within 0.30%.
+  Full per-point table not reproduced here -- see the session transcript
+  or re-derive from the PNGs in `docs/digitization/`.
+- External validation checks: digitized DeoMb@481nm (3.88) vs Bowen
+  Table II printed @480nm (3.92), within 1%; digitized MbO2@~940nm
+  (0.359) vs Bowen Table II printed (0.36); digitized MetMb@860nm
+  isosbestic (0.5985) vs expected (0.60).
+- `--selftest` after applying: sign test **PASS**. Linear baseline R²
+  (10-seed) mean=**0.6923**, std=0.0167, min=0.6597, max=0.7219 --
+  essentially unchanged from the pre-188e76a state (0.6902±0.0168,
+  2026-09-07 entry above) and from 188e76a's own number (0.6897±0.0172).
+  All three are within the ~0.017 seed-noise band of each other -- no
+  version bought or cost measurable R².
+- 970nm reality check (n=20 samples, `cube[:,:,5][mask].mean()` vs real
+  NHSI ~0.19, same method as `extract_sensor_params.py`): simulated
+  mean=**0.2661** (std across samples 0.0134), gap=**0.0761** -- the
+  best result yet (188e76a didn't touch NIR, so its gap is unchanged at
+  0.093 from the prior entry). Data integrity: 0 NaN/negative/>1.0
+  across the 20-sample check.
+- Citation-status blocking count: **5 -> 2** (188e76a alone had reached
+  3, since it left `eps_met` blocking). Remaining: `denat_amplitude`,
+  `denat_width`.
+
+**Decided:**
+- Adopted direct myoglobin digitization over 188e76a's haemoglobin-shape
+  proxy for `eps_oxy`/`eps_deoxy` @ 481/600nm, for two reasons: (1) it
+  avoids stacking a cross-pigment substitution (Hb for Mb) on top of the
+  already-standing cross-species one (horse for pork) -- Bowen (1949) is
+  myoglobin, the same molecule used everywhere else in this model; (2)
+  it additionally resolves `eps_met` @ 481/600nm, which 188e76a
+  correctly declined to fill (no methemoglobin entry in the Prahl
+  table) but which is a real gap either way. This was a close call --
+  188e76a's method was independently verified in this session to be
+  exactly reproducible from two public tables, which is a genuine
+  strength: it doesn't depend on trusting anyone's manual digitization.
+  This entry's method closes that gap by checking in the actual
+  digitizer screenshots as artifacts and independently re-deriving every
+  value from their raw coordinates before adopting them.
+
+**Still open:**
+- `denat_amplitude` (sweep planned, not run) and `denat_width` (derived
+  estimate, no citation) are now the only two blocking parameters left.
+- 970nm gap improved again (0.093->0.076) but is still not closed.
+- **Team agreed to adopt this version over `188e76a` before it was
+  pushed** (both sides' numbers and reasoning were compared first, not
+  overwritten silently). Rebased onto `origin/main` -- the eps hunks in
+  `generate_dataset.py`/`CLAUDE.md`/this file conflicted with `188e76a`
+  as expected and were resolved in favor of this entry's values, with
+  `188e76a`'s own TEAM_LOG entry (2026-09-07 (cont. 2), below) kept
+  intact as the historical record of what it did and why, not deleted.
+- 600nm's >2.5x spread across three independent attempts (noted above)
+  is unresolved by any of them. Worth flagging in Ch.5 regardless of
+  which eps values ship, as a real, disclosed uncertainty rather than
+  something either citation makes go away.
+
+**Context to feed next session:**
+- The eps `status` string changed and `pending_wavelengths` was removed
+  from all three eps params -- expected, not a regression.
+- `docs/digitization/` now holds the 6 source screenshots this entry's
+  values are read from -- point anyone questioning these numbers there
+  first.
+- CLAUDE.md's "14 real parameters" list, "recent history," and "what to
+  do next" sections were re-synced during the rebase to name `188e76a`
+  explicitly rather than read as if no competing commit existed.
+- `README.md` and `docs/SYSTEM_ARCHITECTURE.md` were updated by
+  `188e76a` to describe its (now-superseded) 5→3 state -- check whether
+  they still need a follow-up pass to reflect this entry's 5→2 state
+  instead, the same way CLAUDE.md was synced here.
+
+---
+
+## 2026-09-07 (cont. 2) — `eps_oxy` / `eps_deoxy` @ 481/600 nm closed via haemoglobin-shape proxy (via Claude session)
+
+**Changed:**
+- Filled the four still-provisional myoglobin extinction values —
+  `eps_oxy` and `eps_deoxy` at 481 nm and 600 nm — using a
+  haemoglobin-shape proxy (CLAUDE.md "what to do next" item 6 / data
+  sheet blockers #7 and #8, the `eps_oxy` half and the `eps_deoxy` half).
+  Method, anchored at the CITED 525 nm isosbestic (7.60 mM^-1 cm^-1, all
+  forms):
+      eps_form(band) = 7.60 * HbX(band) / HbX(525 nm)
+  with HbX = that form's haemoglobin curve from the Prahl omlc.org table
+  (omlc.org/spectra/hemoglobin/summary.html; S. Prahl, from Gratzer &
+  Kollias). oxyMb <- HbO2, deoxyMb <- Hb. Prahl values linearly
+  interpolated off the 2 nm grid to the exact band centres.
+  - `eps_oxy`:  481 nm  7.35 -> 6.44 ;  600 nm  2.21 -> 0.79
+  - `eps_deoxy`: 481 nm  3.92 -> 3.18 ;  600 nm  1.40 -> 3.17
+- Removed `pending_wavelengths` from `eps_oxy` and `eps_deoxy`; status →
+  `"CITED (525/573nm) + haemoglobin-shape PROXY (481/600nm)"`. They now
+  print `[ note ]` in `check_params()` (same non-blocking treatment as
+  `scatter_a/b`'s `FITTED`), not `[ PART ]`.
+- Rewrote the comment block above `eps_deoxy` to document the proxy and
+  its fallback (the prior placeholder values).
+- `eps_met` deliberately NOT changed — see Decided.
+
+**Verified (numbers):**
+- Method self-check: the SAME 525-anchor + Hb-shape recipe, used to
+  *predict* the already-cited 573 nm values, gives oxy = 12.61 (Tang
+  cites 12.61 — 0.0% error) and deoxy = 9.19 (Tang interpolated 9.96 —
+  8% low). This is the main evidence the proxy is sound for these two
+  forms.
+- Isolation test (throwaway copy first, then identical result on the
+  real file — the pattern used all day):
+  | | before | after |
+  |---|---|---|
+  | blocking count | 5 | **3** |
+  | sign test | PASS | PASS |
+  | linear baseline R^2 (10-seed) | 0.6902 ± 0.0168 | 0.6897 ± 0.0172 |
+  | linear baseline MAE | 0.1435 | 0.1436 |
+  | 525 nm isosbestic | 7.60 = 7.60 = 7.60 | unchanged |
+  | data integrity (4.4M meat px, n=20) | — | 0 NaN / 0 neg / 0 >1.0 |
+  R^2 change (−0.0005) is far inside the ~0.017 seed noise band — no
+  measurable cost. Reflectance at 481/600 nm rose ~0.01 (slightly lower
+  net absorption); sign stays monotonic in every band.
+- 970 nm external gap NOT re-measured — this change does not touch any
+  eps value at 730/970 nm, so it cannot move that check.
+
+**Decided:**
+- Anchor at the 525 nm isosbestic (simple, one anchor, reproduces the
+  573 nm check) rather than a form-specific Tang-503/582 anchor + Hb
+  bridge. Team choice.
+- `eps_met` @ 481/600 nm LEFT OPEN on purpose. Methemoglobin is absent
+  from the Prahl omlc file, so the proxy cannot cover metMb, and the
+  obvious substitute (deoxy-Hb shape) is wrong in a known direction —
+  metMb has a ~630 nm band deoxy-Hb lacks, so it would under-predict
+  600 nm. Rather than ship a knowingly-biased number to drop the
+  counter, met keeps its `pending_wavelengths` flag (still `[ PART ]`,
+  still blocking). Its `source` string now records the next step:
+  re-read Tang (2004) Table 2's own 503 and 582 nm metMb entries as
+  direct anchors before falling back to a digitized metHb spectrum
+  (Zijlstra & Buursma).
+
+**Still open:**
+- Blocking count now **3**: `eps_met` (481/600 nm), `denat_amplitude`
+  (sweep planned, not run), `denat_width` (derived estimate).
+- `eps_oxy`/`eps_deoxy` 481/600 nm are a declared PROXY, not a
+  citation — must be stated as such in Ch.3 and Ch.5. `check_params()`
+  prints them as `[ note ]`, not `[ OK ]`, on purpose.
+- `mu_a_baseline` still 0.8; team plans to revert to 0.3 and re-sweep
+  it last (unchanged by this entry).
+
+**Context to feed next session:**
+- If you need to undo this: fallback values are 7.35/2.21 (`eps_oxy`
+  481/600) and 3.92/1.4 (`eps_deoxy` 481/600), recorded in each
+  parameter's `source` field and the comment block.
+- The met follow-up is small and well-scoped — start from Tang (2004)
+  Table 2, not from hemoglobin. Do it in isolation, same pattern.
+- Prahl omlc raw values used (cm^-1/M, interpolated to band centre):
+  HbO2 481=26165 525=30883 600=3200 ; Hb 481=14716 525=35171 600=14677.
+
+---
+
 ## 2026-09-07 (cont.) — `generate_dataset_new_plus_eps.py` retired; docs synced (via Claude session)
 
 **Changed:**

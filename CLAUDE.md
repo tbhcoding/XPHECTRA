@@ -85,10 +85,10 @@ either direction. `self_test()` now averages 10 seeds and reports
 mean/std. **Treat any single-number R² quoted anywhere in this project's
 older history as suspect** unless it explicitly says "mean over N
 seeds." Current honest baseline: **R² mean ≈ 0.69, std ≈ 0.02** (10
-seeds), on the current `PARAMS` (post scatter_a/b + eps NIR + retuned
-`mu_a_baseline`) — this number has moved twice since it was 0.59 and
-will move again once the remaining 5 blockers close; always re-run
-`--selftest` rather than trust this file's snapshot.
+seeds), on the current `PARAMS` (post scatter_a/b + fully digitized eps
++ retuned `mu_a_baseline`) — this number has moved twice since it was
+0.59 and will move again once the remaining 2 blockers close; always
+re-run `--selftest` rather than trust this file's snapshot.
 
 ## The Parameterized Data Sheet
 
@@ -105,8 +105,9 @@ into four tabs, that `generate_dataset.py`'s `PARAMS` dict must mirror:
    and verified in `mu_a()`.
 3. **Validation Checks** — outputs, not inputs: the sign check, the
    isosbestic check, the non-triviality (linear baseline) check, and the
-   970nm external reality check against real NHSI pork data (currently
-   **failing** — simulated ~0.53-0.58 vs real ~0.19).
+   970nm external reality check against real NHSI pork data (still
+   **not closed**, but much improved — simulated ~0.27 vs real ~0.19,
+   was ~0.53-0.58).
 4. **Proposed Cuts** — simplification ideas that have been evaluated but
    not necessarily applied (e.g. folding `water_fraction` into
    `mua_water`, or using a haemoglobin spectrum as a proxy for the
@@ -120,32 +121,24 @@ values, they're derivations and measurements of the model's output.
 
 ### The 14 real parameters, and where they stand
 
-**Done (6):**
+**Done (7):**
 - `c_Mb_mean`, `c_Mb_sd` — myoglobin concentration (Cross et al. 2018)
 - `sensor_sigma` — measured directly from real NHSI pork cubes
 - `mua_water` — Hale & Querry 1973 via omlc.org, linearly interpolated
 - `water_fraction` — 0.732, Wojtasik-Kalinowska et al. 2016
 - `denat_midpoint` — kept 5.70 as a labelled proxy (decided, not a TODO)
-- `scatter_a`/`scatter_b` — see #1 below, now resolved
+- `scatter_a`/`scatter_b` — see "resolved" list below
+- `eps_oxy`/`eps_deoxy`/`eps_met` (all 6 bands) — see "resolved" list
+  below, now fully digitized
 
-**Still open (5 blocking parameters), roughly in the order they should be
-tackled:**
+**Still open (2 blocking parameters):**
 
-1. `eps_oxy`/`eps_deoxy`/`eps_met` at 481/600nm — **the sheet's #1
-   blocker, unchanged for weeks.** No visible-range oxymyoglobin curve
-   exists in Bowen 1949 at all; this is a genuine research gap, not just
-   an unread table. 600nm is also the highest-weighted band in the
-   design. Two paths: keep searching for Bowen/equivalent data, or
-   adopt the haemoglobin-spectrum proxy (Prahl, omlc.org — fully
-   tabulated, spectroscopically similar to myoglobin in this range per
-   Grabtchak et al. 2014), which would close all three rows in one team
-   decision at the cost of declaring the proxy explicitly in Ch.3/Ch.5.
-2. `denat_amplitude` — not a single citable value by design; needs an
+1. `denat_amplitude` — not a single citable value by design; needs an
    actual sweep (0.2/0.4/0.6/0.8) run and reported as a Chapter 4
    sensitivity result. A literature-anchored ceiling exists (Offer &
    Knight 1988 via Kim et al. 2014). Plan agreed for a while, not yet
-   executed — lowest-effort real blocker left.
-3. `denat_width` — genuinely unsourced after an active search; current
+   executed — lowest-effort real blocker left, now the #1 priority item.
+2. `denat_width` — genuinely unsourced after an active search; current
    value (0.28) is a derived central estimate from two independent
    published transitions, not a direct citation. Report as a second
    sensitivity axis alongside `denat_amplitude` if nothing better
@@ -174,6 +167,34 @@ tackled:**
   the kind of confusion multiple people on the team ran into. Don't
   recreate a parallel candidate file for future changes — test in
   isolation on a throwaway copy instead, then merge directly.
+- `eps_oxy`/`eps_deoxy`/`eps_met` at 481/600nm — **the sheet's former #1
+  blocker, resolved — but as a DISCLOSED OVERRIDE of a teammate's
+  already-pushed commit, not a clean-slate resolution.** A separate
+  track independently closed `eps_oxy`/`eps_deoxy` @ 481/600nm first
+  (`origin/main` commit `188e76a`), via a haemoglobin-shape proxy (Prahl
+  omlc.org table, anchored at the 525nm isosbestic) — fully reproducible
+  from two public tables, self-checked against the cited 573nm value,
+  and independently re-verified by hand in this session. It left
+  `eps_met` open on principle (no methemoglobin entry in the Prahl
+  table). This session's work, done in parallel without knowing about
+  that commit at first, instead digitized the myoglobin curves directly
+  from Tang 2004 Fig.1 (481/573/600nm) and Bowen 1949 Figs.1-2
+  (730/970nm) — avoiding the extra Hb-for-Mb substitution `188e76a`
+  needed, and additionally resolving `eps_met`. Once the conflict was
+  found, the digitization was re-verified against the raw
+  WebPlotDigitizer screenshots (now checked in at `docs/digitization/`)
+  before adopting it over `188e76a`'s values. Blocking count 5→2 (vs.
+  `188e76a` alone reaching 3). 970nm gap improved further (0.093→0.076,
+  the closest yet — `188e76a` didn't touch NIR) at no measurable R² cost
+  across either version (0.6902 → 0.6897 `188e76a` / 0.6923 this
+  version, all within the ~0.017 seed-noise band). **Team-agreed
+  override, reconciled with `188e76a` via rebase** — see
+  `docs/TEAM_LOG.md`'s 2026-09-08 entry for the full comparison and the
+  reasoning for overriding rather than keeping `188e76a`'s values. Also
+  flagged there: across old-placeholder / `188e76a` / this version,
+  `eps_oxy`/`eps_deoxy` @ 600nm — the highest-weighted band in the
+  design — span more than a 2.5x range, which is a real unresolved
+  uncertainty no single version settles.
 
 ## Recent history worth knowing about
 
@@ -201,11 +222,25 @@ tackled:**
   `mu_a_baseline` was re-swept fresh against the new state (adopted 0.8,
   a genuine trade-off this time, not a free win like earlier sweeps
   found). `generate_dataset_new_plus_eps.py` was retired after fully
-  merging into `generate_dataset.py`. Blocking count went 7→5. Full
-  before/after numbers for every step in `docs/TEAM_LOG.md`'s three
-  entries from this window — each change was tested in isolation on a
-  throwaway copy before being applied to the real file, confirmed
-  identical both times.
+  merging into `generate_dataset.py`. Then `eps_oxy`/`eps_deoxy` at
+  481/600nm were closed with a haemoglobin-shape proxy (Prahl omlc.org,
+  525nm-isosbestic anchor, `origin/main` commit `188e76a`). Blocking
+  count went 7→5→3. Full before/after numbers for every step in
+  `docs/TEAM_LOG.md`'s four entries from this window — each change was
+  tested in isolation on a throwaway copy before being applied to the
+  real file, confirmed identical both times.
+- **2026-09-08:** a second, parallel track closed the same eps
+  481/600nm blocker independently, via a full digitization of
+  `eps_deoxy`/`eps_oxy`/`eps_met` from Tang (2004)/Bowen (1949) figures
+  (all 6 bands, not just 481/600). Once the two tracks were discovered
+  to conflict, the digitization was adopted over `188e76a`'s proxy as a
+  disclosed override — not silently — after independently re-verifying
+  it against the raw digitizer screenshots (now in `docs/digitization/`)
+  and weighing it against `188e76a`'s own, genuinely reproducible,
+  method. Blocking count went 3→2 (`eps_met`, which `188e76a` left
+  open, is now resolved too). 970nm gap improved further (0.093→0.076)
+  at no measurable R² cost. Full comparison and reasoning in
+  `docs/TEAM_LOG.md`'s 2026-09-08 entry.
 
 ## What to actually do next
 
@@ -213,14 +248,18 @@ tackled:**
 2. ~~Adopt `scatter_a`/`scatter_b`~~ — DONE. Resolved and merged.
 3. ~~Decide `denat_midpoint`~~ — DONE. Kept 5.70 as a labelled proxy.
 4. ~~Re-test `mu_a_baseline`~~ — DONE. Re-swept, adopted 0.8.
-5. **Run and write up the `denat_amplitude` sweep as a Ch.4 result** (use
-   the 10-seed method) — plan agreed for a while, not yet executed.
-   Lowest-effort real blocker remaining.
-6. **Decide on the haemoglobin-proxy approach for `eps_oxy`/`eps_deoxy`/
-   `eps_met` at 481/600nm** — this is the project's real remaining
-   research blocker, not just a TODO. The #1 priority item.
+5. ~~Decide on `eps_oxy`/`eps_deoxy`/`eps_met` at 481/600nm~~ — DONE. A
+   haemoglobin-proxy (`origin/main` commit `188e76a`) closed `eps_oxy`/
+   `eps_deoxy` first, leaving `eps_met` open; a parallel digitization
+   track then closed all three, and was adopted over the proxy as a
+   team-agreed, disclosed override (not a silent overwrite) — see
+   `docs/TEAM_LOG.md`'s 2026-09-08 entry for the full reasoning and the
+   `188e76a` reconciliation.
+6. **Run and write up the `denat_amplitude` sweep as a Ch.4 result** (use
+   the 10-seed method) — plan agreed for a while, not yet executed. Now
+   the #1 priority item.
 7. `denat_width` — report as a sensitivity axis if no citation surfaces.
-8. Decide on the 970nm gap: it's improved a lot (sim ~0.30 vs real
+8. Decide on the 970nm gap: it's improved a lot (sim ~0.27 vs real
    ~0.19, was ~0.54) but not closed. Tune further, or document as a
    stated Ch.5 limitation.
 9. Once the parameter table is fully CITED/MEASURED: regenerate the

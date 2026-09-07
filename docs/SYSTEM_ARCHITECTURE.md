@@ -59,10 +59,10 @@ same pH can look different depending on myoglobin state, and vice versa
 — the network has to use the *spectral shape* across all 6 bands to
 separate the two effects, not just overall brightness. This is verified
 empirically: a plain linear regression on raw pixel values only reaches
-R²≈0.690 ± 0.017 on the current `generate_dataset.py` (10-seed mean,
-post scatter_a/b + eps NIR + retuned `mu_a_baseline` — this number has
-moved several times as parameters got resolved; always re-run
-`--selftest` rather than trust a snapshot), well under 1.0, proving the
+R²≈0.692 ± 0.017 on the current `generate_dataset.py` (10-seed mean,
+post scatter_a/b + fully digitized eps + retuned `mu_a_baseline` — this
+number has moved several times as parameters got resolved; always
+re-run `--selftest` rather than trust a snapshot), well under 1.0, proving the
 mapping isn't trivial (see §6.5 and `self_test()`).
 
 ### 3.1 Scattering — `mu_s_prime(pH)`
@@ -137,9 +137,9 @@ against the live output before quoting it.
 
 | Parameter | Value | Status | What it controls |
 |---|---|---|---|
-| `eps_deoxy/oxy/met` @ 525, 573nm | Tang et al. (2004) values | **CITED** | Myoglobin light absorption at those 2 bands |
-| `eps_deoxy/oxy/met` @ **481, 600nm** | rescaled placeholders | **⚠️ STILL PENDING — the #1 open blocker** | Same, at the 2 diagnostic bands the camera setup is built around |
-| `eps_deoxy/oxy/met` @ 730, 970nm | small non-zero values | TUNED, not cited | Was the AMSA/Krzywicki 0.0 convention; adopted after isolated testing showed a real 970nm-match improvement at no R² cost |
+| `eps_deoxy/oxy/met` @ 525nm | Tang et al. (2004) Table 2, printed | **CITED** | Isosbestic point, all 3 forms = 7.60 |
+| `eps_deoxy/oxy/met` @ 481, 573, 600nm | digitized from Tang (2004) Figure 1 | **CITED — digitized** | Calibrated to the 525nm isosbestic. Supersedes `origin/main` commit `188e76a`'s haemoglobin-shape proxy for `eps_oxy`/`eps_deoxy` (adopted as a disclosed, team-agreed override — see `docs/TEAM_LOG.md` 2026-09-08) and resolves `eps_met`, which that commit left open. |
+| `eps_deoxy/oxy/met` @ 730, 970nm | digitized from Bowen (1949) Figures 1–2 | **CITED — digitized** | Replaces earlier small tuned values; closed more of the 970nm gap (0.093→0.076) at no R² cost. Source screenshots in `docs/digitization/`. |
 | `c_Mb_mean`, `c_Mb_sd` | 0.87, 0.12 mg/g | CITED / back-calculated, justified | Myoglobin concentration (Cross et al. 2018, n=599 pigs) |
 | `scatter_a`, `scatter_b` | 8.7436, 1.6618 | **FITTED — resolved** | Scattering power law — refit to approximate a porcine-specific study (Bergmann et al. 2021) using the original 2-parameter formula. Formerly a `"DECISION"` blocker; adopted. |
 | `denat_amplitude` | 0.45 | **PLACEHOLDER** | How strongly pH affects scattering — plan: report as a sensitivity sweep (0.2–0.8), not a pinned value. Plan agreed, not yet executed. |
@@ -151,8 +151,9 @@ against the live output before quoting it.
 | `mu_a_baseline` | 0.8 | TUNED, not cited (documented limitation) | Non-myoglobin absorption baseline — re-swept fresh after scattering/eps changes; a disclosed trade-off (closer 970nm match, real R² cost), not a free win |
 | ~~`texture_amplitude`~~ | — | **CUT** | Removed — verified (10-seed test) that it added no mechanistic value beyond what `sensor_sigma` already provides |
 
-**Current blocking count: 5** (`eps_deoxy/oxy/met` × 3, each flagged for
-their pending 481/600nm values; `denat_amplitude`; `denat_width`).
+**Current blocking count: 2** (`denat_amplitude`; `denat_width`). All
+three eps arrays dropped off 2026-09-08 when they were fully digitized
+from the Tang/Bowen figures, superseding `188e76a`'s haemoglobin proxy.
 Verified live via `check_params()` — this number has changed multiple
 times in the last few days, always re-run rather than trust a snapshot.
 
@@ -334,11 +335,11 @@ an open gap, not concealed.
 From §4/§6, the concrete open work items, roughly independent of each
 other (good for splitting across people):
 
-1. **Literature search**: 481/600nm myoglobin values (Bowen 1949 or
-   equivalent), `denat_width` citation — the two genuinely unsourced
-   physics gaps.
-2. **Low-effort finish**: wire the already-identified `mua_water` values
-   into the code; run and write up the `denat_amplitude` sweep.
+1. **Literature search**: `denat_width` citation — the remaining
+   unsourced physics gap (`eps_met` @ 481/600nm was closed 2026-09-08 by
+   digitizing Bowen 1949/Tang 2004 directly, superseding the earlier
+   haemoglobin-proxy approach that couldn't reach metMb).
+2. **Low-effort finish**: run and write up the `denat_amplitude` sweep.
 3. **Model stabilization**: pick one of the three untried diagnostic
    ideas in §6.6 and actually test it.
 4. **970nm gap decision**: tune further, or formally document as a

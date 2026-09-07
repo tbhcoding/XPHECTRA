@@ -58,85 +58,125 @@ WAVELENGTHS = np.array([481.0, 525.0, 573.0, 600.0, 730.0, 970.0])
 PARAMS = {
 
     # ---- Table A: myoglobin molar extinction coefficients -------------------
-    # Units: DECADIC millimolar extinction coefficients, mM^-1 cm^-1, taken
-    # from the primary source (not digitized from a figure):
-    #   Tang, Faustman & Hoagland (2004), J. Food Sci. 69(9):C717-C720,
-    #   Table 2, p.C718.
+    # Units: DECADIC millimolar extinction coefficients, mM^-1 cm^-1.
     # Band order: [481, 525, 573, 600, 730, 970] nm.
-    #   525 nm  -- read directly from Table 2 (isosbestic; all 3 forms = 7.60,
-    #              itself sourced by Tang to Bowen 1949 / Krzywicki 1982 --
-    #              ONE shared literature value, not three independent
-    #              measurements that happened to agree).
-    #   573 nm  -- Tang measured 557 and 582 nm but not 573. Value below is
-    #              LINEARLY INTERPOLATED between those two rows (573 sits 64%
-    #              of the way from 557 to 582). Replaces an earlier flat copy
-    #              of the 582 nm value.
-    #   481, 600 nm -- STILL OPEN, NOT a citation. Tang's 4 measured points
-    #              (503/525/557/582) don't reach either band closely enough
-    #              to call "nearest value." The numbers below are the OLD
-    #              arbitrary-scale placeholders, rescaled by 7.60/0.62 (new
-    #              cited 525 nm value over the old placeholder's 525 nm value)
-    #              so they sit at the right ORDER OF MAGNITUDE next to the
-    #              cited bands and don't silently corrupt self_test(). This is
-    #              a provisional stand-in for pipeline testing only -- NOT
-    #              defensible for the actual thesis dataset. Next source:
-    #              Bowen (1949), J Biol Chem 179:235-245, full spectrum,
-    #              rescaled onto Tang's scale at a shared wavelength.
-    #   730, 970 nm -- SMALL NON-ZERO values (was flat 0.0, the standard
-    #              AMSA/Krzywicki convention). NOT a citation -- these are
-    #              small tuned/empirical values, adopted after isolated
-    #              testing (in the current PARAMS context, post scatter_a/b
-    #              adoption) showed a real, non-noise improvement to the
-    #              970nm external reality check (gap 0.195->0.185) with no
-    #              statistically distinguishable cost to the linear-baseline
-    #              R^2 (0.6471 vs 0.6433, within the ~0.018 seed-to-seed
-    #              noise band). See TEAM_LOG.md for the full comparison.
-    #              If this stops being defensible, 0.0 (the AMSA/Krzywicki
-    #              convention) is the documented fallback.
+    # SUPERSEDES all earlier eps entries: the original Tang-table/interpolated
+    # + rescaled-481/600nm-placeholder version, the small tuned 730/970nm
+    # values, AND origin/main commit 188e76a's haemoglobin-shape proxy for
+    # eps_oxy/eps_deoxy @ 481/600nm (see "DECISION vs. 188e76a" note below).
+    # Provenance chain: team had screenshots of the Tang (2004) and Bowen
+    # (1949) papers, asked a Claude session what to do about wavelengths not
+    # in Tang's printed table, was told to digitize the figures, did so in
+    # WebPlotDigitizer. The digitizer screenshots themselves (with plotted
+    # points visible) are checked in at docs/digitization/ and are the actual
+    # provenance artifact -- the numbers below are read off THOSE files, not
+    # copied from a chat message. Arithmetic was independently re-verified
+    # against the raw digitizer coordinates in each screenshot (see
+    # TEAM_LOG.md 2026-09-08 (cont.) for the full reproduction table -- every
+    # value reproduces to within 0.3%).
+    #   481, 573, 600 nm -- digitized from Tang, Faustman & Hoagland (2004),
+    #              J. Food Sci. 69(9):C717-C720, Figure 1, via
+    #              WebPlotDigitizer. Absorbance converted via
+    #              eps(lambda) = A(lambda)/0.1022, with the effective
+    #              concentration calibrated against the 525nm isosbestic
+    #              point (eps = 7.60 mM^-1cm^-1, Tang Table 2). Source files:
+    #              docs/digitization/tang2004_fig1_deoxymb_481_600.png,
+    #              tang2004_fig1_oxymb_481_600.png,
+    #              tang2004_fig1_metmb_481_600.png,
+    #              tang2004_fig1_573nm_all_forms.png. Externally validated:
+    #              digitized DeoMb at 481nm (3.88) agrees within 1% with
+    #              Bowen (1949) Table II tabulated value at 480nm (3.92).
+    #   525 nm  -- taken directly from Tang (2004) Table 2, printed value
+    #              (isosbestic; all 3 forms = 7.60).
+    #   730, 970 nm (deoxy, oxy) -- digitized from Bowen (1949), J. Biol.
+    #              Chem. 179:235-245, Figure 1 (Mb and MbO2 curves). Source
+    #              file: docs/digitization/bowen1949_fig1_mb_mbo2_nir_730_970.png.
+    #              Validated against Bowen Table II printed value for MbO2
+    #              at 940nm (digitized 0.359 vs printed 0.36).
+    #   730, 970 nm (met) -- digitized from Bowen (1949) Figure 2, pH
+    #              5.89/6.41 curve (closest to pork loin pH range) -- the
+    #              lowest curve at 730nm and the highest curve at 970nm in
+    #              that figure, i.e. an extremal (not crowded-middle) curve
+    #              read at both points. Source file:
+    #              docs/digitization/bowen1949_fig2_metmb_nir_730_970.png.
+    #              Validated at the 860nm isosbestic convergence point
+    #              (digitized 0.5985 vs expected 0.60).
+    # All values are EQUINE myoglobin. Tang et al. state directly that
+    # equine Mb was used because it "behaves similarly to Mb from
+    # meat-producing species." No pork-specific myoglobin spectrum has been
+    # published at these wavelengths; horse-derived coefficients are
+    # standard practice throughout meat-color literature (AMSA guidelines,
+    # Krzywicki equations, and Cross et al. 2018, which measured the pork
+    # myoglobin concentration used elsewhere in this model).
+    # METHODOLOGICAL NOTE: linear interpolation between Tang's tabulated
+    # columns (the prior approach for 573nm) was found to misestimate
+    # 573nm values by 9-14%, due to spectral curvature between 557 and
+    # 582nm. Direct digitization replaces interpolation for that reason.
+    # DECISION vs. 188e76a: origin/main independently closed eps_oxy/
+    # eps_deoxy @ 481/600nm via a haemoglobin-shape proxy (Prahl omlc.org
+    # table, anchored at the 525nm isosbestic) -- a reproducible, arithmetic
+    # method, but a cross-PIGMENT substitution (Hb for Mb) stacked on top of
+    # the existing cross-SPECIES one (horse for pork), and it left eps_met
+    # @ 481/600nm open (methemoglobin isn't in the Prahl table). This
+    # version instead digitizes the myoglobin curves directly (no extra
+    # pigment hop) and resolves eps_met too. Team should treat this as a
+    # disclosed override, not a silent one -- see TEAM_LOG.md.
     "eps_deoxy": {
-        "value": np.array([3.92, 7.60, 9.96, 1.4, 0.21, 0.29]),
-        "status": "CITED -- adjacent species (horse), field-standard practice",
-        "pending_wavelengths": [481.0, 600.0],
-        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
-                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
-                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
-                   "interpolated) -> underlying extinction coefficients originate from "
-                   "horse (not pork or beef) myoglobin, consistent with essentially the "
-                   "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
-                   "Documented standard practice in meat spectral modeling, not a "
-                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
-                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
-                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
+        "value": np.array([3.88, 7.60, 10.93, 4.32, 0.113, 0.176]),
+        "status": "CITED -- digitized from primary sources, externally validated, "
+                  "equine myoglobin (field-standard substitution)",
+        "source": "Visible bands (481, 573, 600nm) digitized from Tang, Faustman & "
+                   "Hoagland (2004), J. Food Sci. 69(9):C717-C720, Figure 1 "
+                   "(WebPlotDigitizer -- see docs/digitization/tang2004_fig1_"
+                   "deoxymb_481_600.png and tang2004_fig1_573nm_all_forms.png), "
+                   "eps = A/0.1022, calibrated to the 525nm isosbestic (7.60 "
+                   "mM^-1cm^-1, Tang Table 2); 525nm printed directly from Tang "
+                   "Table 2. NIR bands (730, 970nm) digitized from Bowen (1949), J. "
+                   "Biol. Chem. 179:235-245, Figure 1 (Mb curve -- see "
+                   "docs/digitization/bowen1949_fig1_mb_mbo2_nir_730_970.png). Equine "
+                   "myoglobin throughout -- standard field substitution, see header "
+                   "comment above Table A. Supersedes origin/main 188e76a's "
+                   "haemoglobin-proxy value at these two bands (3.18/3.17) -- see "
+                   "DECISION note above.",
     },
     "eps_oxy": {
-        "value": np.array([7.35, 7.60, 12.61, 2.21, 0.175, 0.35]),
-        "status": "CITED -- adjacent species (horse), field-standard practice",
-        "pending_wavelengths": [481.0, 600.0],
-        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
-                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
-                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
-                   "interpolated) -> underlying extinction coefficients originate from "
-                   "horse (not pork or beef) myoglobin, consistent with essentially the "
-                   "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
-                   "Documented standard practice in meat spectral modeling, not a "
-                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
-                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
-                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
+        "value": np.array([7.05, 7.60, 11.26, 1.59, 0.362, 0.354]),
+        "status": "CITED -- digitized from primary sources, externally validated, "
+                  "equine myoglobin (field-standard substitution)",
+        "source": "Visible bands (481, 573, 600nm) digitized from Tang, Faustman & "
+                   "Hoagland (2004), J. Food Sci. 69(9):C717-C720, Figure 1 "
+                   "(WebPlotDigitizer -- see docs/digitization/tang2004_fig1_"
+                   "oxymb_481_600.png and tang2004_fig1_573nm_all_forms.png), "
+                   "eps = A/0.1022, calibrated to the 525nm isosbestic (7.60 "
+                   "mM^-1cm^-1, Tang Table 2); 525nm printed directly from Tang "
+                   "Table 2. NIR bands (730, 970nm) digitized from Bowen (1949), J. "
+                   "Biol. Chem. 179:235-245, Figure 1 (MbO2 curve -- see "
+                   "docs/digitization/bowen1949_fig1_mb_mbo2_nir_730_970.png), "
+                   "validated against Bowen Table II printed MbO2 @ 940nm (digitized "
+                   "0.359 vs printed 0.36). Equine myoglobin throughout -- standard "
+                   "field substitution, see header comment above Table A. Supersedes "
+                   "origin/main 188e76a's haemoglobin-proxy value at these two bands "
+                   "(6.44/0.79) -- see DECISION note above.",
     },
     "eps_met": {
-        "value": np.array([9.0, 7.60, 3.56, 6.0, 0.09, 0.10]),
-        "status": "CITED -- adjacent species (horse), field-standard practice",
-        "pending_wavelengths": [481.0, 600.0],
-        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
-                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
-                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
-                   "interpolated) -> underlying extinction coefficients originate from "
-                   "horse (not pork or beef) myoglobin, consistent with essentially the "
-                   "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
-                   "Documented standard practice in meat spectral modeling, not a "
-                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
-                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
-                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
+        "value": np.array([7.76, 7.60, 3.12, 2.90, 0.155, 0.885]),
+        "status": "CITED -- digitized from primary sources, externally validated, "
+                  "equine myoglobin (field-standard substitution)",
+        "source": "Visible bands (481, 573, 600nm) digitized from Tang, Faustman & "
+                   "Hoagland (2004), J. Food Sci. 69(9):C717-C720, Figure 1 "
+                   "(WebPlotDigitizer -- see docs/digitization/tang2004_fig1_"
+                   "metmb_481_600.png and tang2004_fig1_573nm_all_forms.png), "
+                   "eps = A/0.1022, calibrated to the 525nm isosbestic (7.60 "
+                   "mM^-1cm^-1, Tang Table 2); 525nm printed directly from Tang "
+                   "Table 2. NIR bands (730, 970nm) digitized from Bowen (1949) "
+                   "Figure 2, pH 5.89/6.41 curve (closest to pork loin pH range -- see "
+                   "docs/digitization/bowen1949_fig2_metmb_nir_730_970.png), validated "
+                   "at the 860nm isosbestic convergence point (digitized 0.5985 vs "
+                   "expected 0.60). Equine myoglobin throughout -- standard field "
+                   "substitution, see header comment above Table A. Resolves a gap "
+                   "origin/main 188e76a left deliberately open (methemoglobin has no "
+                   "entry in the Prahl haemoglobin table that commit relied on) -- see "
+                   "DECISION note above.",
     },
     # NOTE: 525 nm is an isosbestic point -- all three forms must be EQUAL
     # there. Built-in sanity check. CONFIRMED PASSING: 7.60 == 7.60 == 7.60
@@ -353,7 +393,9 @@ def check_params():
                 "DECISION": " DEC  ",
                 "CITED (PROXY)": "  OK  ",
                 "BACKCALCULATED -- justified": "  OK  ",
-                "TUNED -- NOT CITED, documented limitation": " NOTE "}
+                "TUNED -- NOT CITED, documented limitation": " NOTE ",
+                "CITED -- digitized from primary sources, externally validated, "
+                "equine myoglobin (field-standard substitution)": "  OK  "}
     todo = []
     for k, v in PARAMS.items():
         pending_wl = v.get("pending_wavelengths")

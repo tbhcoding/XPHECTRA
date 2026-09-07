@@ -14,7 +14,7 @@ forward model must trace to a published measurement — the running record of
 that is the **Parameterized Data Sheet** (Google Sheet, team drive), which
 `generate_dataset.py`'s `PARAMS` mirrors. Keep the two in sync.
 
-## Current status — 2026-09-07
+## Current status — 2026-09-08
 
 `generate_dataset.py` is the **only** generator now — the earlier
 `generate_dataset_new_plus_eps.py` candidate was fully merged into it
@@ -22,16 +22,26 @@ that is the **Parameterized Data Sheet** (Google Sheet, team drive), which
 `generate_dataset.py`, not any other file, from here on.**
 
 Forward model runs end-to-end and passes both self-tests (sign check,
-and linear-baseline R² = 0.690 ± 0.017, 10-seed mean — non-trivial).
+and linear-baseline R² = 0.692 ± 0.017, 10-seed mean — non-trivial).
 **Do not generate the final dataset or run any CRN experiment you intend
-to report** until the 5 blockers below are closed — every reported
+to report** until the 2 blockers below are closed — every reported
 number will move.
+
+**Note on `eps_oxy`/`eps_deoxy`/`eps_met`:** these were closed twice, in
+parallel, by two different people — `origin/main` commit `188e76a`
+first closed `eps_oxy`/`eps_deoxy` @ 481/600nm via a haemoglobin-shape
+proxy (leaving `eps_met` open on principle), then a second track
+independently digitized all three directly from the Tang/Bowen figures
+and was adopted as a disclosed, team-agreed override once the conflict
+was found. See `docs/TEAM_LOG.md`'s 2026-09-08 entry for the full
+comparison — both approaches' numbers and reasoning are preserved
+there, not just the winner's.
 
 | Parameter | State |
 |---|---|
-| `eps_*` @ 525, 573 nm | CITED / interpolated — Tang, Faustman & Hoagland 2004 Table 2 |
-| `eps_*` @ 481, 600 nm | **PROVISIONAL invented values** — need Bowen 1949 (or the haemoglobin-proxy alternative, see `CLAUDE.md`). These are the manuscript's diagnostic bands. #1 blocker. |
-| `eps_*` @ 730, 970 nm | Small non-zero values (was the AMSA/Krzywicki 0 convention) — tuned, not cited; adopted after isolated testing showed a real 970nm-match improvement at no R² cost |
+| `eps_*` @ 525 nm | CITED — Tang, Faustman & Hoagland 2004 Table 2 (isosbestic, printed value) |
+| `eps_deoxy`/`eps_oxy`/`eps_met` @ 481, 573, 600 nm | **CITED — digitized** from Tang 2004 Figure 1 (WebPlotDigitizer; artifacts in `docs/digitization/`), calibrated to the 525nm isosbestic. Supersedes `188e76a`'s haemoglobin-proxy values for `eps_oxy`/`eps_deoxy` and resolves `eps_met`, which that commit left open. |
+| `eps_deoxy`/`eps_oxy`/`eps_met` @ 730, 970 nm | **CITED — digitized** from Bowen 1949 Figures 1–2 (same artifact folder). Replaces the earlier small tuned values; closed more of the 970nm gap (0.093→0.076) at no R² cost. |
 | `c_Mb_mean` 0.87, `c_Mb_sd` 0.12 mg/g | CITED — Cross et al. 2018 (n=599); SD back-calculated from SE |
 | unit reconciliation (decadic→Napierian, mg/g→mM) | IMPLEMENTED in `mu_a()`; a real 1000× units bug was caught and fixed here |
 | `scatter_a` 8.7436, `scatter_b` 1.6618 | **RESOLVED** — porcine-muscle refit (approx. Bergmann 2021) adopted, replacing the generic Jacques 2013 soft-tissue values. Formerly a `"DECISION"` blocker; now `FITTED`, not blocking. |
@@ -42,11 +52,11 @@ number will move.
 | `water_fraction` 0.732 | CITED — Wojtasik-Kalinowska et al. 2016 (LWT 67:112-117), mean of 4 diet groups |
 | `sensor_sigma` 0.0054 | MEASURED — `extract_sensor_params.py` on NHSI cube `01.mat` |
 | `mu_a_baseline` 0.8 | TUNED, uncited nuisance term (documented limitation) — re-swept fresh after the scattering/eps changes; this is a disclosed trade-off (closer 970nm match, real R² cost), see `docs/TEAM_LOG.md` |
-| **970 nm external reality check** | Improved but not closed — sim ~0.30 vs real NHSI ~0.19 (was ~0.54). Decide: tune further, or report as a stated Ch. 5 limitation. |
+| **970 nm external reality check** | Improved but not closed — sim ~0.27 vs real NHSI ~0.19 (was ~0.54). Decide: tune further, or report as a stated Ch. 5 limitation. |
 
-**Current blocking count: 5** (eps @481/600nm ×3, `denat_amplitude`,
-`denat_width`). `python generate_dataset.py --selftest` prints the live
-blocking list — always trust that over this table if they disagree.
+**Current blocking count: 2** (`denat_amplitude`, `denat_width`).
+`python generate_dataset.py --selftest` prints the live blocking list —
+always trust that over this table if they disagree.
 
 ## Files
 
@@ -88,38 +98,41 @@ that's step 1 below.
 
 ## Step 1 — Fill in the parameter table
 
-> **Status note (2026-09-03):** this step is partly done — see *Current
-> status* above and the Parameterized Data Sheet for the authoritative
-> record. Myoglobin extinction coefficients now come from **Tang, Faustman
-> & Hoagland 2004** Table 2 (decadic mM⁻¹cm⁻¹), read directly from the
-> primary PDF, not digitized from Piao et al. 2025. The `c_Mb`, scattering,
-> `denat_midpoint` and `sensor_sigma` rows are done. Still open: `eps` at
-> 481/600 nm (Bowen 1949), `mua_water`, `water_fraction`, the
+> **Status note (2026-09-08):** this step is done except for two
+> sensitivity-sweep items — see *Current status* above and the
+> Parameterized Data Sheet for the authoritative record. Myoglobin
+> extinction coefficients at 525nm come from **Tang, Faustman & Hoagland
+> 2004** Table 2 (decadic mM⁻¹cm⁻¹, read directly from the primary PDF);
+> the 481/573/600/730/970nm bands are digitized directly from Tang
+> (2004) Figure 1 and Bowen (1949) Figures 1–2 (see `docs/digitization/`
+> for the source screenshots). The `c_Mb`, scattering, `denat_midpoint`
+> and `sensor_sigma` rows are done. `mua_water` and `water_fraction` are
+> done (Hale & Querry 1973; Wojtasik-Kalinowska 2016). Still open: the
 > `denat_amplitude` sweep, `denat_width`, and the 970 nm gap.
 
 Open `generate_dataset.py` and find the `PARAMS` dictionary near the top.
 Each entry has a `value`, a `status`, and a `source`. Your job is to turn
 every `PLACEHOLDER`, `ASSUMED` and `PARTIAL` into `CITED` or `MEASURED`.
 
-### 1a. Myoglobin extinction coefficients — from Piao et al. (2025)
+### 1a. Myoglobin extinction coefficients — DONE (digitized from Tang 2004 / Bowen 1949)
 
-Open **Piao, Ramanathan, Denzer, Pfeiffer & Mafi (2025)**, *Meat and
-Muscle Biology* 9(1):18338. Open access, already reference [8] in your
-manuscript.
-
-Find the extinction coefficients for deoxymyoglobin, oxymyoglobin and
-metmyoglobin. Fill in `eps_deoxy`, `eps_oxy`, `eps_met` — one value per
-wavelength, in the order `[481, 525, 573, 600, 730, 970]`.
-
-Notes:
-- The paper uses Krzywicki's wavelengths (474, 525, 572, 610 nm). Yours
-  are 481, 525, 573, 600. Use the nearest published value and say so in
-  Chapter 3.
-- **525 nm is isosbestic** — all three forms must have the SAME value
-  there. If yours differ, you misread the table.
-- 730 and 970 nm sit outside the myoglobin bands. Zero is defensible.
-
-Set `status` to `"CITED"` and put the real citation in `source`.
+**Historical note:** this section originally pointed at Piao et al.
+(2025) as a source, then at a haemoglobin-shape proxy for the
+481/600nm gap (`origin/main` commit `188e76a`, 2026-09-07). Both are
+superseded — the project now reads `eps_deoxy`/`eps_oxy`/`eps_met` at
+all 6 bands directly off the Tang (2004) Figure 1 and Bowen (1949)
+Figures 1–2 curves (WebPlotDigitizer), calibrated to the cited 525nm
+isosbestic value. Nothing left to fill in here. See:
+- `generate_dataset.py`'s Table A header comment for the full method
+  and per-band source breakdown.
+- `docs/digitization/` for the six source screenshots the values are
+  read from.
+- `docs/TEAM_LOG.md`'s 2026-09-08 entry for why this was chosen over
+  the haemoglobin-proxy alternative, including that approach's own
+  numbers and reasoning (preserved there, not discarded).
+- **525 nm is isosbestic** — all three forms have the SAME value
+  (7.60) there; this is still worth spot-checking if you ever touch
+  this table again.
 
 ### 1b. Water absorption — from omlc.org
 
