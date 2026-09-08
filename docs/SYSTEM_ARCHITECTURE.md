@@ -138,8 +138,7 @@ against the live output before quoting it.
 | Parameter | Value | Status | What it controls |
 |---|---|---|---|
 | `eps_deoxy/oxy/met` @ 525, 573nm | Tang et al. (2004) values | **CITED** | Myoglobin light absorption at those 2 bands |
-| `eps_oxy/deoxy` @ **481, 600nm** | haemoglobin-shape proxy | **PROXY (declared)** | 7.60 (cited 525nm isosbestic) × Prahl-omlc Hb ratio; oxyMb←HbO2, deoxyMb←Hb. Reproduces the cited 573nm values to 0.0%/8%. Closed 2026-09-07. `[ note ]`, not `[ OK ]`. |
-| `eps_met` @ **481, 600nm** | rescaled placeholders | **⚠️ STILL PENDING** | Prahl file has no metHb, so the proxy above doesn't extend. Next: Tang (2004) 503/582nm metMb anchors, else digitized metHb. |
+| `eps_deoxy/oxy/met` @ **481, 600nm** | rescaled placeholders | **⚠️ STILL PENDING — the #1 open blocker** | Same, at the 2 diagnostic bands the camera setup is built around |
 | `eps_deoxy/oxy/met` @ 730, 970nm | small non-zero values | TUNED, not cited | Was the AMSA/Krzywicki 0.0 convention; adopted after isolated testing showed a real 970nm-match improvement at no R² cost |
 | `c_Mb_mean`, `c_Mb_sd` | 0.87, 0.12 mg/g | CITED / back-calculated, justified | Myoglobin concentration (Cross et al. 2018, n=599 pigs) |
 | `scatter_a`, `scatter_b` | 8.7436, 1.6618 | **FITTED — resolved** | Scattering power law — refit to approximate a porcine-specific study (Bergmann et al. 2021) using the original 2-parameter formula. Formerly a `"DECISION"` blocker; adopted. |
@@ -152,11 +151,10 @@ against the live output before quoting it.
 | `mu_a_baseline` | 0.8 | TUNED, not cited (documented limitation) | Non-myoglobin absorption baseline — re-swept fresh after scattering/eps changes; a disclosed trade-off (closer 970nm match, real R² cost), not a free win |
 | ~~`texture_amplitude`~~ | — | **CUT** | Removed — verified (10-seed test) that it added no mechanistic value beyond what `sensor_sigma` already provides |
 
-**Current blocking count: 3** (`eps_met` @ 481/600nm; `denat_amplitude`;
-`denat_width`). `eps_oxy`/`eps_deoxy` dropped off 2026-09-07 when their
-481/600nm values were filled by the haemoglobin proxy. Verified live via
-`check_params()` — this number has changed multiple times in the last
-few days, always re-run rather than trust a snapshot.
+**Current blocking count: 5** (`eps_deoxy/oxy/met` × 3, each flagged for
+their pending 481/600nm values; `denat_amplitude`; `denat_width`).
+Verified live via `check_params()` — this number has changed multiple
+times in the last few days, always re-run rather than trust a snapshot.
 
 ---
 
@@ -336,11 +334,11 @@ an open gap, not concealed.
 From §4/§6, the concrete open work items, roughly independent of each
 other (good for splitting across people):
 
-1. **Literature search**: `eps_met` @ 481/600nm (Tang 2004's own 503/582nm
-   metMb entries, else a digitized metHb spectrum — the oxy/deoxy halves
-   were closed 2026-09-07 with a haemoglobin proxy that doesn't reach
-   metMb), `denat_width` citation — the remaining unsourced physics gaps.
-2. **Low-effort finish**: run and write up the `denat_amplitude` sweep.
+1. **Literature search**: 481/600nm myoglobin values (Bowen 1949 or
+   equivalent), `denat_width` citation — the two genuinely unsourced
+   physics gaps.
+2. **Low-effort finish**: wire the already-identified `mua_water` values
+   into the code; run and write up the `denat_amplitude` sweep.
 3. **Model stabilization**: pick one of the three untried diagnostic
    ideas in §6.6 and actually test it.
 4. **970nm gap decision**: tune further, or formally document as a

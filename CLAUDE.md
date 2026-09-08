@@ -128,18 +128,18 @@ values, they're derivations and measurements of the model's output.
 - `denat_midpoint` — kept 5.70 as a labelled proxy (decided, not a TODO)
 - `scatter_a`/`scatter_b` — see #1 below, now resolved
 
-**Still open (3 blocking parameters), roughly in the order they should be
+**Still open (5 blocking parameters), roughly in the order they should be
 tackled:**
 
-1. `eps_met` at 481/600nm — the last piece of the old "#1 blocker."
-   `eps_oxy` and `eps_deoxy` at these bands were closed 2026-09-07 with
-   a haemoglobin-shape proxy (Prahl omlc.org, anchored at the cited
-   525nm isosbestic — see "Resolved since" below). Methemoglobin is
-   **not** in the Prahl file, so that proxy doesn't extend to metMb, and
-   a deoxy-Hb substitute is wrong in a known direction (misses metMb's
-   ~630nm band). Next step, small and scoped: use Tang (2004) Table 2's
-   own 503 and 582 nm metMb entries as direct anchors, else a digitized
-   metHb spectrum (Zijlstra & Buursma). Do it in isolation.
+1. `eps_oxy`/`eps_deoxy`/`eps_met` at 481/600nm — **the sheet's #1
+   blocker, unchanged for weeks.** No visible-range oxymyoglobin curve
+   exists in Bowen 1949 at all; this is a genuine research gap, not just
+   an unread table. 600nm is also the highest-weighted band in the
+   design. Two paths: keep searching for Bowen/equivalent data, or
+   adopt the haemoglobin-spectrum proxy (Prahl, omlc.org — fully
+   tabulated, spectroscopically similar to myoglobin in this range per
+   Grabtchak et al. 2014), which would close all three rows in one team
+   decision at the cost of declaring the proxy explicitly in Ch.3/Ch.5.
 2. `denat_amplitude` — not a single citable value by design; needs an
    actual sweep (0.2/0.4/0.6/0.8) run and reported as a Chapter 4
    sensitivity result. A literature-anchored ceiling exists (Offer &
@@ -152,16 +152,6 @@ tackled:**
    surfaces.
 
 **Resolved since the list above was first written:**
-- `eps_oxy` / `eps_deoxy` at 481/600nm — **closed 2026-09-07 via
-  haemoglobin-shape proxy.** Each value = 7.60 (the cited 525nm
-  isosbestic) × that form's Prahl-omlc haemoglobin ratio HbX(band)/
-  HbX(525nm); oxyMb←HbO2, deoxyMb←Hb. The same recipe reproduces the
-  already-cited 573nm values to 0.0% (oxy) / 8% (deoxy), which is the
-  evidence it holds. Declared a PROXY, not a citation — state in
-  Ch.3/Ch.5; `check_params()` prints `[ note ]`, not `[ OK ]`. Blocking
-  count 5→3. No measurable R² cost (0.6902→0.6897, inside seed noise).
-  `eps_met` deliberately excluded — see open item 1. Full record:
-  `docs/TEAM_LOG.md` 2026-09-07 (cont. 2).
 - `scatter_a`/`scatter_b` — **adopted** (was the `"DECISION"` blocker,
   the former #1 item here). Jacques 2013 generic soft-tissue values
   (18.9/1.286) → refit to approximate Bergmann et al. 2021's
@@ -211,12 +201,11 @@ tackled:**
   `mu_a_baseline` was re-swept fresh against the new state (adopted 0.8,
   a genuine trade-off this time, not a free win like earlier sweeps
   found). `generate_dataset_new_plus_eps.py` was retired after fully
-  merging into `generate_dataset.py`. Then `eps_oxy`/`eps_deoxy` at
-  481/600nm were closed with a haemoglobin-shape proxy (Prahl omlc.org,
-  525nm-isosbestic anchor). Blocking count went 7→5→3. Full before/after
-  numbers for every step in `docs/TEAM_LOG.md`'s four entries from this
-  window — each change was tested in isolation on a throwaway copy
-  before being applied to the real file, confirmed identical both times.
+  merging into `generate_dataset.py`. Blocking count went 7→5. Full
+  before/after numbers for every step in `docs/TEAM_LOG.md`'s three
+  entries from this window — each change was tested in isolation on a
+  throwaway copy before being applied to the real file, confirmed
+  identical both times.
 
 ## What to actually do next
 
@@ -227,11 +216,9 @@ tackled:**
 5. **Run and write up the `denat_amplitude` sweep as a Ch.4 result** (use
    the 10-seed method) — plan agreed for a while, not yet executed.
    Lowest-effort real blocker remaining.
-6. ~~Haemoglobin-proxy for `eps_oxy`/`eps_deoxy` at 481/600nm~~ — DONE
-   2026-09-07 (525nm-isosbestic anchor × Prahl omlc Hb shape; declared a
-   proxy). **`eps_met` at 481/600nm still open** — the Prahl file has no
-   methemoglobin. Next: anchor on Tang (2004)'s own 503/582nm metMb
-   entries, else digitize metHb (Zijlstra & Buursma).
+6. **Decide on the haemoglobin-proxy approach for `eps_oxy`/`eps_deoxy`/
+   `eps_met` at 481/600nm** — this is the project's real remaining
+   research blocker, not just a TODO. The #1 priority item.
 7. `denat_width` — report as a sensitivity axis if no citation surfaces.
 8. Decide on the 970nm gap: it's improved a lot (sim ~0.30 vs real
    ~0.19, was ~0.54) but not closed. Tune further, or document as a

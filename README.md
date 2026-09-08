@@ -30,8 +30,7 @@ number will move.
 | Parameter | State |
 |---|---|
 | `eps_*` @ 525, 573 nm | CITED / interpolated — Tang, Faustman & Hoagland 2004 Table 2 |
-| `eps_oxy` / `eps_deoxy` @ 481, 600 nm | **PROXY (declared), closed 2026-09-07** — 7.60 (cited 525 nm isosbestic) × Prahl-omlc haemoglobin ratio; oxyMb←HbO2, deoxyMb←Hb. Reproduces the cited 573 nm values to 0.0% / 8%. Declared a proxy in Ch.3/Ch.5, not a citation. |
-| `eps_met` @ 481, 600 nm | **PROVISIONAL** — still invented. Prahl file has no methemoglobin; the proxy above doesn't extend. Next: Tang 2004's own 503/582 nm metMb entries, else digitized metHb. Last of the old "#1 blocker." |
+| `eps_*` @ 481, 600 nm | **PROVISIONAL invented values** — need Bowen 1949 (or the haemoglobin-proxy alternative, see `CLAUDE.md`). These are the manuscript's diagnostic bands. #1 blocker. |
 | `eps_*` @ 730, 970 nm | Small non-zero values (was the AMSA/Krzywicki 0 convention) — tuned, not cited; adopted after isolated testing showed a real 970nm-match improvement at no R² cost |
 | `c_Mb_mean` 0.87, `c_Mb_sd` 0.12 mg/g | CITED — Cross et al. 2018 (n=599); SD back-calculated from SE |
 | unit reconciliation (decadic→Napierian, mg/g→mM) | IMPLEMENTED in `mu_a()`; a real 1000× units bug was caught and fixed here |
@@ -45,7 +44,7 @@ number will move.
 | `mu_a_baseline` 0.8 | TUNED, uncited nuisance term (documented limitation) — re-swept fresh after the scattering/eps changes; this is a disclosed trade-off (closer 970nm match, real R² cost), see `docs/TEAM_LOG.md` |
 | **970 nm external reality check** | Improved but not closed — sim ~0.30 vs real NHSI ~0.19 (was ~0.54). Decide: tune further, or report as a stated Ch. 5 limitation. |
 
-**Current blocking count: 3** (`eps_met` @481/600nm, `denat_amplitude`,
+**Current blocking count: 5** (eps @481/600nm ×3, `denat_amplitude`,
 `denat_width`). `python generate_dataset.py --selftest` prints the live
 blocking list — always trust that over this table if they disagree.
 
@@ -94,11 +93,9 @@ that's step 1 below.
 > record. Myoglobin extinction coefficients now come from **Tang, Faustman
 > & Hoagland 2004** Table 2 (decadic mM⁻¹cm⁻¹), read directly from the
 > primary PDF, not digitized from Piao et al. 2025. The `c_Mb`, scattering,
-> `denat_midpoint` and `sensor_sigma` rows are done. `mua_water` and
-> `water_fraction` are done (Hale & Querry 1973; Wojtasik-Kalinowska
-> 2016). `eps_oxy`/`eps_deoxy` at 481/600 nm were closed 2026-09-07 with
-> a declared haemoglobin-shape proxy. Still open: `eps_met` at 481/600 nm,
-> the `denat_amplitude` sweep, `denat_width`, and the 970 nm gap.
+> `denat_midpoint` and `sensor_sigma` rows are done. Still open: `eps` at
+> 481/600 nm (Bowen 1949), `mua_water`, `water_fraction`, the
+> `denat_amplitude` sweep, `denat_width`, and the 970 nm gap.
 
 Open `generate_dataset.py` and find the `PARAMS` dictionary near the top.
 Each entry has a `value`, a `status`, and a `source`. Your job is to turn
@@ -121,12 +118,6 @@ Notes:
 - **525 nm is isosbestic** — all three forms must have the SAME value
   there. If yours differ, you misread the table.
 - 730 and 970 nm sit outside the myoglobin bands. Zero is defensible.
-- **481/600 nm status (2026-09-07):** `eps_oxy`/`eps_deoxy` at these two
-  bands are now a haemoglobin-shape proxy — 7.60 (cited 525 nm
-  isosbestic) × HbX(band)/HbX(525 nm) from the Prahl omlc.org table,
-  oxyMb←HbO2, deoxyMb←Hb. Declared a proxy, not a citation. `eps_met` at
-  481/600 nm is still an unfilled placeholder (no methemoglobin in the
-  Prahl file). See `docs/TEAM_LOG.md` 2026-09-07 (cont. 2).
 
 Set `status` to `"CITED"` and put the real citation in `source`.
 

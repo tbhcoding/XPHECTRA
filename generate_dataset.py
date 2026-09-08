@@ -71,27 +71,17 @@ PARAMS = {
     #              LINEARLY INTERPOLATED between those two rows (573 sits 64%
     #              of the way from 557 to 582). Replaces an earlier flat copy
     #              of the 582 nm value.
-    #   481, 600 nm -- eps_oxy / eps_deoxy: HAEMOGLOBIN-SHAPE PROXY (adopted
-    #              2026-09-07). No visible-range oxy/deoxy myoglobin curve
-    #              reaches these two bands -- Tang's nearest measured points
-    #              (503/582 nm) are a 20+ nm extrapolation. Filled from the
-    #              Prahl haemoglobin spectrum (omlc.org/spectra/hemoglobin/
-    #              summary.html; compiled by S. Prahl, Gratzer & Kollias):
-    #                eps_form(band) = 7.60 * HbX(band) / HbX(525 nm)
-    #              where 7.60 is the CITED 525 nm isosbestic value and HbX is
-    #              that form's haemoglobin curve -- oxyMb <- HbO2, deoxyMb <-
-    #              Hb. Cross-pigment swap justified by Hb/Mb spectroscopic
-    #              similarity in 450-650 nm (Grabtchak et al. 2014). SELF-
-    #              CHECK: the identical method reproduces the already-cited
-    #              573 nm values to 0.0% (oxy) / 8% (deoxy). This is a
-    #              declared PROXY, not a direct citation -- state it in
-    #              Ch.3/Ch.5. Fallback if challenged: the prior rescaled-
-    #              placeholder values (7.35/2.21 oxy, 3.92/1.4 deoxy).
-    #   481, 600 nm -- eps_met: STILL OPEN. Methemoglobin is not in the Prahl
-    #              omlc file, so the proxy above cannot cover metMb. Next
-    #              step: use Tang (2004) Table 2's own 503 and 582 nm metMb
-    #              entries as direct anchors before falling back to a
-    #              digitized metHb spectrum (Zijlstra & Buursma).
+    #   481, 600 nm -- STILL OPEN, NOT a citation. Tang's 4 measured points
+    #              (503/525/557/582) don't reach either band closely enough
+    #              to call "nearest value." The numbers below are the OLD
+    #              arbitrary-scale placeholders, rescaled by 7.60/0.62 (new
+    #              cited 525 nm value over the old placeholder's 525 nm value)
+    #              so they sit at the right ORDER OF MAGNITUDE next to the
+    #              cited bands and don't silently corrupt self_test(). This is
+    #              a provisional stand-in for pipeline testing only -- NOT
+    #              defensible for the actual thesis dataset. Next source:
+    #              Bowen (1949), J Biol Chem 179:235-245, full spectrum,
+    #              rescaled onto Tang's scale at a shared wavelength.
     #   730, 970 nm -- SMALL NON-ZERO values (was flat 0.0, the standard
     #              AMSA/Krzywicki convention). NOT a citation -- these are
     #              small tuned/empirical values, adopted after isolated
@@ -104,58 +94,49 @@ PARAMS = {
     #              If this stops being defensible, 0.0 (the AMSA/Krzywicki
     #              convention) is the documented fallback.
     "eps_deoxy": {
-        "value": np.array([3.18, 7.60, 9.96, 3.17, 0.21, 0.29]),
-        "status": "CITED (525/573nm) + haemoglobin-shape PROXY (481/600nm)",
-        "source": "525/573nm: Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> "
-                   "Piao et al. (2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland "
-                   "(2004), J. Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
+        "value": np.array([3.92, 7.60, 9.96, 1.4, 0.21, 0.29]),
+        "status": "CITED -- adjacent species (horse), field-standard practice",
+        "pending_wavelengths": [481.0, 600.0],
+        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
+                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
+                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
                    "interpolated) -> underlying extinction coefficients originate from "
                    "horse (not pork or beef) myoglobin, consistent with essentially the "
                    "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
                    "Documented standard practice in meat spectral modeling, not a "
-                   "shortcut specific to this thesis. 481/600nm: HAEMOGLOBIN-SHAPE PROXY "
-                   "(adopted 2026-09-07) -- 7.60 (cited 525nm isosbestic) * "
-                   "deoxy-Hb(band)/deoxy-Hb(525nm), Hb curve from the Prahl omlc.org "
-                   "table (omlc.org/spectra/hemoglobin/summary.html). Reproduces the "
-                   "cited 573nm value to within 8%. Declared a proxy, NOT a direct "
-                   "citation. See the comment block above eps_deoxy and TEAM_LOG.md "
-                   "2026-09-07. Fallback: prior placeholders 3.92 (481) / 1.4 (600).",
+                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
+                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
+                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     "eps_oxy": {
-        "value": np.array([6.44, 7.60, 12.61, 0.79, 0.175, 0.35]),
-        "status": "CITED (525/573nm) + haemoglobin-shape PROXY (481/600nm)",
-        "source": "525/573nm: Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> "
-                   "Piao et al. (2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland "
-                   "(2004), J. Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
+        "value": np.array([7.35, 7.60, 12.61, 2.21, 0.175, 0.35]),
+        "status": "CITED -- adjacent species (horse), field-standard practice",
+        "pending_wavelengths": [481.0, 600.0],
+        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
+                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
+                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
                    "interpolated) -> underlying extinction coefficients originate from "
                    "horse (not pork or beef) myoglobin, consistent with essentially the "
                    "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
                    "Documented standard practice in meat spectral modeling, not a "
-                   "shortcut specific to this thesis. 481/600nm: HAEMOGLOBIN-SHAPE PROXY "
-                   "(adopted 2026-09-07) -- 7.60 (cited 525nm isosbestic) * "
-                   "HbO2(band)/HbO2(525nm), HbO2 curve from the Prahl omlc.org table "
-                   "(omlc.org/spectra/hemoglobin/summary.html). Reproduces the cited "
-                   "573nm value exactly (0.0% error). Declared a proxy, NOT a direct "
-                   "citation. See the comment block above eps_deoxy and TEAM_LOG.md "
-                   "2026-09-07. Fallback: prior placeholders 7.35 (481) / 2.21 (600).",
+                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
+                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
+                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     "eps_met": {
         "value": np.array([9.0, 7.60, 3.56, 6.0, 0.09, 0.10]),
         "status": "CITED -- adjacent species (horse), field-standard practice",
         "pending_wavelengths": [481.0, 600.0],
-        "source": "525/573nm: Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> "
-                   "Piao et al. (2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland "
-                   "(2004), J. Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
+        "source": "Piao et al. (2025), Meat and Muscle Biology 9(1):18338 -> Piao et al. "
+                   "(2022), Meat Muscle Biol. 5 -> Tang, Faustman & Hoagland (2004), J. "
+                   "Food Sci. 69(9):C717-C720, Table 2, p.C718 (525 cited, 573 "
                    "interpolated) -> underlying extinction coefficients originate from "
                    "horse (not pork or beef) myoglobin, consistent with essentially the "
                    "entire meat-color literature (Krzywicki 1979/1982 and downstream). "
                    "Documented standard practice in meat spectral modeling, not a "
-                   "shortcut specific to this thesis. 481, 600 nm STILL PROVISIONAL "
-                   "placeholders. NOTE: the haemoglobin-shape proxy adopted for "
-                   "eps_oxy/eps_deoxy 481/600nm (2026-09-07) does NOT extend here -- "
-                   "methemoglobin is absent from the Prahl omlc file. Next step: use "
-                   "Tang (2004) Table 2's own 503 and 582 nm metMb entries as direct "
-                   "anchors, else a digitized metHb spectrum (Zijlstra & Buursma).",
+                   "shortcut specific to this thesis. 481, 600 nm still PROVISIONAL "
+                   "rescaled placeholders pending digitized values (Bowen 1949 / Piao "
+                   "et al. 2022) -- separate open item, NOT resolved by this citation.",
     },
     # NOTE: 525 nm is an isosbestic point -- all three forms must be EQUAL
     # there. Built-in sanity check. CONFIRMED PASSING: 7.60 == 7.60 == 7.60
