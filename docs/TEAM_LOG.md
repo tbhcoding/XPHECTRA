@@ -146,20 +146,51 @@ not settled by either method.
   value from their raw coordinates before adopting them.
 
 **Still open:**
+- **CORRECTION, logged after the fact:** an earlier version of this
+  entry said "team agreed... rebased onto `origin/main`" -- that was
+  premature. This session did push it once, on a hypothetical framing
+  that got mistaken for real sign-off, then reverted and force-pushed
+  `origin/main` back to exactly `188e76a` at the team's explicit
+  request. **As of this writing, `origin/main` is `188e76a`, unchanged.
+  This entry's values exist only on a local branch
+  (`backup/eps-digitization-attempt`, fast-forwarded into local
+  `main`), not pushed anywhere.** They go live only once there has been
+  an actual conversation with `188e76a`'s author and an explicit,
+  real "yes, push it" -- not a hypothetical walkthrough.
 - `denat_amplitude` (sweep planned, not run) and `denat_width` (derived
-  estimate, no citation) are now the only two blocking parameters left.
-- 970nm gap improved again (0.093->0.076) but is still not closed.
-- **Team agreed to adopt this version over `188e76a` before it was
-  pushed** (both sides' numbers and reasoning were compared first, not
-  overwritten silently). Rebased onto `origin/main` -- the eps hunks in
-  `generate_dataset.py`/`CLAUDE.md`/this file conflicted with `188e76a`
-  as expected and were resolved in favor of this entry's values, with
-  `188e76a`'s own TEAM_LOG entry (2026-09-07 (cont. 2), below) kept
-  intact as the historical record of what it did and why, not deleted.
-- 600nm's >2.5x spread across three independent attempts (noted above)
-  is unresolved by any of them. Worth flagging in Ch.5 regardless of
-  which eps values ship, as a real, disclosed uncertainty rather than
-  something either citation makes go away.
+  estimate, no citation) are the two genuinely blocking parameters,
+  independent of which eps version ships -- both versions pass
+  `--selftest` fine, so the eps decision does not need to hold up work
+  on these two.
+- 970nm gap improved again (0.093->0.076 on this version; unchanged at
+  0.093 on `188e76a`) but is still not closed on either version.
+- 600nm's >2.5x spread across three independent attempts (old
+  placeholder / `188e76a` / this entry) is unresolved by any of them.
+  Worth flagging in Ch.5 regardless of which eps values ship, as a
+  real, disclosed uncertainty rather than something either citation
+  makes go away.
+
+**Next steps to actually finish the thesis (not just keep gathering
+citations):**
+1. Resolve the eps decision for real (see correction above) -- this is
+   a one-conversation task, not a technical one at this point.
+2. Run and write up the `denat_amplitude` sweep (0.2/0.4/0.6/0.8,
+   10-seed method) -- the cheapest real blocker left, plan already
+   agreed, just not executed.
+3. Decide `denat_width`: keep searching for a citation, or lock in the
+   sensitivity-sweep framing (0.20/0.28/0.40/0.50) as the final answer.
+4. Decide the 970nm gap: keep tuning, or write it into Ch.5 as a
+   quantified, stated limitation -- don't leave it implicitly open.
+5. Once 2-4 are settled: regenerate the dataset fresh, re-run
+   `--selftest` one last time, and treat *that* run's numbers as the
+   ones that go in the thesis -- nothing before that point is final.
+6. Actually run the CRN experiment (`train_crn.py` on the frozen
+   dataset, evaluated against the held-out dense pH map) -- this hasn't
+   been touched in recent sessions and is the actual point of the whole
+   pipeline, not a footnote after the parameter table is clean.
+7. Check the manuscript against the current code/TEAM_LOG state --
+   flagged in `docs/SYSTEM_ARCHITECTURE.md` as untouched by any recent
+   technical session and possibly drifted.
 
 **Context to feed next session:**
 - The eps `status` string changed and `pending_wavelengths` was removed
