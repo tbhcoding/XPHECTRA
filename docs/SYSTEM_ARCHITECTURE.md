@@ -59,10 +59,12 @@ same pH can look different depending on myoglobin state, and vice versa
 — the network has to use the *spectral shape* across all 6 bands to
 separate the two effects, not just overall brightness. This is verified
 empirically: a plain linear regression on raw pixel values only reaches
-R²≈0.692 ± 0.017 on the current `generate_dataset.py` (10-seed mean,
-post scatter_a/b + fully digitized eps + retuned `mu_a_baseline` — this
-number has moved several times as parameters got resolved; always
-re-run `--selftest` rather than trust a snapshot), well under 1.0, proving the
+R²≈0.651 ± 0.018 on the current `generate_dataset.py` (10-seed mean,
+post scatter_a/b + fully digitized eps + retuned `mu_a_baseline` +
+swept `denat_amplitude`=0.4, **pushed for team review, not yet
+formally agreed** — this number has moved several times as parameters
+got resolved; always re-run `--selftest` rather than trust a snapshot),
+well under 1.0, proving the
 mapping isn't trivial (see §6.5 and `self_test()`).
 
 ### 3.1 Scattering — `mu_s_prime(pH)`
@@ -142,20 +144,24 @@ against the live output before quoting it.
 | `eps_deoxy/oxy/met` @ 730, 970nm | digitized from Bowen (1949) Figures 1–2 | **CITED — digitized** | Replaces earlier small tuned values; closed more of the 970nm gap (0.093→0.076) at no R² cost. Source screenshots in `docs/digitization/`. |
 | `c_Mb_mean`, `c_Mb_sd` | 0.87, 0.12 mg/g | CITED / back-calculated, justified | Myoglobin concentration (Cross et al. 2018, n=599 pigs) |
 | `scatter_a`, `scatter_b` | 8.7436, 1.6618 | **FITTED — resolved** | Scattering power law — refit to approximate a porcine-specific study (Bergmann et al. 2021) using the original 2-parameter formula. Formerly a `"DECISION"` blocker; adopted. |
-| `denat_amplitude` | 0.45 | **PLACEHOLDER** | How strongly pH affects scattering — plan: report as a sensitivity sweep (0.2–0.8), not a pinned value. Plan agreed, not yet executed. |
+| `denat_amplitude` | 0.4 | **SWEPT — resolved** | How strongly pH affects scattering. A literature value (2.19, Offer & Knight 1988) was checked and rejected — structurally capped at 1.49x vs. the cited 2x, and breaks R²<0.9 (R²=0.9437) if forced. Adopted a verified sweep (0.2/0.4/0.6/0.8) instead; pushed for team review. |
 | `denat_midpoint` | 5.70 | CITED (proxy) | pH at half-maximal denaturation — proxy from population mean ultimate pH; source cohort was non-PSE (caveat documented) |
-| `denat_width` | 0.28 | **PLACEHOLDER** | Steepness of the pH transition — derived central estimate from two independent published transitions, not a direct citation |
+| `denat_width` | 0.28 | **SWEPT — resolved** | Steepness of the pH transition. Prior citation (MacDougall & Jones 1981) checked and retracted — did not actually support the claim made for it. Now an explicitly unsourced sweep value (0.20/0.28/0.40/0.50). |
 | `mua_water` | Hale & Querry 1973 values | **CITED** | Water absorption spectrum, wired in with linear interpolation between tabulated grid points |
 | `water_fraction` | 0.732 | CITED | Pork loin water content (Wojtasik-Kalinowska et al. 2016, n=24 pigs) |
 | `sensor_sigma` | 0.0054 | MEASURED | Sensor noise, measured directly from a real hyperspectral cube |
 | `mu_a_baseline` | 0.8 | TUNED, not cited (documented limitation) | Non-myoglobin absorption baseline — re-swept fresh after scattering/eps changes; a disclosed trade-off (closer 970nm match, real R² cost), not a free win |
 | ~~`texture_amplitude`~~ | — | **CUT** | Removed — verified (10-seed test) that it added no mechanistic value beyond what `sensor_sigma` already provides |
 
-**Current blocking count: 2** (`denat_amplitude`; `denat_width`). All
-three eps arrays dropped off 2026-09-08 when they were fully digitized
-from the Tang/Bowen figures, superseding `188e76a`'s haemoglobin proxy.
-Verified live via `check_params()` — this number has changed multiple
-times in the last few days, always re-run rather than trust a snapshot.
+**Current blocking count: 0.** All three eps arrays dropped off
+2026-09-08 (fully digitized, superseding `188e76a`'s haemoglobin
+proxy), and `denat_amplitude`/`denat_width` dropped off 2026-09-09
+(swept and verified). This is the first time the parameter table has
+been fully clean. **The 2026-09-09 change is pushed to `origin/main`
+for team review** — it still needs a real team conversation and
+explicit agreement, same as the eps override, before being treated as
+final. Verified live via `check_params()` — always re-run rather than
+trust a snapshot.
 
 ---
 
@@ -335,17 +341,24 @@ an open gap, not concealed.
 From §4/§6, the concrete open work items, roughly independent of each
 other (good for splitting across people):
 
-1. **Literature search**: `denat_width` citation — the remaining
-   unsourced physics gap (`eps_met` @ 481/600nm was closed 2026-09-08 by
-   digitizing Bowen 1949/Tang 2004 directly, superseding the earlier
+1. **Get team agreement on the 2026-09-09 `denat_amplitude`/
+   `denat_width` resolution** — done, verified, and pushed to
+   `origin/main` for review (parameter table now fully clean, 0
+   blockers), but still needs an actual team conversation and explicit
+   agreement before being treated as final, same process as the eps
+   override (`eps_met` @ 481/600nm, closed 2026-09-08 by digitizing
+   Bowen 1949/Tang 2004 directly, superseding the earlier
    haemoglobin-proxy approach that couldn't reach metMb).
-2. **Low-effort finish**: run and write up the `denat_amplitude` sweep.
-3. **Model stabilization**: pick one of the three untried diagnostic
+2. **Model stabilization**: pick one of the three untried diagnostic
    ideas in §6.6 and actually test it.
-4. **970nm gap decision**: tune further, or formally document as a
+3. **970nm gap decision**: tune further, or formally document as a
    stated Chapter 5 limitation.
-5. **Manuscript**: hasn't been touched by any of the recent technical
+4. **Manuscript**: hasn't been touched by any of the recent technical
    work — worth an explicit status check.
+5. **Once the above is pushed**: regenerate the dataset fresh, re-run
+   `--selftest`, and run the actual CRN experiment (`train_crn.py` on
+   the frozen dataset) — hasn't been touched by any recent session and
+   is the actual point of the pipeline.
 
 See `docs/TEAM_LOG.md` for the full dated history behind every number and
 decision above.

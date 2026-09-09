@@ -84,11 +84,12 @@ used a single fixed random seed. That number was found to be unreliable
 either direction. `self_test()` now averages 10 seeds and reports
 mean/std. **Treat any single-number R² quoted anywhere in this project's
 older history as suspect** unless it explicitly says "mean over N
-seeds." Current honest baseline: **R² mean ≈ 0.69, std ≈ 0.02** (10
+seeds." Current honest baseline: **R² mean ≈ 0.65, std ≈ 0.02** (10
 seeds), on the current `PARAMS` (post scatter_a/b + fully digitized eps
-+ retuned `mu_a_baseline`) — this number has moved twice since it was
-0.59 and will move again once the remaining 2 blockers close; always
-re-run `--selftest` rather than trust this file's snapshot.
++ retuned `mu_a_baseline` + swept `denat_amplitude`=0.4, **not yet
+pushed**) — this number has moved several times as parameters got
+resolved; always re-run `--selftest` rather than trust this file's
+snapshot.
 
 ## The Parameterized Data Sheet
 
@@ -130,21 +131,40 @@ values, they're derivations and measurements of the model's output.
 - `scatter_a`/`scatter_b` — see "resolved" list below
 - `eps_oxy`/`eps_deoxy`/`eps_met` (all 6 bands) — see "resolved" list
   below, now fully digitized
+- `denat_amplitude`/`denat_width` — see "resolved" list below, now
+  swept and verified
 
-**Still open (2 blocking parameters):**
-
-1. `denat_amplitude` — not a single citable value by design; needs an
-   actual sweep (0.2/0.4/0.6/0.8) run and reported as a Chapter 4
-   sensitivity result. A literature-anchored ceiling exists (Offer &
-   Knight 1988 via Kim et al. 2014). Plan agreed for a while, not yet
-   executed — lowest-effort real blocker left, now the #1 priority item.
-2. `denat_width` — genuinely unsourced after an active search; current
-   value (0.28) is a derived central estimate from two independent
-   published transitions, not a direct citation. Report as a second
-   sensitivity axis alongside `denat_amplitude` if nothing better
-   surfaces.
+**Still open (0 blocking parameters).** For the first time in this
+project's history, `check_params()` prints no `!!` warning line at
+all. **Pushed 2026-09-09 for team review — not yet formally agreed by
+the team**; see the `denat_amplitude`/`denat_width` entry in "resolved"
+below before treating any downstream number as final.
 
 **Resolved since the list above was first written:**
+- `denat_amplitude`/`denat_width` — **swept and adopted, 2026-09-09,
+  pushed for team review.** A literature-anchored value was proposed for
+  `denat_amplitude` (2.19, from Offer & Knight 1988's ~2x PSE-vs-normal
+  scattering claim, via Kim/Warner/Rosenvold 2014 — independently
+  re-verified against the actual PDF text, citation confirmed accurate)
+  but checked and REJECTED: the model is structurally capped at 1.49x
+  at the citation's actual comparison (PSE vs. normal, i.e. pH 5.4 vs.
+  the cited midpoint 5.70) for any amplitude, and forcing a literal 2x
+  by anchoring across the wider domain instead pushes linear-baseline
+  R² to 0.9437 — breaking the project's own "must stay comfortably
+  under 0.9" non-triviality requirement — while also worsening the
+  970nm match. Adopted instead: a verified sweep (0.2/0.4/0.6/0.8, real
+  10-seed R²/970nm-gap numbers, not just planned), operating value 0.4.
+  `denat_width` kept at 0.28 but its prior citation (MacDougall & Jones
+  1981) was checked, found not to actually support the claim made for
+  it, and retracted — now `"SWEPT -- unsourced, no citation found"`.
+  Blocking count 2→0. Full sweep table, the literature-value math, and
+  the citation re-verification against the actual source PDFs are in
+  `docs/TEAM_LOG.md`'s 2026-09-09 entry. **Pushed to `origin/main` for
+  the team to review directly in the code — same disclosed-decision
+  process as the eps override, but this one doesn't overwrite anyone
+  else's commit. Still needs actual team discussion and explicit
+  agreement before treating it as the final, adopted state — a push is
+  "here's what I propose, please check it," not "this is settled."**
 - `scatter_a`/`scatter_b` — **adopted** (was the `"DECISION"` blocker,
   the former #1 item here). Jacques 2013 generic soft-tissue values
   (18.9/1.286) → refit to approximate Bergmann et al. 2021's
@@ -241,6 +261,22 @@ values, they're derivations and measurements of the model's output.
   open, is now resolved too). 970nm gap improved further (0.093→0.076)
   at no measurable R² cost. Full comparison and reasoning in
   `docs/TEAM_LOG.md`'s 2026-09-08 entry.
+- **2026-09-09:** `denat_amplitude`/`denat_width` closed. A literature
+  value (2.19, from Offer & Knight 1988 via Kim/Warner/Rosenvold 2014 —
+  independently re-verified against the actual PDF text) was checked
+  and rejected: it breaks the non-triviality requirement (R²=0.9437)
+  and is structurally incompatible with the already-cited midpoint
+  (capped at 1.49x, not 2x, at the citation's actual comparison).
+  Adopted a verified sweep instead (0.2/0.4/0.6/0.8, operating value
+  0.4). `denat_width`'s prior citation was checked and retracted (not
+  actually supported), kept at 0.28 as an unsourced sweep value.
+  Blocking count 2→0 — the parameter table has zero uncited/unmeasured
+  entries for the first time in this project. **Pushed for team
+  review** — visible on `origin/main` now, but still needs an actual
+  team conversation and agreement before treating it as final, same
+  standard as the eps decision.
+  Full sweep table and citation verification in `docs/TEAM_LOG.md`'s
+  2026-09-09 entry.
 
 ## What to actually do next
 
@@ -255,17 +291,28 @@ values, they're derivations and measurements of the model's output.
    team-agreed, disclosed override (not a silent overwrite) — see
    `docs/TEAM_LOG.md`'s 2026-09-08 entry for the full reasoning and the
    `188e76a` reconciliation.
-6. **Run and write up the `denat_amplitude` sweep as a Ch.4 result** (use
-   the 10-seed method) — plan agreed for a while, not yet executed. Now
-   the #1 priority item.
-7. `denat_width` — report as a sensitivity axis if no citation surfaces.
-8. Decide on the 970nm gap: it's improved a lot (sim ~0.27 vs real
+6. ~~Run and write up the `denat_amplitude` sweep~~ — DONE. A literature
+   value (2.19) was proposed, checked, and rejected (breaks R²<0.9,
+   structurally incompatible with the cited midpoint); adopted a
+   verified sweep instead (0.2/0.4/0.6/0.8, operating value 0.4). **Not
+   yet pushed** — needs a real team conversation, same as item 5.
+7. ~~`denat_width`~~ — DONE. No citation surfaced; prior citation
+   (MacDougall & Jones) was checked and found not to hold, retracted.
+   Kept at 0.28 as an explicitly unsourced sweep value.
+8. Decide on the 970nm gap: it's improved a lot (sim ~0.264 vs real
    ~0.19, was ~0.54) but not closed. Tune further, or document as a
-   stated Ch.5 limitation.
-9. Once the parameter table is fully CITED/MEASURED: regenerate the
-   dataset, re-run `--selftest`, and only then treat any R² number or
-   CRN result as reportable. Nothing generated so far should be quoted
-   as final — every entry in `docs/TEAM_LOG.md` says so for a reason.
+   stated Ch.5 limitation. Now the top open item, along with pushing
+   items 5/6 once agreed.
+9. Once items 5/6 are pushed: regenerate the dataset, re-run
+   `--selftest`, and only then treat any R² number or CRN result as
+   reportable. Nothing generated so far should be quoted as final —
+   every entry in `docs/TEAM_LOG.md` says so for a reason.
+10. Run the actual CRN experiment (`train_crn.py` on the frozen
+    dataset) — hasn't been touched by any recent session and is the
+    actual point of the pipeline, not a footnote after the parameter
+    table is clean.
+11. Check the manuscript against the current code/TEAM_LOG state —
+    flagged as possibly drifted, untouched by recent technical work.
 
 For anything not covered here — exact numbers, exact citations, what was
 tried and rejected and why — read `docs/TEAM_LOG.md` in full. It's

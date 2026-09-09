@@ -236,12 +236,65 @@ PARAMS = {
     # Low pH near the isoelectric point (~5.4) denatures sarcoplasmic
     # proteins, raising mu_s'. That is why PSE meat is pale. Direction is
     # well established; the exact magnitude and shape are not.
-    # DO NOT hide this. Sweep denat_amplitude (0.2-0.8) and report the sweep
-    # as a sensitivity analysis in Chapter 4.
+    # DO NOT hide this. Sweep denat_amplitude (0.2/0.4/0.6/0.8, now VERIFIED
+    # with real 10-seed R^2 + 970nm-gap numbers, not just planned) and
+    # report the sweep as a sensitivity analysis in Chapter 4. A literature
+    # value (Offer & Knight 1988 via Warner et al. 2014, ~2x PSE-vs-normal
+    # scattering) was checked and found INCOMPATIBLE with this experiment:
+    # solving for the amplitude that reproduces a literal 2x ratio at the
+    # domain extremes gives ~2.19, but that value pushes linear-baseline R^2
+    # to 0.94 -- past the project's own "must stay comfortably under 0.9"
+    # non-triviality requirement -- and moves the 970nm match FURTHER from
+    # real (both metrics degrade monotonically with amplitude across the
+    # whole tested range). See denat_amplitude's source string below for
+    # the full numbers. This incompatibility is itself a disclosed Ch.5
+    # finding, not a gap papered over by picking a different value.
     "denat_amplitude": {
-        "value": 0.45,
-        "status": "PLACEHOLDER",
-        "source": "TODO: sweep 0.2-0.8; report sensitivity, do not pin one value",
+        "value": 0.4,
+        "status": "SWEPT -- literature-informed range, no single citable value",
+        "source": "No single citable value exists (denaturation-driven scattering "
+                   "magnitude is not tabulated at this granularity in the meat-science "
+                   "literature). Reported as a sweep: [0.2, 0.4, 0.6, 0.8], 10-seed "
+                   "R^2 mean / 970nm-gap at each: 0.2->R^2=0.370,gap=0.065; "
+                   "0.4->~0.65,gap~0.075 (0.45 measured: R^2=0.692,gap=0.076); "
+                   "0.6->R^2=0.778,gap=0.082; 0.8->R^2=0.841,gap=0.090. Both metrics "
+                   "move together monotonically -- lower amplitude is safer on BOTH the "
+                   "R^2<0.9 non-triviality requirement AND the 970nm external match, so "
+                   "there is no free-lunch high-amplitude option. Operating value 0.4 "
+                   "chosen as a disclosed team pick (comfortable R^2 margin, near-best "
+                   "970nm match), not a discovery -- report the full sweep table, not "
+                   "just this point, same convention as mu_a_baseline. SEPARATELY: "
+                   "Offer & Knight (1988), 'The structural basis of water-holding in "
+                   "meat, Part 1,' in Developments in Meat Science -- 4 (ed. R. Lawrie), "
+                   "Elsevier Applied Science, pp.63-171 -- propose (their verb, not "
+                   "'measured') that SARCOPLASMIC PROTEIN DENATURATION in PSE muscle "
+                   "causes incident light to be scattered to about TWICE the extent it "
+                   "is scattered in normal muscle. NOT read in the original "
+                   "(inaccessible); independently verified via the actual text of Kim, "
+                   "Warner & Rosenvold (2014), Animal Production Science 54(4):375-395, "
+                   "p.385 'Light scattering and meat colour' section (team has the PDF), "
+                   "which states this Offer & Knight (1988) claim near-verbatim -- "
+                   "citation chain confirmed accurate, not a fabrication/misreading risk. "
+                   "That same source ALSO states the underlying mechanism 'has received "
+                   "very little attention, as it is hard to test this theory' -- an "
+                   "independent reason (beyond the R^2 problem below) not to treat 2x as "
+                   "a solid pin. DO NOT CONFUSE with a second, weaker, unrelated ~2x claim "
+                   "in the companion paper Offer, Knight, Jeacocke et al. (1989), Food "
+                   "Structure 8:151-170, p.154 -- 'the myofibrils shrink about twice as "
+                   "much [in PSE] as in normal meat,' explicitly labeled 'Preliminary "
+                   "results ... (Knight, unpublished results)'. That is a myofibrillar-"
+                   "SHRINKAGE figure, not a scattering-magnitude figure, comes from "
+                   "unpublished data, and is not what this parameter's citation rests on. "
+                   "CHECKED and found NOT usable as a direct pin: (1) with "
+                   "denat_midpoint=5.70 fixed, the model's PSE(pH 5.4)-vs-normal"
+                   "(pH=midpoint) ratio is structurally capped at 1.49x for ANY amplitude "
+                   "value -- it cannot reach 2x by construction; (2) forcing a literal 2x "
+                   "ratio requires anchoring across the domain extremes (pH 5.4 vs 6.2) "
+                   "rather than PSE-vs-normal, which is not what Offer & Knight's finding "
+                   "describes, and yields amplitude=2.19, which breaks the R^2<0.9 "
+                   "non-triviality requirement (R^2=0.9437) and worsens the 970nm match "
+                   "(gap 0.134 vs 0.065-0.076 in the adopted sweep range). Kept as "
+                   "context for the Ch.5 limitation, not as the adopted value.",
     },
     "denat_midpoint": {
         "value": 5.70,
@@ -259,16 +312,20 @@ PARAMS = {
     },
     "denat_width": {
         "value": 0.28,
-        "status": "PLACEHOLDER",
-        "source": "DERIVED ESTIMATE, not a directly cited value. Central value 0.28 from "
-                   "two independent published transitions: MacDougall & Jones (1981) "
-                   "scattering-coefficient doubling over ~1.1 pH units, and the "
-                   "myofilament lattice-spacing transition over pH ~5.2-6.4 (~1.2 pH "
-                   "units). Each maps to a logistic scale parameter ~0.25-0.27 "
-                   "(10-90% span = 2*ln(9)*width ~= 4.39*width). REPORT AS A SWEEP "
-                   "(0.20 / 0.28 / 0.40 / 0.50) alongside denat_amplitude -- do not "
-                   "pin. CAVEAT: MacDougall & Jones (1981) primary not yet "
-                   "independently verified; treat as a proxy in Ch.3.",
+        "status": "SWEPT -- unsourced, no citation found",
+        "source": "UNSOURCED, SWEPT. No published source reports a pH-domain transition "
+                   "steepness for the PSE paling effect. Meat science characterizes PSE "
+                   "either as a rate process over time (pH units/min) or as discrete "
+                   "quality-class comparisons (PSE/normal/DFD); no published work fits a "
+                   "continuous sigmoid to pH. Swept 0.20/0.28/0.40/0.50, corresponding to "
+                   "10-90% transition spans of 0.88 to 2.20 pH units via "
+                   "span = 2*ln(9)*width ~= 4.39*width. CORRECTION: an earlier version of "
+                   "this entry cited MacDougall & Jones (1981) for a 'scattering-"
+                   "coefficient doubling over ~1.1 pH units' -- checked and found NOT "
+                   "supported. That paper is cited elsewhere in the literature for a "
+                   "translucent-to-opaque transition MIDPOINT around pH 5.9, not a "
+                   "doubling over a 1.1-unit span. No source supports the 1.1 figure; "
+                   "removed rather than left standing on a citation that doesn't hold.",
     },
 
     # ---- Table E: water ------------------------------------------------
@@ -395,7 +452,9 @@ def check_params():
                 "BACKCALCULATED -- justified": "  OK  ",
                 "TUNED -- NOT CITED, documented limitation": " NOTE ",
                 "CITED -- digitized from primary sources, externally validated, "
-                "equine myoglobin (field-standard substitution)": "  OK  "}
+                "equine myoglobin (field-standard substitution)": "  OK  ",
+                "SWEPT -- literature-informed range, no single citable value": " NOTE ",
+                "SWEPT -- unsourced, no citation found": " NOTE "}
     todo = []
     for k, v in PARAMS.items():
         pending_wl = v.get("pending_wavelengths")

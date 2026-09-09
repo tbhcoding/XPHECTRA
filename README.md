@@ -14,7 +14,7 @@ forward model must trace to a published measurement — the running record of
 that is the **Parameterized Data Sheet** (Google Sheet, team drive), which
 `generate_dataset.py`'s `PARAMS` mirrors. Keep the two in sync.
 
-## Current status — 2026-09-08
+## Current status — 2026-09-09 (pushed for team review — not yet formally agreed, see note below)
 
 `generate_dataset.py` is the **only** generator now — the earlier
 `generate_dataset_new_plus_eps.py` candidate was fully merged into it
@@ -22,10 +22,13 @@ that is the **Parameterized Data Sheet** (Google Sheet, team drive), which
 `generate_dataset.py`, not any other file, from here on.**
 
 Forward model runs end-to-end and passes both self-tests (sign check,
-and linear-baseline R² = 0.692 ± 0.017, 10-seed mean — non-trivial).
+and linear-baseline R² = 0.651 ± 0.018, 10-seed mean — non-trivial).
 **Do not generate the final dataset or run any CRN experiment you intend
-to report** until the 2 blockers below are closed — every reported
-number will move.
+to report** — the parameter table has **zero** blocking entries for the
+first time in this project, but the latest change (`denat_amplitude`/
+`denat_width`) is pushed for team review, not yet formally agreed.
+Treat every number below as provisional until the team has actually
+looked at it and signed off.
 
 **Note on `eps_oxy`/`eps_deoxy`/`eps_met`:** these were closed twice, in
 parallel, by two different people — `origin/main` commit `188e76a`
@@ -46,17 +49,21 @@ there, not just the winner's.
 | unit reconciliation (decadic→Napierian, mg/g→mM) | IMPLEMENTED in `mu_a()`; a real 1000× units bug was caught and fixed here |
 | `scatter_a` 8.7436, `scatter_b` 1.6618 | **RESOLVED** — porcine-muscle refit (approx. Bergmann 2021) adopted, replacing the generic Jacques 2013 soft-tissue values. Formerly a `"DECISION"` blocker; now `FITTED`, not blocking. |
 | `denat_midpoint` 5.70 | CITED (proxy) — Cross et al. 2018 ultimate pH |
-| `denat_amplitude` | OPEN — must be **swept** (0.2/0.4/0.6/0.8) and reported as a Ch. 4 result, not pinned |
-| `denat_width` 0.28 | OPEN — derived estimate (two independent published transitions), not a direct citation |
+| `denat_amplitude` 0.4 | **SWEPT** — no single citable value exists. A literature value (2.19, Offer & Knight 1988 via Kim/Warner/Rosenvold 2014) was checked and rejected: breaks the R²<0.9 non-triviality requirement (R²=0.9437) and is structurally incompatible with the cited midpoint (capped at 1.49×, not 2×). Adopted a verified sweep instead (0.2/0.4/0.6/0.8); full table in `docs/TEAM_LOG.md`. |
+| `denat_width` 0.28 | **SWEPT** — genuinely unsourced. Prior citation (MacDougall & Jones 1981) was checked, found not to actually support the claim, and retracted. |
 | `mua_water` | CITED — Hale & Querry 1973 via omlc.org, wired in with linear interpolation (970 nm = 0.45 exact) |
 | `water_fraction` 0.732 | CITED — Wojtasik-Kalinowska et al. 2016 (LWT 67:112-117), mean of 4 diet groups |
 | `sensor_sigma` 0.0054 | MEASURED — `extract_sensor_params.py` on NHSI cube `01.mat` |
 | `mu_a_baseline` 0.8 | TUNED, uncited nuisance term (documented limitation) — re-swept fresh after the scattering/eps changes; this is a disclosed trade-off (closer 970nm match, real R² cost), see `docs/TEAM_LOG.md` |
-| **970 nm external reality check** | Improved but not closed — sim ~0.27 vs real NHSI ~0.19 (was ~0.54). Decide: tune further, or report as a stated Ch. 5 limitation. |
+| **970 nm external reality check** | Improved but not closed — sim ~0.264 vs real NHSI ~0.19 (was ~0.54). Decide: tune further, or report as a stated Ch. 5 limitation. |
 
-**Current blocking count: 2** (`denat_amplitude`, `denat_width`).
-`python generate_dataset.py --selftest` prints the live blocking list —
-always trust that over this table if they disagree.
+**Current blocking count: 0.** `python generate_dataset.py --selftest`
+prints the live blocking list — always trust that over this table if
+they disagree. **The `denat_amplitude`/`denat_width` resolution above
+is pushed to `origin/main` so the team can review it in the actual
+code** — it still needs an actual team conversation and explicit
+agreement before being treated as final, same standard as the eps
+override. See `docs/TEAM_LOG.md`'s 2026-09-09 entry.
 
 ## Files
 
@@ -98,17 +105,18 @@ that's step 1 below.
 
 ## Step 1 — Fill in the parameter table
 
-> **Status note (2026-09-08):** this step is done except for two
-> sensitivity-sweep items — see *Current status* above and the
-> Parameterized Data Sheet for the authoritative record. Myoglobin
-> extinction coefficients at 525nm come from **Tang, Faustman & Hoagland
-> 2004** Table 2 (decadic mM⁻¹cm⁻¹, read directly from the primary PDF);
-> the 481/573/600/730/970nm bands are digitized directly from Tang
-> (2004) Figure 1 and Bowen (1949) Figures 1–2 (see `docs/digitization/`
-> for the source screenshots). The `c_Mb`, scattering, `denat_midpoint`
-> and `sensor_sigma` rows are done. `mua_water` and `water_fraction` are
-> done (Hale & Querry 1973; Wojtasik-Kalinowska 2016). Still open: the
-> `denat_amplitude` sweep, `denat_width`, and the 970 nm gap.
+> **Status note (2026-09-09, pushed for team review):** this step is fully done
+> — see *Current status* above and the Parameterized Data Sheet for the
+> authoritative record. Myoglobin extinction coefficients at 525nm come
+> from **Tang, Faustman & Hoagland 2004** Table 2 (decadic mM⁻¹cm⁻¹,
+> read directly from the primary PDF); the 481/573/600/730/970nm bands
+> are digitized directly from Tang (2004) Figure 1 and Bowen (1949)
+> Figures 1–2 (see `docs/digitization/` for the source screenshots). The
+> `c_Mb`, scattering, `denat_midpoint` and `sensor_sigma` rows are done.
+> `mua_water` and `water_fraction` are done (Hale & Querry 1973;
+> Wojtasik-Kalinowska 2016). `denat_amplitude`/`denat_width` are now
+> swept (see §1d) rather than open placeholders. Only the 970 nm gap
+> decision remains a genuinely open question.
 
 Open `generate_dataset.py` and find the `PARAMS` dictionary near the top.
 Each entry has a `value`, a `status`, and a `source`. Your job is to turn
@@ -147,16 +155,34 @@ Wojtasik-Kalinowska et al. 2016 (LWT 67:112-117).
 `c_Mb_mean` and `c_Mb_sd` — pork *Longissimus* myoglobin concentration
 and its between-animal variation. Any meat science reference works.
 
-### 1d. The denaturation parameters — DO NOT just pick a number
+### 1d. The denaturation parameters — DONE (swept, not pinned)
 
 `denat_amplitude`, `denat_midpoint`, `denat_width` control how strongly
-pH affects scattering. This is your weakest assumption and you should
-treat it as one.
+pH affects scattering. This is the project's weakest assumption and is
+treated as one, deliberately, not smoothed over.
 
-**Sweep it.** Generate datasets at `denat_amplitude` = 0.2, 0.4, 0.6, 0.8
-and report how your results change. That sensitivity analysis IS a
-Chapter 4 result, and it's more honest than pinning a value you can't
-source.
+**Historical note:** a literature value for `denat_amplitude` (2.19,
+from Offer & Knight 1988's ~2× PSE-vs-normal scattering claim) was
+seriously considered — the citation itself was independently
+re-verified against the actual source PDF and checks out. It was
+rejected anyway: with `denat_midpoint`=5.70 already fixed, the model is
+structurally capped at 1.49× at the citation's actual comparison (no
+amplitude reaches 2× there), and forcing a literal 2× by anchoring
+across the wider pH domain instead pushes linear-baseline R² to
+0.9437 — breaking the "must stay comfortably under 0.9" non-triviality
+requirement this whole experiment depends on, and worsening the 970nm
+external match too.
+
+**Adopted instead:** the swept range, `denat_amplitude` = 0.2, 0.4,
+0.6, 0.8, all verified safely under R²=0.9, operating value **0.4**
+(10-seed R²=0.651, 970nm gap=0.074). Report the full sweep table as the
+Ch.4 sensitivity result, not just the operating value — same as
+`mu_a_baseline`'s precedent. `denat_width` stays at 0.28, but as an
+explicitly unsourced sweep value (0.20/0.28/0.40/0.50) after its prior
+citation was checked and retracted. Full numbers, the literature-value
+math, and citation re-verification: `docs/TEAM_LOG.md`'s 2026-09-09
+entry. **Pushed for team review** — needs actual team agreement before
+being treated as final.
 
 ### 1e. Scattering — RESOLVED
 

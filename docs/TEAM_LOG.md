@@ -20,6 +20,147 @@ Template:
 
 ---
 
+## 2026-09-09 — denat_amplitude/denat_width resolved via verified sweep; blocking count 2 -> 0 (via Claude session, PUSHED FOR TEAM REVIEW -- not yet formally agreed)
+
+**Changed:**
+- A literature-anchored value for `denat_amplitude` (2.19, derived from
+  Offer & Knight 1988's ~2x PSE-vs-normal scattering claim, via Warner
+  et al. 2014) was proposed, checked, and REJECTED before being written
+  in -- see Verified below. Adopted instead: `denat_amplitude` = 0.4,
+  status `PLACEHOLDER` -> `"SWEPT -- literature-informed range, no
+  single citable value"`. Full sweep (0.2/0.4/0.6/0.8) reported in the
+  `source` field, not just the picked point -- same convention as
+  `mu_a_baseline`.
+- `denat_width` kept at 0.28 (unchanged value), status `PLACEHOLDER` ->
+  `"SWEPT -- unsourced, no citation found"`. Source string rewritten:
+  the previously-cited MacDougall & Jones (1981) "scattering doubling
+  over ~1.1 pH units" was checked against how that paper is actually
+  cited elsewhere in the literature (a translucent-to-opaque transition
+  MIDPOINT near pH 5.9, not a doubling over a span) and found NOT
+  supported. Removed rather than left standing.
+- `check_params()`'s `mark_map` extended with both new status strings
+  (both map to non-blocking `[ NOTE ]`, matching `mu_a_baseline`'s
+  precedent).
+- `generate_dataset.py`, this file, and the three synced docs
+  (`CLAUDE.md`/`README.md`/`docs/SYSTEM_ARCHITECTURE.md`) committed and
+  pushed to `origin/main` at the user's explicit instruction, so the
+  team can review the actual diff rather than just a summary. This is
+  NOT the same as team agreement -- see Still open below.
+
+**Verified (numbers):**
+- **The literature value (2.19) was checked, not assumed usable, and
+  found to break the experiment's own design requirement.** Independently
+  solved `(1+A*s(5.4))/(1+A*s(6.2))=2` with the current midpoint (5.70)
+  and width (0.28): A=2.185, confirmed by direct computation (not just
+  algebra) to produce exactly a 2.0x ratio between pH 5.4 and 6.2.
+  BUT: (1) that 2.19 does NOT reproduce a 2x ratio at the citation's
+  actual comparison (PSE @ pH 5.4 vs normal @ pH=midpoint=5.70) -- it
+  gives only 1.26x there, and the model is structurally capped at 1.49x
+  at that comparison for ANY amplitude, since s(5.4)/s(midpoint) = 1.49
+  as a hard limit as A->infinity; (2) a full sweep at amp=2.19 was run
+  and gives linear-baseline R^2 (10-seed) = **0.9437** -- past the
+  project's own "must stay comfortably under 0.9" non-triviality
+  requirement (self_test() itself warns "too easy" above 0.9) -- and
+  970nm gap = 0.134, WORSE than every other tested value, not better.
+- Full sweep, 10-seed R^2 / 970nm gap at each point (n=20 samples for
+  the 970nm check, same method as every prior 970nm measurement):
+  | amp | R^2 mean | R^2 std | 970nm gap |
+  |---|---|---|---|
+  | 0.2 | 0.3703 | 0.0220 | 0.0653 (best) |
+  | 0.3 | 0.5378 | 0.0207 | 0.0697 |
+  | 0.4 (adopted) | 0.6509 | 0.0180 | 0.0740 |
+  | 0.45 (old placeholder) | 0.6923 | 0.0167 | 0.0761 |
+  | 0.6 | 0.7776 | 0.0132 | 0.0822 |
+  | 0.7 | 0.8140 | 0.0115 | 0.0861 |
+  | 0.75 | 0.8283 | 0.0107 | 0.0880 |
+  | 0.8 | 0.8406 | 0.0101 | 0.0899 |
+  | 1.2 | 0.8989 | 0.0067 | 0.1042 |
+  | 1.49 | 0.9193 (>0.9) | 0.0055 | 0.1137 |
+  | 2.19 (literature value) | 0.9437 (>0.9) | 0.0040 | 0.1343 |
+  | 3.0 | 0.9558 (>0.9) | 0.0035 | 0.1549 |
+  Both metrics move together, monotonically, across the ENTIRE range --
+  no free-lunch high-amplitude option exists; lower amplitude is safer
+  on both the R^2 ceiling and the 970nm match simultaneously.
+- Sign test: PASS at amp=0.4 (reflectance falls monotonically with pH,
+  all 6 bands, pH 5.4-6.3).
+- Final adopted-value re-check (amp=0.4, the actual number now in
+  code): R^2 mean=0.6509, std=0.0180, min=0.6161, max=0.6834; 970nm
+  sim=0.2640, gap=0.0740; n=20 generation, 0 NaN/negative/>1.0.
+- `check_params()` after applying: **0 parameters still uncited/
+  unmeasured/incomplete** -- no `!!` warning line printed at all, first
+  time in this project's history. `denat_amplitude`/`denat_width` both
+  print `[ NOTE ]`, not `[ OK ]` or `[ TODO ]` -- correctly non-blocking
+  but not disguised as a clean citation either.
+
+**Decided:**
+- Adopted amp=0.4 as the disclosed operating value: comfortable R^2
+  margin (0.65, well clear of the 0.9 ceiling), near-best 970nm match
+  within the safe range, and closer to the old placeholder's behavior
+  than an arbitrary pick. This is a team-disclosed value judgment, not
+  a discovery -- report the full sweep table in Ch.4, not just this
+  point, same as `mu_a_baseline`'s adoption.
+- The Offer & Knight-implied magnitude (2.19) is kept in the `source`
+  field and in this log as context for a Ch.5 limitation, NOT adopted:
+  "our model's own design (fixed midpoint/width) cannot reproduce the
+  literature's proposed ~2x PSE-vs-normal contrast without breaking the
+  CRN experiment's non-triviality requirement" is itself a disclosed,
+  quantified finding, not a gap to hide.
+- **2026-09-09 (cont.), citation independently re-verified against the
+  actual source PDFs (team supplied Offer, Knight, Jeacocke et al. 1989,
+  Food Structure 8:151-170, and Kim, Warner & Rosenvold 2014, Animal
+  Production Science 54(4):375-395):** the "~2x" scattering claim in
+  `denat_amplitude`'s `source` field checks out -- Kim/Warner/Rosenvold
+  2014 p.385 states the Offer & Knight (1988) claim near-verbatim to
+  what was already cited, confirming the citation chain is accurate,
+  not a misreading. That same page also has the reviewing authors call
+  the underlying mechanism "hard to test" and say it's "received very
+  little attention" -- a second, independent reason (beyond the R^2
+  problem) not to pin 2.19. Also found and flagged in the `source`
+  field: a DIFFERENT, weaker "~2x" claim in the 1989 companion paper
+  (p.154, myofibrillar shrinkage, explicitly "preliminary" and
+  "unpublished, Knight") that must not be confused with the scattering
+  claim this parameter actually cites. Source string updated with the
+  precise page numbers and this distinction; no change to the adopted
+  value (still 0.4) or the sweep -- verified `--selftest` still PASS,
+  R^2=0.6509 unchanged after the edit.
+- `denat_width`'s MacDougall & Jones citation was retracted rather than
+  left standing once checked and found not to hold -- same standard
+  applied to a citation we added ourselves as to anyone else's.
+
+**Still open:**
+- **Pushed to `origin/main` at the user's explicit instruction, so the
+  team can check the actual code -- this is NOT the same as team
+  agreement.** Unlike the eps override, this doesn't overwrite anyone
+  else's commit (nobody else had touched `denat_amplitude`/
+  `denat_width`), so there's no conflicting work at risk here. But the
+  values (amp=0.4, the rejected 2.19, the retracted width citation)
+  are not final until the team has actually discussed and agreed --
+  same bar as every other decision in this log, just reviewed via the
+  live diff instead of a written summary first.
+- Blocking count is now **0** for the first time in this project. That
+  means the parameter table itself is no longer the bottleneck -- see
+  CLAUDE.md's "what to actually do next" items 6+ (970nm gap decision,
+  freeze + regenerate, the actual CRN experiment, manuscript sync).
+- Plan (per this session): team reviews the pushed commit (a
+  teammate-facing briefing was prepared separately), and confirms
+  agreement -- same disclosed-decision standard as the eps override,
+  just with the review happening after the push instead of before.
+
+**Context to feed next session:**
+- If you're re-deriving these numbers, the sweep script isn't saved as
+  a standalone file -- it was run ad hoc in this session. Re-running it
+  is cheap (a few minutes per amplitude point at n_seeds=10, n_gap=20)
+  if you need to reproduce or extend the table.
+- `denat_midpoint` (5.70) was NOT touched by this session -- it remains
+  `CITED (PROXY)`, unchanged. The 1.49x structural ceiling discussed
+  above is a property of the (midpoint, width) pair as they currently
+  stand; revisiting either would change that ceiling.
+- CLAUDE.md's parameter tables/counts have NOT been re-synced to this
+  entry yet -- do that once this change is actually committed, same as
+  every prior parameter resolution in this log.
+
+---
+
 ## 2026-09-08 — eps_deoxy/eps_oxy/eps_met replaced with digitized primary-source values; DISCLOSED OVERRIDE of origin/main 188e76a (via Claude session)
 
 **Changed:**
