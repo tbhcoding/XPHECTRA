@@ -20,6 +20,152 @@ Template:
 
 ---
 
+## 2026-09-10 — Retracted citation scrubbed from code; `mu_a_baseline` re-swept and KEPT at 0.8; parameter sheet audited for chemist review (via Claude session)
+
+**Changed:**
+- **`denat_width` source string: removed the MacDougall & Jones (1981)
+  attribution entirely** (commit `8b9c187`). The string previously named
+  the paper and its "~1.1 pH units" figure inside a CORRECTION note
+  explaining the claim had been checked and found unsupported. Team
+  decision: a retraction note is NOT sufficient in the shipped artifact —
+  a reviewer scanning `PARAMS` sees a citation in a provenance field and
+  can miss that it is disproven. Carrying a citation the team already
+  knows is wrong is a worse position for expert certification than
+  carrying none. The source string now states the value plainly as
+  unsourced/swept, with the sweep bounds, the 10-90% span derivation, the
+  operating value, and a neutral pointer back to this log. **No source is
+  named.** Comment/string change only — no value, status, or physics
+  touched.
+- **`mu_a_baseline`: NO code change — the planned revert to 0.3 was
+  tested and abandoned.** See Decided.
+- Parameter sheet (external Google Sheet, "Derivation Trail") audited
+  cell-by-cell against the live code ahead of sending it to a consulting
+  chemist for certification. Corrections applied there, not in this repo
+  — recorded below so the numbers have a home in version control.
+
+**Verified (numbers, all against commit `8b9c187`):**
+
+*`mu_a_baseline` re-sweep, fresh against CURRENT PARAMS (post eps
+digitization). 10-seed averaged R^2, n=20 for the 970nm gap:*
+| `mu_a_baseline` | linear R^2 | 970nm sim | 970nm gap |
+|---|---|---|---|
+| 0.3 | 0.6086 | 0.3509 | 0.1609 |
+| 0.4 | 0.6147 | 0.3286 | 0.1386 |
+| 0.5 | 0.6235 | 0.3093 | 0.1193 |
+| 0.6 | 0.6330 | 0.2924 | 0.1024 |
+| 0.7 | 0.6423 | 0.2774 | 0.0874 |
+| **0.8 (kept)** | **0.6509** | **0.2640** | **0.0740** |
+
+*Scattering contribution, RE-MEASURED at current PARAMS (the previously
+logged 0.366 -> 0.195 was measured pre-digitization and no longer
+reproduces):*
+| | linear R^2 | 970nm sim | 970nm gap |
+|---|---|---|---|
+| Jacques 2013 generic (18.9 / 1.286) | 0.5368 ± 0.0207 | 0.4280 | 0.2380 |
+| Porcine refit (8.7436 / 1.6618, adopted) | 0.6509 ± 0.0180 | 0.2640 | 0.0740 |
+
+The refit closes **69%** of the 970nm gap at current PARAMS — a larger
+effect than the ~47% recorded at adoption time. Disclosed R^2 cost
+0.5368 -> 0.6509.
+
+*`denat_amplitude` sweep independently re-run — all four in-range points
+reproduce the 2026-09-09 entry EXACTLY (0.2/0.4/0.6/0.8 ->
+R^2 0.3703/0.6509/0.7776/0.8406, gap 0.0653/0.0740/0.0822/0.0899).*
+Good evidence the sweep methodology is deterministic.
+
+*Structural ceiling s(5.4)/s(5.70) as amplitude -> infinity, recomputed
+independently: width 0.20 -> 1.6351, 0.28 -> 1.4897, 0.40 -> 1.3584,
+0.50 -> 1.2913.* Confirms the 1.29x-1.64x range quoted in the sheet and
+the planned Ch.5 wording. No width reaches the Offer & Knight 2x.
+
+*Post-scrub `--selftest`:* `denat_width` still 0.28, status still SWEPT,
+sign test PASS, linear R^2 mean=0.6509 std=0.0180, blocking count 0 —
+all identical to pre-scrub, confirming the string edit touched nothing.
+
+**Decided:**
+- **`mu_a_baseline` STAYS at 0.8. This reverses an earlier intent to
+  revert it to 0.3.** The original argument for 0.3 was to preserve R^2
+  margin under the 0.9 ceiling. That argument no longer holds: the team's
+  eps digitization dropped R^2 to ~0.65 at every setting, so 0.8 already
+  leaves ~0.25 of margin, and reverting would buy back only 0.04 of
+  margin nobody needs. Meanwhile 0.3 puts the 970nm simulation at 0.3509
+  against real NHSI 0.19 — nearly double, a mismatch that would have to
+  be written up as a real limitation — where 0.8 gives 0.2640. The
+  parameter is uncited at ANY value, so that cost is fixed; it should
+  therefore sit where it best serves the one external reality check.
+  0.5-0.6 remain a defensible middle if the team prefers to be more
+  conservative about tuning toward the reality check.
+- **Standing rule established: a citation the team has disproven must be
+  DELETED from the code, not rephrased as a caveat.** The retraction
+  rationale belongs in this log; the code's `source` field should read
+  as unsourced. Applies to any future retraction, not just this one.
+- Chemist certification will be **scoped**, not blanket. In scope: the
+  myoglobin extinction coefficients and their absorbance->extinction
+  conversion, the 525nm isosbestic handling, the metMb-vs-MMbCN NIR
+  correction, the mg/g->mM and decadic->Napierian unit chain, the
+  `c_Mb_sd` SE->SD inference. Explicitly OUT of scope: `scatter_a/b`
+  (biophotonics, not chemistry), `denat_amplitude`/`denat_width`,
+  `mu_a_baseline`, `sensor_sigma`, and the spatial-field design choices.
+
+**Parameter-sheet corrections made (for the record — sheet is external):**
+- `denat_amplitude` row said value 0.45 / status PLACEHOLDER; code has
+  0.4 / SWEPT. Corrected in three columns (Value, Derivation, Status).
+- `denat_amplitude`'s "Full Citation + DOI" column carried the full
+  Offer & Knight / Kim et al. / Offer et al. chain with a "do NOT cite as
+  the source of the value" disclaimer. Same principle as the code scrub:
+  set to NONE, references relocated to the Derivation/Status narrative
+  and the Ch.5 discussion. Now consistent with how `denat_width` was
+  already handled.
+- `mu_a_baseline` row carried pre-digitization sweep numbers
+  (gap 0.185->0.093, R^2 0.643->0.690), which contradicted the
+  `denat_amplitude` row's figures for the SAME adopted configuration.
+  Replaced with the table above.
+- `mu_a_baseline` claimed twice to be "the one genuinely uncited value in
+  the model." False — there are three (`denat_amplitude`, `denat_width`,
+  `mu_a_baseline`). Reworded to "the only TUNED value."
+- `scatter_a`'s adoption-time figures relabelled as historical/superseded
+  to match the re-measurement above.
+- WAVELENGTHS row said status "CITED" while its own citation column said
+  "No citation — a design input." Reworded to "DESIGN INPUT — no
+  citation; defended at title defense; the optical rationale is post-hoc
+  reconstruction."
+- Removed an informal internal annotation and internal workflow jargon
+  from cells that will be read by an external reviewer.
+
+**Still open:**
+- **Formal team sign-off on `denat_amplitude` = 0.4 and
+  `denat_width` = 0.28.** Both are in code and non-blocking, but the
+  2026-09-09 entry marked them "pushed for review, not yet agreed." This
+  is now the last item gating a reportable dataset.
+- 970nm gap decision: sim 0.2640 vs real 0.19 (gap 0.0740). Improved
+  a lot, not closed. Keep tuning, or write into Ch.5 as a stated
+  limitation.
+- Three sheet items deliberately left as-is, flagged for the team:
+  (1) "VALIDATED 3 TIMES" is stated identically in all three eps rows,
+  but none of the three checks covers oxy or met at 481/600nm;
+  (2) validation #1 compares digitized DeoMb@481 (3.88) against Bowen
+  Table II @480 (3.92) — but 3.92 was ALSO the old placeholder in
+  `eps_deoxy[0]`, so confirm the check is genuinely independent and not
+  circular; (3) the MacDougall & Jones ~pH 5.9 optical midpoint cited in
+  the `denat_midpoint` row is secondhand and unverified — label it.
+- Dataset on disk is from Aug 31, pre-everything. Must be regenerated
+  before any CRN run that will be reported.
+- CRN validation instability (last seen 2026-09-0x) is unaddressed and
+  independent of all parameter work.
+
+**Context to feed next session:**
+- `mu_a_baseline` is 0.8 and that is now a DECIDED value, not a pending
+  revert. Do not re-open it without a stated reason — the trade-off table
+  above is the justification.
+- Any figure quoted from before the 2026-09-08 eps digitization is
+  suspect; several were found stale in the parameter sheet this session.
+  Re-measure rather than copy a number forward.
+- The parameter sheet and `generate_dataset.py` were verified
+  cell-by-cell in agreement as of commit `8b9c187`. If they diverge
+  later, the live `--selftest` output is the authority.
+
+---
+
 ## 2026-09-09 — denat_amplitude/denat_width resolved via verified sweep; blocking count 2 -> 0 (via Claude session, PUSHED FOR TEAM REVIEW -- not yet formally agreed)
 
 **Changed:**
