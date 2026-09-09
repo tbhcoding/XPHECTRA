@@ -313,19 +313,15 @@ PARAMS = {
     "denat_width": {
         "value": 0.28,
         "status": "SWEPT -- unsourced, no citation found",
-        "source": "UNSOURCED, SWEPT. No published source reports a pH-domain transition "
-                   "steepness for the PSE paling effect. Meat science characterizes PSE "
-                   "either as a rate process over time (pH units/min) or as discrete "
-                   "quality-class comparisons (PSE/normal/DFD); no published work fits a "
-                   "continuous sigmoid to pH. Swept 0.20/0.28/0.40/0.50, corresponding to "
-                   "10-90% transition spans of 0.88 to 2.20 pH units via "
-                   "span = 2*ln(9)*width ~= 4.39*width. CORRECTION: an earlier version of "
-                   "this entry cited MacDougall & Jones (1981) for a 'scattering-"
-                   "coefficient doubling over ~1.1 pH units' -- checked and found NOT "
-                   "supported. That paper is cited elsewhere in the literature for a "
-                   "translucent-to-opaque transition MIDPOINT around pH 5.9, not a "
-                   "doubling over a 1.1-unit span. No source supports the 1.1 figure; "
-                   "removed rather than left standing on a citation that doesn't hold.",
+        "source": "UNSOURCED, SWEPT -- no citation is claimed for this value. No published "
+                   "source reports a pH-domain transition steepness for the PSE paling "
+                   "effect: meat science characterizes PSE either as a rate process over "
+                   "time (pH units/min) or as discrete quality-class comparisons "
+                   "(PSE/normal/DFD), and no published work fits a continuous sigmoid to "
+                   "pH. Swept 0.20/0.28/0.40/0.50 -- 10-90% transition spans of 0.88 to "
+                   "2.20 pH units via span = 2*ln(9)*width ~= 4.39*width. Operating value "
+                   "0.28; report the sweep as a Ch.4 sensitivity axis, not a pinned "
+                   "value. Full provenance discussion in docs/TEAM_LOG.md (2026-09-09).",
     },
 
     # ---- Table E: water ------------------------------------------------
