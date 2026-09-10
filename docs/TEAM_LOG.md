@@ -20,6 +20,103 @@ Template:
 
 ---
 
+## 2026-09-10 (cont.) — CRN instability characterized; `denat_amplitude` stays 0.4, a proposed revert to 0.45 was NOT applied (via Claude session)
+
+**Changed:**
+- No code changed. This entry records CRN training-stability findings
+  reported by the team (via their own session), and resolves an
+  apparent conflict with this repo's live state before it caused
+  confusion later.
+
+**Verified (numbers, as reported by the team -- not re-run in this
+session):**
+- CRN training shows real epoch-to-epoch instability: val R² swings
+  sharply within a single run, including crashes to strongly negative
+  values, rather than converging smoothly.
+- 50-epoch run (lr=1e-4), last-10-epoch stats: val R² mean=0.680,
+  std=0.053, range 0.573-0.758. Best single epoch 0.767. **Mean is
+  essentially tied with the linear baseline (~0.65-0.69)** -- on an
+  arbitrary epoch the CRN was not reliably beating a dumb linear fit.
+- Halving lr to 5e-5 made it WORSE (mean 0.605, std tripled to 0.165,
+  best epoch unchanged) -- not pure step-size noise; more epochs at
+  the smaller rate not tried.
+- 5-seed early-stopping experiment: per-seed val R² = 0.6596 / 0.8663 /
+  0.8280 / 0.8162 / 0.8650 (mean 0.807, std 0.076; MAE 0.084±0.019).
+  Seed 0 is a clear low outlier, roughly tied with baseline even after
+  early stopping. All 5 seeds still hit severe mid-training crashes
+  (seed 3: R²=-2.45 @ epoch 8; seed 4: R²=-2.79 @ epoch 19) -- early
+  stopping does not eliminate the instability, it picks around it.
+  4 of 5 seeds land at 0.82-0.87 when stopped at lowest val_loss.
+- All CRN numbers above were measured before any `denat_amplitude`
+  change (i.e. at the pre-2026-09-09 value); team confirmed they
+  remain valid unchanged, no re-run needed on that account.
+
+**Decided:**
+- **Mitigation adopted, root cause NOT understood:** (1) never quote a
+  single best-epoch CRN number -- always mean±std across seeds, with
+  seed 0 explicitly flagged as an outlier; (2) untried root-cause leads:
+  more epochs, GroupNorm, a possible val R² per-batch-averaging issue.
+  Does not block downstream work -- characterized, with a working
+  mitigation, same disclosure standard as every other open item in this
+  log.
+- **`denat_amplitude` stays at `0.4`.** The team's report proposed
+  reverting to `0.45` (the original, never-justified placeholder,
+  outside the actual sweep grid) and framed it as "denat_amplitude
+  remains an open sweep parameter rather than a literature-anchored
+  value" -- but on checking the live repo, `origin/main` was already at
+  `0.4` (the verified sweep's operating value, pushed 2026-09-09,
+  engaged with by the team via `8b9c187`/`1c3d7c5` without objection to
+  the value itself). Asked the user directly rather than applying an
+  unreconciled instruction; user confirmed **0.4 is correct, no
+  change**. The "open sweep parameter, not literature-anchored" framing
+  the team wanted is already true at 0.4 -- it was never adopted as a
+  clean literature-anchored citation, it's the disclosed operating
+  point of a reported sweep, which is the same epistemic status the
+  team's proposed reasoning was asking for. Nothing to revert.
+
+**Resolved (2026-09-10, cont. 2) -- checkpoint-selection question
+answered by reading `train_crn.py` directly, not left as speculation:**
+- `train_crn.py` already has two modes, cleanly split by `--patience`:
+  - **`--patience` set** (the mode the good 5-seed numbers used):
+    checkpoints on `val_loss` (sparse MSE + TV, from the 4 sparse val
+    points only). `val_mae`/`val_r2` -- computed against the hidden
+    `phtrue.npy` map -- are stored for reporting only; the code
+    comments explicitly say they are "not the criterion" and never
+    drive the save decision. **No leakage in this mode.**
+  - **`--patience` unset** (bare default, labeled in-code as "unchanged
+    prior behavior"): checkpoints on `val_mae`, which IS computed
+    against `phtrue.npy` -- the same quantity the experimental design
+    calls a blind, hidden evaluation target. **This mode does have the
+    leakage concern.**
+  - So the concern was real but is already anticipated in the code, not
+    an undiscovered flaw needing a redesign. The fix is a usage rule,
+    not a code change: **always pass `--patience` when running
+    `train_crn.py` for any number that will be reported.** Never quote
+    a number produced by the bare default (no `--patience`) mode as
+    final -- that mode's checkpoint selection has touched the hidden
+    field.
+  - Action: add this rule explicitly to `train_crn.py`'s own
+    `--help`/docstring and to `README.md`'s CRN-running instructions,
+    so it's not just tribal knowledge -- not yet done, flagged for next
+    session touching `train_crn.py`.
+- CRN instability's root cause remains unknown (see untried leads
+  above).
+- Everything else already open in this log (970nm gap decision +
+  n=1-vs-n=19 NHSI question, dataset regeneration, manuscript sync)
+  is unaffected by this entry.
+
+**Context to feed next session:**
+- If someone says "we reverted denat_amplitude to 0.45," check this
+  entry first -- that proposal was surfaced, checked against the live
+  repo, and explicitly not applied, with the user's direct
+  confirmation. Don't re-apply it without a new, explicit instruction.
+- The checkpoint-selection question above should be resolved before
+  quoting any CRN number as final in the manuscript -- it affects
+  whether the reported R² values are measuring what the experimental
+  design claims they measure.
+
+---
+
 ## 2026-09-10 — Retracted citation scrubbed from code; `mu_a_baseline` re-swept and KEPT at 0.8; parameter sheet audited for chemist review (via Claude session)
 
 **Changed:**
