@@ -20,6 +20,70 @@ Template:
 
 ---
 
+## 2026-09-11 — NHSI 970nm reference re-checked across all local cubes; 0.19 holds for lean tissue, but it was never pork-specific (via Claude session)
+
+**Changed:**
+- Added `analysis/nhsi_inspect_cube.py` (renders what a cube contains and
+  what `find_meat()` selects) and `analysis/nhsi_970_breakdown.py` (970nm
+  per cube and per tray column, original method vs. a water-band tissue
+  mask). No model code or `PARAMS` touched.
+- `.gitignore`: added `NHSI dataset/`. `*.mat` was already ignored, but the
+  ~70MB of RGB photos in that folder were not.
+
+**Verified (numbers):**
+- Local set is **18 cubes, not 19**: `01-06`, `08-19` (`07` missing).
+- **Each cube images one mixed tray, not a pork sample:** chicken, salmon,
+  and three red-meat/fat columns. **The cubes are one tray re-imaged over
+  time** (RGB stamps 2025-12-23 11:52 -> 20:18, tissue visibly drying), so
+  more cubes = more time points of the same pieces, not more samples.
+- Wavelength axis: the `.mat` stores no wavelength vector. On the assumed
+  900-1700nm linear axis the meat-spectrum minimum lands at ~1460-1471nm,
+  consistent with the ~1450nm water band — roughly confirmed, not exact.
+- Original method reproduces **0.1896** on cube 01. Across all 18:
+  **0.166 ± 0.012; cube 01 is the maximum.** From cube 03 on, `find_meat()`
+  (top-40%-brightness threshold) pulls **62-71% of the bottom background
+  strip** into its mask as the tissue darkens. Cube 01 was unaffected, so
+  no previously logged number is wrong.
+- Water-band tissue mask (R ~1010-1090nm minus R ~1440-1500nm,
+  Otsu-thresholded inside the tray), checked visually on cubes 01/09/19 —
+  covers every piece, excludes background. A brightness-only Otsu mask was
+  tried first and rejected (it selected bright tissue only, biasing ~0.28):
+  | | tissue (all) | C1 chicken | C2 row 4 | C3 fatty | C4 row 2 | C5 salmon |
+  |---|---|---|---|---|---|---|
+  | cube 01 | 0.2288 | 0.1648 | 0.2050 | 0.2903 | 0.1981 | 0.2474 |
+  | cube 02 | 0.2113 | 0.1497 | 0.1865 | 0.2600 | 0.1840 | 0.2407 |
+  | 18-cube mean ± sd | 0.2205 ± 0.015 | 0.198 ± 0.046 | 0.194 ± 0.014 | 0.243 ± 0.020 | 0.217 ± 0.045 | 0.235 ± 0.016 |
+  Full per-cube table: re-run `analysis/nhsi_970_breakdown.py`.
+- **Lean red-meat columns at the freshest time points: 0.18-0.21 —
+  brackets the old 0.19.** Gap to sim (0.264) stays ~0.06-0.08.
+- Values drift with time (C4 0.198 -> 0.301 from cube 01 to 19), and C1/C4
+  jump between cubes 11 and 12 (RGB file sizes also change there) — cause
+  unknown.
+
+**Decided:**
+- Nothing re-decided. `mu_a_baseline` stays 0.8 — the lean-tissue reference
+  didn't move. **Exception:** if the pork on the tray is the fatty column
+  (C3, 0.26-0.29), the gap closes and the 970nm decision changes.
+
+**Still open:**
+- **Which tray pieces are pork?** Not in the repo, and the dataset's source
+  page wasn't found online. Whoever downloaded NHSI should confirm. Until
+  then, don't call the 970nm reference "pork".
+- `find_meat()` background leak: fix before running
+  `extract_sensor_params.py` on any cube other than 01/02.
+- `sensor_sigma`'s source string says "pork cube 01.mat" — camera noise is
+  species-independent, so the value likely stands, but the label may not.
+- Which time point represents "fresh pork" (earliest is the natural pick).
+
+**Context to feed next session:**
+- The 970nm "real ~0.19" is a whole-tray, mixed-species number that happens
+  to match lean tissue at the fresh time points. Quote it as "lean tissue,
+  fresh time points, 0.18-0.21, species unconfirmed" until species is known.
+- "n=19" in earlier notes means 18 local time points of one tray, not 19
+  independent samples.
+
+---
+
 ## 2026-09-10 (cont.) — CRN instability characterized; `denat_amplitude` stays 0.4, a proposed revert to 0.45 was NOT applied (via Claude session)
 
 **Changed:**

@@ -27,6 +27,7 @@ crn_outputs*/
 # Downloaded NHSI cubes (large, not redistributable)
 data/
 *.mat
+NHSI dataset/
 
 # OS
 .DS_Store
