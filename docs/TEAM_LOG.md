@@ -20,6 +20,63 @@ Template:
 
 ---
 
+## 2026-09-11 (cont.) — NHSI source repo found; timing gaps explained, but the source paper doesn't identify species by position either (via Claude session)
+
+**Changed:** No code touched — this resolves part of the entry above using
+the dataset's own README/paper, found at the user's teammate's link:
+`BruceTangLin/-A-Hyperspectral-Dataset-for-Meat-Freshness-Analysis` on
+GitHub, citing Wang, Tang, Li & Chen, "NHSI-meat-overtime: A Near-Infrared
+Hyperspectral Imaging Dataset for Meat Freshness Assessment via Spectral
+Unmixing," IET Conference Proceedings CP987, 2026, pp. 208-212.
+
+**Verified (numbers, from the source README):**
+- Confirms the exact 19 acquisition timestamps. **`07` (2025-12-23 19:17)
+  sits only 8 minutes after `06` (19:09)** — the missing local file is a
+  near-duplicate of one we have, not a meaningful gap in time coverage.
+- **Explains the cube-11-to-12 jump flagged in the entry above:** `11` was
+  2025-12-23 22:54 and `12` was 2025-12-24 09:55 — an **11-hour overnight
+  gap**, the longest in the schedule (every other gap is 1-3 hours). Not a
+  data anomaly; the tissue genuinely aged more between those two cubes than
+  between any other consecutive pair.
+- 900-1700nm / 512 raw bands / 431 retained (first 39 + last 42 dropped) /
+  black-white calibrated — all matches what `extract_sensor_params.py` and
+  this session's scripts already assumed.
+- **The source paper's own method does not split by species either.** Its
+  unmixing uses exactly five endmembers — fresh lean, fresh fat, stale
+  lean, stale fat, conveyor-belt background — extracted from
+  regions-of-interest, with no species-specific endmember and no stated
+  tray diagram or position key. Confirmed by listing the repo's
+  `endmembers/` directory: `bk_end.mat`, `fat_fresh_end.mat`,
+  `fat_dry_end.mat`, `lean_fresh_end.mat`, `lean_dry_end.mat` — five files,
+  matching exactly.
+
+**Decided:** Nothing new — `mu_a_baseline` stays at 0.8, same as the entry
+above.
+
+**Still open:**
+- **Which tray column is pork is still unconfirmed — and now clearly not
+  answerable from the dataset's own documentation.** The paper distinguishes
+  lean/fat/background, not species, so there is no authoritative position
+  key to request from the authors' materials; only two of five columns are
+  visually unambiguous (C5 = salmon by color/striation, C1 = chicken by
+  color/small-piece shape). C2/C3/C4 among beef/mutton/pork remain
+  unassigned. Options: ask the paper's authors directly, or accept "lean
+  red meat, species unconfirmed among beef/mutton/pork" as the permanent
+  caveat on this reality check.
+- Everything else from the entry above (`find_meat()` background leak,
+  `sensor_sigma`'s "pork cube 01.mat" label) is unaffected.
+
+**Context to feed next session:**
+- Don't re-investigate the cube-11-vs-12 jump or the missing `07` as
+  anomalies — both are explained by the official schedule now in this
+  entry.
+- The species-per-column question is now a genuine dead end via the
+  dataset's own materials, not a documentation gap we failed to find. If
+  it matters enough to the 970nm decision, the next step is contacting the
+  paper's authors, not searching harder.
+
+---
+
 ## 2026-09-11 — NHSI 970nm reference re-checked across all local cubes; 0.19 holds for lean tissue, but it was never pork-specific (via Claude session)
 
 **Changed:**
