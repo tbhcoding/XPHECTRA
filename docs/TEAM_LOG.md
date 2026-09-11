@@ -20,6 +20,161 @@ Template:
 
 ---
 
+## 2026-09-12 — Dataset frozen and regenerated; first CRN run on the actual final PARAMS (5-seed, R²/MAE/RMSE); instability root-cause evidence tied to code + literature (via Claude session)
+
+**Changed:**
+- Deleted `ligtas_synthetic_dataset_v2/` -- confirmed stale, generated
+  2026-09-06, predates the eps digitization (09-08), the
+  `denat_amplitude`/`denat_width` sweep (09-09), and the `mu_a_baseline`
+  re-sweep (09-10). Never valid to report from.
+- Regenerated the dataset fresh via `python generate_dataset.py`
+  (default: `--n 400`, fixed `rng seed=42` in `main()`, 75/12.5/12.5
+  train/val/test split) -> `ligtas_synthetic_dataset/` (400 samples,
+  300/50/50). Generation took 31s. This is the FROZEN baseline -- the
+  first dataset generated after every open parameter was resolved.
+- Ran the CRN experiment for the first time against this frozen
+  dataset: 5 seeds (0-4), `train_crn.py --data ligtas_synthetic_dataset
+  --seed {0..4} --patience 10 --epochs 50 --out
+  crn_5seed_final/seed_{0..4}`, sequential (CPU only, no CUDA detected
+  on this machine; ~70s/epoch measured via a 3-epoch timing run first).
+  Total wall time ~1.5-3h (background job). Output NOT committed yet
+  (large binaries + checkpoints; decide before pushing whether to keep
+  only `history.json`/PNGs like the older `crn_5seed_*` folders did, or
+  gitignore the whole thing).
+- Computed RMSE post-hoc for all 5 seeds -- `train_crn.py` does not
+  compute or log RMSE natively (only sparse-loss, MAE, R² per epoch).
+  Reloaded each seed's already-saved `crn_best.pt` checkpoint (no
+  retraining) and ran one inference pass over the val set per seed.
+  Took 23s total for all 5.
+
+**Verified (numbers):**
+- Final `--selftest` on the frozen dataset, before generation: 0
+  blocking parameters (first time ever -- `check_params()` prints no
+  `!!` line at all). Sign test PASS. Linear-baseline R² (10-seed)
+  mean=0.6509, std=0.0180, min=0.6161, max=0.6834; MAE mean=0.1524,
+  std=0.0060.
+- Data integrity across the full generated dataset: checked all 400
+  `*_msi.npy` cubes directly (not a sample) -- 0 NaN, 0 negative, 0
+  values >1.0.
+- **CRN 5-seed results, frozen dataset, checkpoint selected on val_loss
+  only (clean mode, does not touch `phtrue.npy` for the save decision):**
+
+  | Seed | Epochs (early-stopped) | Best-checkpoint epoch | val R² | val MAE | val RMSE | Worst mid-run crash |
+  |---|---|---|---|---|---|---|
+  | 0 | 19 | 9 | 0.6919 | 0.1159 | 0.1484 | R²=-0.34 @ epoch 1 |
+  | 1 | 24 | 14 | 0.8388 | 0.0787 | 0.1056 | R²=-0.71 @ epoch 19 |
+  | 2 | 31 | 21 | 0.8057 | 0.0812 | 0.1185 | R²=-6.16 @ epoch 26 |
+  | 3 | 20 | 10 | 0.7881 | 0.0904 | 0.1240 | R²=-6.12 @ epoch 11 |
+  | 4 | 28 | 18 | 0.8173 | 0.0851 | 0.1151 | R²=-4.82 @ epoch 15 |
+
+  **Aggregate: R² mean=0.7884, std=0.0510, min=0.6919, max=0.8388.
+  MAE mean=0.0903, std=0.0134. RMSE mean=0.1223, std=0.0143, min=0.1056,
+  max=0.1484.** RMSE > MAE for every seed, as expected (RMSE
+  weights large errors more).
+- Seed 0 is the low outlier on all three metrics simultaneously
+  (R², MAE, RMSE) -- same seed, same role, as in the team's earlier
+  5-seed report on the OLD dataset (`crn_5seed_s0` etc.). Worth noting
+  as a pattern, not yet explained (seed-0-specific initialization
+  effect vs. coincidence -- not investigated).
+- CRN vs. linear baseline: 4 of 5 seeds (0.79-0.84) clear the baseline
+  (0.65) decisively; seed 0 (0.69) only marginally clears it. Confirms
+  the core non-triviality claim -- a linear model cannot do this, a
+  spectral-shape-aware network can, most of the time, seed-dependent.
+- **Instability confirmed reproducible on independent data:** every
+  seed still hit severe mid-training crashes to strongly negative R²
+  (worse than the team's original report on the old dataset: -6.16/
+  -6.12/-4.82 here vs. -2.45/-2.79 there). Early stopping on val_loss
+  continued to reliably select a good checkpoint anyway in 4/5 runs.
+  This is now confirmed on two independently-generated datasets, not a
+  one-off artifact of the earlier data.
+- **Root-cause evidence, checked directly in the codebase rather than
+  re-guessed:** `crn_model.py`'s own docstring records that BatchNorm
+  was the first suspected cause after the initial instability was
+  found, that an isolated LR test (1e-3 -> 1e-4) found LR was the
+  dominant cause at the time, that BatchNorm (batch size 8) was kept
+  as-is, and explicitly states the standing trigger: "revisit GroupNorm
+  only if instability resurfaces after the LR fix." It has now
+  resurfaced, confirmed on a second dataset -- that trigger condition
+  is met.
+- **Two supporting citations independently verified (fetched/searched,
+  not recalled from memory) for the panel-facing writeup:**
+  - Wu, Y. & He, K. (2018), "Group Normalization," ECCV 2018 (arXiv:
+    1803.08494) -- confirmed via web search: documents that
+    BatchNorm's error rises sharply as batch size shrinks (noisy batch
+    statistics), proposes GroupNorm (batch-size-independent) as the
+    fix. Directly matches the mechanism `crn_model.py` already names.
+  - Henderson, Islam, Bachman, Pineau, Precup & Meger (2018), "Deep
+    Reinforcement Learning that Matters," AAAI 2018 (arXiv:1709.06560)
+    -- confirmed via web search: varying only random seed produced
+    non-overlapping performance curves across runs. RL-specific in its
+    experiments, but the general lesson (seed alone can dominate
+    reported results; report distributions, not single runs) is why
+    this project runs multiple seeds at all, here and in the linear
+    baseline self-test.
+
+**Flagged at the user's explicit request -- timing note, not a technical
+dependency:** this freeze and CRN run happened while the NHSI pork
+tray-position question (2026-09-11 entries, "which column is pork?")
+was still unconfirmed. Logging that timing fact plainly, since the
+user asked for it on record. **For accuracy, also recording the
+factual check behind it:** `generate_dataset.py`'s `PARAMS` -- the eps
+values, `denat_amplitude`, `denat_width`, `mu_a_baseline` -- were
+inspected directly and confirmed to contain no dependency on which
+NHSI tray column is pork; that question only ever affects the wording
+of the 970nm external-reference sentence (currently reverted to
+"species unconfirmed" per the user's own 2026-09-11 instruction), not
+any value that fed into this freeze. Both statements are true at once:
+the timing overlap is real and now on record, and the two threads are
+independently verified not to feed into each other technically.
+
+**Decided:**
+- This IS the dataset and the CRN result to report going forward --
+  supersedes every earlier CRN number in this log, all of which were
+  measured on now-superseded data (`ligtas_synthetic_dataset_v2/` or
+  the `generate_dataset_new_plus_eps.py` era).
+- 5 seeds stays the reported number, not reduced to 1: a single seed
+  here would have reported either 0.69 (looks like the CRN barely beats
+  baseline) or 0.84 (looks like a clean win) depending purely on luck
+  of the draw -- exactly the failure mode Henderson et al. (2018)
+  documents and the reason this project already moved the linear
+  baseline check to a 10-seed mean once before. 5 was chosen over 10
+  for compute-time reasons (~35 min/seed here vs. seconds for the
+  linear check) -- state that plainly if asked, don't let it look like
+  an unexplained inconsistency with the 10-seed linear-baseline
+  convention.
+- Root cause of the instability is NOT re-investigated or fixed in this
+  entry (GroupNorm swap not attempted) -- flagged as the next concrete
+  step below, but not blocking reportability. The mitigation (early
+  stopping + mean/std reporting + outlier flagging) is what's actually
+  being reported, and it works, on two independent datasets now.
+
+**Still open:**
+- **GroupNorm swap** -- the code's own stated trigger condition for
+  revisiting this has now been met. Low-to-medium effort (swap
+  `nn.BatchNorm2d` for `nn.GroupNorm` in `conv_block`, re-run a subset
+  of seeds to compare) -- worth doing if time allows, not required for
+  a reportable result as-is.
+- Why seed 0 specifically is the recurring outlier, across two
+  datasets -- not investigated, possibly coincidence, possibly a real
+  initialization effect.
+- `crn_5seed_final/` not committed to git yet -- decide retention
+  policy (full checkpoints vs. history.json + PNGs only, matching the
+  older `crn_5seed_*` folders' pattern) before pushing.
+- Same still-open items as before this entry, unaffected: NHSI pork
+  tray-position confirmation (with the team), manuscript sync,
+  `find_meat()` background-leak fix (unrelated to any cube used here).
+
+**Context to feed next session:**
+- If asked "why 5 seeds, why not 1," the answer is now fully scripted
+  and sourced -- see this session's conversation or just cite Henderson
+  et al. (2018) directly.
+- `crn_5seed_final/seed_{0-4}/crn_best.pt` are real, loadable
+  checkpoints on disk right now -- RMSE or any other post-hoc metric
+  can be recomputed from them in seconds without retraining, same
+  method used here.
+
+---
+
 ## 2026-09-11 (cont.) — NHSI source repo found; timing gaps explained, but the source paper doesn't identify species by position either (via Claude session)
 
 **Changed:** No code touched — this resolves part of the entry above using
