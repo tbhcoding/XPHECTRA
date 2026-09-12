@@ -1,0 +1,70 @@
+[
+  {
+    "amp": 0.4,
+    "linear_held": 0.6212394024302655,
+    "plsr_held": 0.6205512193058664,
+    "per_seed": {
+      "0": {
+        "batch_avg": 0.6942103600502014,
+        "pooled_all": 0.7865249514579773,
+        "pooled_sub": 0.7823660373687744
+      },
+      "1": {
+        "batch_avg": 0.7812067604064942,
+        "pooled_all": 0.851248025894165,
+        "pooled_sub": 0.8478269577026367
+      },
+      "2": {
+        "batch_avg": 0.7481602811813355,
+        "pooled_all": 0.817761242389679,
+        "pooled_sub": 0.8125985264778137
+      }
+    },
+    "crn_batch_avg_mean": 0.741192467212677,
+    "crn_batch_avg_std": 0.03585625228942615,
+    "margin_batch_avg": 0.11995306478241141,
+    "beats_batch_avg": true,
+    "crn_pooled_all_mean": 0.8185114065806071,
+    "crn_pooled_all_std": 0.026428408337154773,
+    "margin_pooled_all": 0.19727200415034152,
+    "beats_pooled_all": true,
+    "crn_pooled_sub_mean": 0.8142638405164083,
+    "crn_pooled_sub_std": 0.02675023957368634,
+    "margin_pooled_sub": 0.19302443808614278,
+    "beats_pooled_sub": true
+  },
+  {
+    "amp": 0.8,
+    "linear_held": 0.8307561669282089,
+    "plsr_held": 0.8299466317915813,
+    "per_seed": {
+      "0": {
+        "batch_avg": 0.8423644924163818,
+        "pooled_all": 0.8905448913574219,
+        "pooled_sub": 0.8876365423202515
+      },
+      "1": {
+        "batch_avg": 0.8828021001815796,
+        "pooled_all": 0.9155240058898926,
+        "pooled_sub": 0.9130318760871887
+      },
+      "2": {
+        "batch_avg": 0.8754626750946045,
+        "pooled_all": 0.912365198135376,
+        "pooled_sub": 0.9087382555007935
+      }
+    },
+    "crn_batch_avg_mean": 0.8668764225641886,
+    "crn_batch_avg_std": 0.017589633875857127,
+    "margin_batch_avg": 0.03612025563597976,
+    "beats_batch_avg": false,
+    "crn_pooled_all_mean": 0.9061446984608968,
+    "crn_pooled_all_std": 0.011105854397770539,
+    "margin_pooled_all": 0.07538853153268799,
+    "beats_pooled_all": true,
+    "crn_pooled_sub_mean": 0.9031355579694113,
+    "crn_pooled_sub_std": 0.011098750950884922,
+    "margin_pooled_sub": 0.07237939104120239,
+    "beats_pooled_sub": true
+  }
+]
