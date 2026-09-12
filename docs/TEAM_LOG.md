@@ -20,7 +20,151 @@ Template:
 
 ---
 
-## 2026-09-12 — Dataset frozen and regenerated; first CRN run on the actual final PARAMS (5-seed, R²/MAE/RMSE); instability root-cause evidence tied to code + literature (via Claude session)
+## 2026-09-12 (session 2) — CRN-vs-baseline robustness sweep across denat_amplitude; amp=0.4 reconciliation; repo cleanup (via Claude session)
+
+**Why this entry exists:** the CRN's win over Linear/PLSR baselines (see the
+entry below) was only ever checked at denat_amplitude=0.4, the adopted
+value. This session checked whether that win holds across the whole
+literature-plausible range (0.2/0.4/0.6/0.8), found an apparent
+contradiction, ran it down, and cleaned up the resulting file sprawl.
+Written so a teammate (or their own AI) can pick this up without asking
+what was done.
+
+**Changed:**
+- Added `sweep_denat_amplitude.py` — small-scale test (100 train/20 val
+  per amplitude, 3 CRN seeds) across all 4 amplitudes.
+- Added `deconfound_full_scale.py` — full-scale follow-up (300 train/50
+  val, matching `ligtas_synthetic_dataset/`'s own split) after the
+  small-scale test showed the CRN LOSING to both baselines at 3 of 4
+  amplitudes — contradicting the already-reported full-scale win.
+- Added `compute_amp04_baselines.py` — small, rerunnable script that
+  computes held-out Linear/PLSR R² for amp=0.4 directly against the
+  frozen `ligtas_synthetic_dataset/`. (The CRN side for amp=0.4 was NOT
+  retrained — reused `crn_5seed_final/seed_0,1,2`, already trained on
+  this exact dataset, to avoid redundant compute.)
+- Added `deconfound_outputs/full_table.json` — consolidates all 4
+  amplitudes' Linear/PLSR/CRN numbers into one file, each row tagged
+  with exactly which script/log it came from. (Previously scattered
+  across a JSON file that gets overwritten on every run, a raw log
+  file, and one-off console output — no single source existed before.)
+- Moved 7 old/superseded folders (`crn_5seed_new_plus_eps/`,
+  `crn_5seed_s0..s4/`, `crn_outputs_lr1e4_50ep/`, plus one stray
+  killed-job leftover and one empty log) into `archive/` — staged as
+  git renames, nothing deleted, history preserved.
+- Confirmed the 970nm external-reference gap specifically under the
+  (still-unconfirmed) "pork = tray column C4, next to salmon" hypothesis:
+  sim=0.264 vs. C4-freshest=0.1981 (ratio 1.333x) / C4-18-cube-mean=0.217
+  (ratio 1.217x) — tighter than the generic species-unconfirmed range
+  (1.26x–1.47x) quoted before, landing at ~1.22x–1.33x. Still a
+  hypothesis, not a confirmed fact — no position key exists to prove it.
+
+**Verified (numbers):**
+- **Small-scale sweep (100/20, 3 seeds) — the result that triggered this
+  investigation:** CRN lost to both Linear and PLSR at 3 of 4 amplitudes
+  (0.4/0.6/0.8), won only at 0.2. Directly contradicted the already-
+  reported full-scale (300/50, 5-seed) result where CRN won clearly
+  (0.7884 vs 0.6509 linear). Not an architecture or physics bug — see
+  "Decided" below.
+- **Full-scale deconfounding — all 4 amplitudes, standardized (held-out
+  R², Linear/PLSR/CRN, 3 CRN seeds each):**
+
+  | amp | Linear (held) | PLSR (held) | CRN mean±std | CRN beats both by >0.05? |
+  |---|---|---|---|---|
+  | 0.2 | 0.3113 | 0.3110 | 0.6174±0.1152 | YES |
+  | 0.4 | 0.6212 | 0.6206 | 0.7788±0.0629 (reused `crn_5seed_final`) | YES (margin 0.158) |
+  | 0.6 | 0.7616 | 0.7608 | 0.8396±0.0193 | YES (margin 0.078) |
+  | 0.8 | 0.8308 | 0.8299 | 0.8599±0.0245 | NO (margin 0.029–0.030) |
+
+  Full per-seed numbers and exact provenance (which script/log each cell
+  came from) are in `deconfound_outputs/full_table.json` — read that
+  file directly rather than re-deriving these numbers from scratch.
+- **The small-scale/full-scale contradiction is a confirmed sample-size
+  confound, not a real result.** At matched full scale, CRN wins at 3 of
+  4 amplitudes and its margin over both baselines shrinks monotonically
+  as amplitude rises (0.158 → 0.078 → ~0.03), crossing below the ">0.05
+  beats both" threshold only at amp=0.8. Complex models (CRN) need more
+  data to show their advantage than simple ones (Linear/PLSR) — confirmed
+  empirically by rerunning at matched scale, not just asserted.
+- **Reconciled two conflicting amp=0.4 numbers that existed before this
+  entry:**
+  - The existing 0.6509 (10-seed) figure elsewhere in this log is
+    `generate_dataset.py self_test()`'s **in-sample** R² on 10
+    independent, freshly-generated 40-sample throwaway datasets —
+    confirmed by reading `_linear_baseline_once()` directly. A different
+    question from "held-out R² on the frozen dataset" — correctly
+    doesn't match, not a bug.
+  - An earlier interactive "hand deconfound" number (Linear=0.6136) does
+    **NOT** exactly reconcile with the freshly-computed 0.6212 (off by
+    0.0076) — flagged as an open, small, unexplained discrepancy rather
+    than claimed as resolved. The earlier number's exact method was
+    never saved to any file, so it can't be re-verified or re-derived.
+- **Dataset regeneration reproducibility: empirically tested, confirmed
+  bit-for-bit identical.** Regenerated `sample_001` from `data_amp_0.6/`
+  fresh (same seed) and diffed against the on-disk copy — `_msi.npy`
+  bit-identical; `_phtrue.npy` initially looked different due to
+  `NaN != NaN` in the background mask (a comparison artifact, not a real
+  bug) — re-checked NaN-aware, also bit-identical.
+- **CRN training reproducibility: NOT empirically tested, flagged as an
+  open risk.** `train_crn.py` only calls `torch.manual_seed()` — no
+  deterministic-algorithm flag, no thread-count pinning. Given this
+  project's own documented training instability (crashes to R² as low
+  as −6.16 mid-run), small CPU floating-point drift between runs could
+  plausibly select a different "best" checkpoint on a rerun. Don't
+  assume a rerun of any `crn_amp_*_seed_*` reproduces its exact saved
+  number — this is exactly why those result files (history.json/PNGs)
+  are worth committing rather than left to be "regenerated later."
+
+**Decided:**
+- The small-scale sweep result does not overturn the full-scale CRN
+  result — it was underpowered (100/20 vs 300/50), confirmed by
+  rerunning the same check at matched scale.
+- Repo cleanup: `archive/` holds everything superseded; nothing deleted.
+  Commit plan (not yet executed — pending go-ahead) is in "Context to
+  feed next session" below.
+
+**Still open:**
+- The 0.0076 gap between the two amp=0.4 Linear numbers (0.6136 vs
+  0.6212) — unexplained, likely a sampling-seed/ordering detail, not
+  re-derivable since the original method wasn't saved anywhere.
+- CRN training run-to-run reproducibility — not tested (see above).
+- Everything already open before this entry (team agreement on
+  denat_amplitude/denat_width, NHSI pork tray-position confirmation,
+  manuscript sync, GroupNorm fix) — unaffected by this entry, still open.
+- Nothing from this entry has been committed or pushed yet.
+
+**Context to feed next session — what to actually do with this:**
+1. **What to commit** (recommended split — confirm before pushing, same
+   standing rule as every other change in this project):
+   - **Commit:** all new/changed code (`sweep_denat_amplitude.py`,
+     `deconfound_full_scale.py`, `compute_amp04_baselines.py`, the
+     `train_crn.py`/`requirements.txt` diffs already in the working
+     tree), the `archive/` renames, and ONLY the lightweight per-seed
+     result files (`history.json`, `loss_curve.png`,
+     `sanity_check_heatmap.png` — ~17MB total across all seeds) plus the
+     summary tables (`sweep_results.csv/json`, `deconfound_results.json`,
+     `full_table.json`, the comparison PNG).
+   - **Do NOT commit:** the raw regenerated dataset copies (`data_amp_*/`
+     folders under `sweep_outputs/`/`deconfound_outputs/` — 225MB,
+     confirmed bit-for-bit regenerable from code + documented seed, adds
+     nothing a teammate needs to look at). Add a `.gitignore` rule for
+     `data_amp_*/` first so this doesn't happen by accident later.
+   - `.npy`/`.pt` checkpoints are already gitignored project-wide — no
+     action needed there.
+2. **If a teammate (or their own AI assistant) needs to pick this up
+   cold:** point them at this entry plus `deconfound_outputs/full_table.json`
+   (the numbers, each with provenance). That pairing is the complete,
+   self-contained record of this session — they shouldn't need to ask
+   anything else to understand what was tested, what the result was, and
+   what's still unresolved.
+3. The next concrete step is unchanged from before this entry: get the
+   team to actually discuss and agree to `denat_amplitude`/`denat_width`
+   (not just "it's pushed, please look"), and start the manuscript sync
+   pass — neither of those is a coding task, and no amount of further
+   sweeping resolves them.
+
+---
+
+## 2026-09-12 — Dataset frozen and regenerated; first CRN run on the actual final PARAMS (5-seed, R²/MAE/RMSE); instability root-cause evidence tied to code + literature
 
 **Changed:**
 - Deleted `ligtas_synthetic_dataset_v2/` -- confirmed stale, generated

@@ -1,0 +1,70 @@
+{
+  "description": "Consolidated full-scale (300 train / 50 val) denat_amplitude deconfounding table. Held-out R2 for Linear and PLSR, CRN R2 mean+/-std across seeds. Built 2026-09-12 by merging results that were previously scattered across a JSON file, a log file, and one-off console output -- see 'source' per row for exact provenance. No PARAMS or model code changed to build this file; it is a consolidation of already-completed runs only.",
+  "amplitudes": [
+    {
+      "denat_amplitude": 0.2,
+      "linear_in_sample_r2": 0.34788933900192076,
+      "linear_held_out_r2": 0.3113311734837614,
+      "plsr_in_sample_r2": 0.34780118366937063,
+      "plsr_held_out_r2": 0.3110097140201148,
+      "crn_r2_per_seed": [0.45444448709487917, 0.7004714846611023, 0.6973153758049011],
+      "crn_r2_mean": 0.6174104491869609,
+      "crn_r2_std": 0.11524154012689002,
+      "n_crn_seeds": 3,
+      "source": {
+        "method": "deconfound_full_scale.py, run_one_amplitude() -- fresh 300/50 dataset generated under deconfound_outputs/data_amp_0.2/",
+        "file": "deconfound_outputs/deconfound_results.json (verbatim, still the only entry in that file as of this consolidation)"
+      }
+    },
+    {
+      "denat_amplitude": 0.4,
+      "linear_in_sample_r2": 0.6390,
+      "linear_held_out_r2": 0.6212,
+      "plsr_in_sample_r2": 0.6389,
+      "plsr_held_out_r2": 0.6206,
+      "crn_r2_per_seed": [0.6919, 0.8388, 0.8057],
+      "crn_r2_mean": 0.7788,
+      "crn_r2_std": 0.0629,
+      "n_crn_seeds": 3,
+      "source": {
+        "method": "Linear/PLSR: compute_amp04_baselines.py, run fresh against ligtas_synthetic_dataset/ (the frozen dataset, not a regenerated copy) -- re-run and reconfirmed identical (0.6212/0.6206) immediately before this file was written. CRN: NOT retrained here -- reused directly from crn_5seed_final/seed_0,1,2 (already trained on this same ligtas_synthetic_dataset/), per docs/TEAM_LOG.md's 2026-09-12 frozen-dataset entry.",
+        "file": "compute_amp04_baselines.py output (Linear/PLSR); crn_5seed_final/seed_{0,1,2}/history.json (CRN, best-checkpoint val_r2 per seed)"
+      }
+    },
+    {
+      "denat_amplitude": 0.6,
+      "linear_in_sample_r2": null,
+      "linear_held_out_r2": 0.7616,
+      "plsr_in_sample_r2": null,
+      "plsr_held_out_r2": 0.7608,
+      "crn_r2_per_seed": [0.8135, 0.8597, 0.8456],
+      "crn_r2_mean": 0.8396,
+      "crn_r2_std": 0.0193,
+      "n_crn_seeds": 3,
+      "source": {
+        "method": "deconfound_full_scale.py, run_one_amplitude() -- fresh 300/50 dataset generated under deconfound_outputs/data_amp_0.6/. Re-verified directly against the raw log text on 2026-09-12 (grep of 'SUMMARY amp=0.6' and the three preceding 'CRN seed=' lines) before this file was written -- exact match, no discrepancy.",
+        "file": "deconfound_run.log, lines ~167-254 (in-sample R2 was not printed by this script's summary line for Linear/PLSR -- held-out only)"
+      }
+    },
+    {
+      "denat_amplitude": 0.8,
+      "linear_in_sample_r2": null,
+      "linear_held_out_r2": 0.8308,
+      "plsr_in_sample_r2": null,
+      "plsr_held_out_r2": 0.8299,
+      "crn_r2_per_seed": [0.8357, 0.8934, 0.8506],
+      "crn_r2_mean": 0.8599,
+      "crn_r2_std": 0.0245,
+      "n_crn_seeds": 3,
+      "source": {
+        "method": "deconfound_full_scale.py, run_one_amplitude() -- fresh 300/50 dataset generated under deconfound_outputs/data_amp_0.8/. Re-verified directly against the raw log text on 2026-09-12 (grep of 'SUMMARY amp=0.8' and the three preceding 'CRN seed=' lines) before this file was written -- exact match, no discrepancy.",
+        "file": "deconfound_run.log, lines ~52-121 (in-sample R2 was not printed by this script's summary line for Linear/PLSR -- held-out only)"
+      }
+    }
+  ],
+  "notes": [
+    "amp=0.2/0.6/0.8 used a freshly-generated 300/50 dataset per amplitude (deconfound_outputs/data_amp_{amp}/). amp=0.4 instead reused the pre-existing frozen ligtas_synthetic_dataset/ and its already-trained crn_5seed_final/ CRN run, to avoid redundant retraining of the live PARAMS value. All four use the identical held-out evaluation logic and the same PIXELS_PER_SAMPLE=400 pixel-sampling convention (sweep_denat_amplitude.sample_pixels()).",
+    "Linear/PLSR in-sample R2 is only available for amp=0.2 (from the JSON) and amp=0.4 (from the fresh script run) -- amp=0.6/0.8's in-sample figures were never saved anywhere retrievable (only held-out was printed to the summary line in deconfound_run.log), hence null above rather than a guessed value.",
+    "This file reports numbers only -- see docs/TEAM_LOG.md for any interpretation/conclusions, none of which are drawn here."
+  ]
+}

@@ -1,0 +1,208 @@
+=== seed 0 ===
+C:\Users\Nora\OneDrive\Documents\XpHectra\XPHECTRA\train_crn.py:208: UserWarning: You passed a edgecolor/edgecolors ('black') for an unfilled marker ('x').  Matplotlib is ignoring the edgecolor in favor of the facecolor.  This behavior may change in the future.
+  ax[1].scatter(cc, rr, c="white", edgecolors="black", s=30, marker="x")
+device: cpu  out_res: 256  n_points: 4  tv_weight: 0.05
+train samples: 300  val samples: 50
+
+Loss = sparse-point MSE + tv_weight * total-variation on the full
+predicted map. The 'MAE/R2 vs hidden dense map' columns are a
+SANITY CHECK only -- phtrue.npy is never used for gradients.
+
+epoch  1/50  train: sparse=0.0970 tv=0.0022  [hidden-map] MAE=0.266 R2=-0.088  |  val: sparse=0.1014 tv=0.0041 loss=0.1016 MAE=0.270 R2=-0.338
+epoch  2/50  train: sparse=0.0849 tv=0.0068  [hidden-map] MAE=0.250 R2=-0.082  |  val: sparse=0.0914 tv=0.0098 loss=0.0919 MAE=0.259 R2=-0.268
+epoch  3/50  train: sparse=0.0651 tv=0.0105  [hidden-map] MAE=0.218 R2=0.158  |  val: sparse=0.0583 tv=0.0114 loss=0.0588 MAE=0.208 R2=0.164
+epoch  4/50  train: sparse=0.0460 tv=0.0138  [hidden-map] MAE=0.188 R2=0.403  |  val: sparse=0.0400 tv=0.0159 loss=0.0408 MAE=0.159 R2=0.485
+epoch  5/50  train: sparse=0.0389 tv=0.0175  [hidden-map] MAE=0.175 R2=0.420  |  val: sparse=0.0301 tv=0.0196 loss=0.0311 MAE=0.138 R2=0.598
+epoch  6/50  train: sparse=0.0300 tv=0.0208  [hidden-map] MAE=0.161 R2=0.524  |  val: sparse=0.0276 tv=0.0229 loss=0.0287 MAE=0.137 R2=0.595
+epoch  7/50  train: sparse=0.0253 tv=0.0218  [hidden-map] MAE=0.154 R2=0.468  |  val: sparse=0.0457 tv=0.0243 loss=0.0469 MAE=0.171 R2=0.425
+epoch  8/50  train: sparse=0.0215 tv=0.0233  [hidden-map] MAE=0.147 R2=0.571  |  val: sparse=0.0262 tv=0.0231 loss=0.0274 MAE=0.130 R2=0.636
+epoch  9/50  train: sparse=0.0204 tv=0.0259  [hidden-map] MAE=0.149 R2=0.553  |  val: sparse=0.0234 tv=0.0239 loss=0.0246 MAE=0.116 R2=0.692
+epoch 10/50  train: sparse=0.0169 tv=0.0277  [hidden-map] MAE=0.142 R2=0.575  |  val: sparse=0.0233 tv=0.0275 loss=0.0246 MAE=0.118 R2=0.671
+epoch 11/50  train: sparse=0.0163 tv=0.0279  [hidden-map] MAE=0.146 R2=0.536  |  val: sparse=0.0256 tv=0.0266 loss=0.0269 MAE=0.128 R2=0.619
+epoch 12/50  train: sparse=0.0139 tv=0.0281  [hidden-map] MAE=0.136 R2=0.606  |  val: sparse=0.0277 tv=0.0287 loss=0.0291 MAE=0.141 R2=0.541
+epoch 13/50  train: sparse=0.0123 tv=0.0294  [hidden-map] MAE=0.135 R2=0.649  |  val: sparse=0.0269 tv=0.0287 loss=0.0283 MAE=0.111 R2=0.701
+epoch 14/50  train: sparse=0.0112 tv=0.0276  [hidden-map] MAE=0.131 R2=0.669  |  val: sparse=0.0263 tv=0.0275 loss=0.0276 MAE=0.111 R2=0.707
+epoch 15/50  train: sparse=0.0126 tv=0.0290  [hidden-map] MAE=0.143 R2=0.533  |  val: sparse=0.0258 tv=0.0285 loss=0.0272 MAE=0.127 R2=0.622
+epoch 16/50  train: sparse=0.0124 tv=0.0287  [hidden-map] MAE=0.138 R2=0.550  |  val: sparse=0.0364 tv=0.0301 loss=0.0379 MAE=0.128 R2=0.611
+epoch 17/50  train: sparse=0.0130 tv=0.0299  [hidden-map] MAE=0.139 R2=0.551  |  val: sparse=0.0234 tv=0.0297 loss=0.0249 MAE=0.115 R2=0.684
+epoch 18/50  train: sparse=0.0109 tv=0.0294  [hidden-map] MAE=0.135 R2=0.617  |  val: sparse=0.0254 tv=0.0286 loss=0.0268 MAE=0.108 R2=0.714
+epoch 19/50  train: sparse=0.0135 tv=0.0299  [hidden-map] MAE=0.145 R2=0.539  |  val: sparse=0.0528 tv=0.0318 loss=0.0544 MAE=0.175 R2=0.377
+  Early stopping: val_loss hasn't improved in 10 epochs (best=0.0246).
+Saved loss curve to crn_5seed_final/seed_0\loss_curve.png
+Saved heatmap comparison to crn_5seed_final/seed_0\sanity_check_heatmap.png
+
+Done. Stopped after epoch 19/50 (early stop).
+Selected checkpoint: epoch 9 (lowest val_loss) -- val_R2=0.6919  val_MAE=0.1159 pH units (hidden-map check, sanity only).
+Checkpoint, loss curve, heatmap, history in crn_5seed_final/seed_0/
+=== seed 1 ===
+C:\Users\Nora\OneDrive\Documents\XpHectra\XPHECTRA\train_crn.py:208: UserWarning: You passed a edgecolor/edgecolors ('black') for an unfilled marker ('x').  Matplotlib is ignoring the edgecolor in favor of the facecolor.  This behavior may change in the future.
+  ax[1].scatter(cc, rr, c="white", edgecolors="black", s=30, marker="x")
+device: cpu  out_res: 256  n_points: 4  tv_weight: 0.05
+train samples: 300  val samples: 50
+
+Loss = sparse-point MSE + tv_weight * total-variation on the full
+predicted map. The 'MAE/R2 vs hidden dense map' columns are a
+SANITY CHECK only -- phtrue.npy is never used for gradients.
+
+epoch  1/50  train: sparse=0.0971 tv=0.0018  [hidden-map] MAE=0.266 R2=-0.149  |  val: sparse=0.1023 tv=0.0021 loss=0.1024 MAE=0.272 R2=-0.361
+epoch  2/50  train: sparse=0.0865 tv=0.0056  [hidden-map] MAE=0.250 R2=-0.109  |  val: sparse=0.0895 tv=0.0081 loss=0.0899 MAE=0.250 R2=-0.142
+epoch  3/50  train: sparse=0.0614 tv=0.0085  [hidden-map] MAE=0.210 R2=0.279  |  val: sparse=0.0541 tv=0.0099 loss=0.0546 MAE=0.193 R2=0.299
+epoch  4/50  train: sparse=0.0406 tv=0.0120  [hidden-map] MAE=0.174 R2=0.490  |  val: sparse=0.1006 tv=0.0150 loss=0.1014 MAE=0.262 R2=-0.275
+epoch  5/50  train: sparse=0.0272 tv=0.0150  [hidden-map] MAE=0.146 R2=0.630  |  val: sparse=0.0737 tv=0.0184 loss=0.0746 MAE=0.251 R2=-0.307
+epoch  6/50  train: sparse=0.0259 tv=0.0174  [hidden-map] MAE=0.146 R2=0.554  |  val: sparse=0.0336 tv=0.0196 loss=0.0345 MAE=0.143 R2=0.582
+epoch  7/50  train: sparse=0.0171 tv=0.0189  [hidden-map] MAE=0.127 R2=0.682  |  val: sparse=0.0594 tv=0.0194 loss=0.0603 MAE=0.211 R2=0.204
+epoch  8/50  train: sparse=0.0174 tv=0.0212  [hidden-map] MAE=0.127 R2=0.647  |  val: sparse=0.0256 tv=0.0210 loss=0.0266 MAE=0.120 R2=0.697
+epoch  9/50  train: sparse=0.0181 tv=0.0219  [hidden-map] MAE=0.130 R2=0.563  |  val: sparse=0.0651 tv=0.0219 loss=0.0662 MAE=0.224 R2=0.118
+epoch 10/50  train: sparse=0.0163 tv=0.0224  [hidden-map] MAE=0.125 R2=0.635  |  val: sparse=0.0209 tv=0.0213 loss=0.0220 MAE=0.127 R2=0.669
+epoch 11/50  train: sparse=0.0118 tv=0.0226  [hidden-map] MAE=0.114 R2=0.746  |  val: sparse=0.0562 tv=0.0232 loss=0.0574 MAE=0.217 R2=0.066
+epoch 12/50  train: sparse=0.0108 tv=0.0254  [hidden-map] MAE=0.111 R2=0.737  |  val: sparse=0.0736 tv=0.0252 loss=0.0749 MAE=0.242 R2=-0.028
+epoch 13/50  train: sparse=0.0105 tv=0.0249  [hidden-map] MAE=0.113 R2=0.739  |  val: sparse=0.0807 tv=0.0267 loss=0.0820 MAE=0.253 R2=-0.138
+epoch 14/50  train: sparse=0.0093 tv=0.0243  [hidden-map] MAE=0.108 R2=0.764  |  val: sparse=0.0133 tv=0.0230 loss=0.0144 MAE=0.079 R2=0.839
+epoch 15/50  train: sparse=0.0106 tv=0.0240  [hidden-map] MAE=0.115 R2=0.736  |  val: sparse=0.0184 tv=0.0241 loss=0.0196 MAE=0.090 R2=0.801
+epoch 16/50  train: sparse=0.0105 tv=0.0246  [hidden-map] MAE=0.117 R2=0.682  |  val: sparse=0.0197 tv=0.0245 loss=0.0209 MAE=0.110 R2=0.725
+epoch 17/50  train: sparse=0.0069 tv=0.0243  [hidden-map] MAE=0.099 R2=0.811  |  val: sparse=0.0442 tv=0.0253 loss=0.0455 MAE=0.182 R2=0.417
+epoch 18/50  train: sparse=0.0093 tv=0.0249  [hidden-map] MAE=0.115 R2=0.715  |  val: sparse=0.1001 tv=0.0265 loss=0.1014 MAE=0.286 R2=-0.493
+epoch 19/50  train: sparse=0.0075 tv=0.0251  [hidden-map] MAE=0.107 R2=0.783  |  val: sparse=0.1034 tv=0.0281 loss=0.1048 MAE=0.316 R2=-0.707
+epoch 20/50  train: sparse=0.0085 tv=0.0252  [hidden-map] MAE=0.110 R2=0.723  |  val: sparse=0.0165 tv=0.0259 loss=0.0178 MAE=0.100 R2=0.773
+epoch 21/50  train: sparse=0.0079 tv=0.0243  [hidden-map] MAE=0.107 R2=0.764  |  val: sparse=0.0362 tv=0.0247 loss=0.0374 MAE=0.157 R2=0.512
+epoch 22/50  train: sparse=0.0066 tv=0.0240  [hidden-map] MAE=0.102 R2=0.777  |  val: sparse=0.0207 tv=0.0249 loss=0.0220 MAE=0.117 R2=0.703
+epoch 23/50  train: sparse=0.0059 tv=0.0248  [hidden-map] MAE=0.100 R2=0.795  |  val: sparse=0.0631 tv=0.0272 loss=0.0644 MAE=0.249 R2=-0.046
+epoch 24/50  train: sparse=0.0067 tv=0.0248  [hidden-map] MAE=0.107 R2=0.758  |  val: sparse=0.0426 tv=0.0255 loss=0.0438 MAE=0.196 R2=0.335
+  Early stopping: val_loss hasn't improved in 10 epochs (best=0.0144).
+Saved loss curve to crn_5seed_final/seed_1\loss_curve.png
+Saved heatmap comparison to crn_5seed_final/seed_1\sanity_check_heatmap.png
+
+Done. Stopped after epoch 24/50 (early stop).
+Selected checkpoint: epoch 14 (lowest val_loss) -- val_R2=0.8388  val_MAE=0.0787 pH units (hidden-map check, sanity only).
+Checkpoint, loss curve, heatmap, history in crn_5seed_final/seed_1/
+=== seed 2 ===
+C:\Users\Nora\OneDrive\Documents\XpHectra\XPHECTRA\train_crn.py:208: UserWarning: You passed a edgecolor/edgecolors ('black') for an unfilled marker ('x').  Matplotlib is ignoring the edgecolor in favor of the facecolor.  This behavior may change in the future.
+  ax[1].scatter(cc, rr, c="white", edgecolors="black", s=30, marker="x")
+device: cpu  out_res: 256  n_points: 4  tv_weight: 0.05
+train samples: 300  val samples: 50
+
+Loss = sparse-point MSE + tv_weight * total-variation on the full
+predicted map. The 'MAE/R2 vs hidden dense map' columns are a
+SANITY CHECK only -- phtrue.npy is never used for gradients.
+
+epoch  1/50  train: sparse=0.0978 tv=0.0012  [hidden-map] MAE=0.267 R2=-0.203  |  val: sparse=0.1023 tv=0.0007 loss=0.1024 MAE=0.272 R2=-0.366
+epoch  2/50  train: sparse=0.0920 tv=0.0035  [hidden-map] MAE=0.258 R2=-0.090  |  val: sparse=0.0929 tv=0.0038 loss=0.0931 MAE=0.257 R2=-0.229
+epoch  3/50  train: sparse=0.0753 tv=0.0065  [hidden-map] MAE=0.231 R2=0.132  |  val: sparse=0.0834 tv=0.0060 loss=0.0837 MAE=0.242 R2=-0.063
+epoch  4/50  train: sparse=0.0573 tv=0.0102  [hidden-map] MAE=0.204 R2=0.189  |  val: sparse=0.0820 tv=0.0078 loss=0.0824 MAE=0.236 R2=0.004
+epoch  5/50  train: sparse=0.0424 tv=0.0135  [hidden-map] MAE=0.175 R2=0.472  |  val: sparse=0.0744 tv=0.0135 loss=0.0751 MAE=0.224 R2=0.093
+epoch  6/50  train: sparse=0.0347 tv=0.0175  [hidden-map] MAE=0.166 R2=0.485  |  val: sparse=0.0293 tv=0.0189 loss=0.0303 MAE=0.135 R2=0.623
+epoch  7/50  train: sparse=0.0258 tv=0.0196  [hidden-map] MAE=0.147 R2=0.595  |  val: sparse=0.0306 tv=0.0207 loss=0.0317 MAE=0.149 R2=0.483
+epoch  8/50  train: sparse=0.0194 tv=0.0214  [hidden-map] MAE=0.135 R2=0.673  |  val: sparse=0.0213 tv=0.0219 loss=0.0224 MAE=0.111 R2=0.705
+epoch  9/50  train: sparse=0.0229 tv=0.0248  [hidden-map] MAE=0.156 R2=0.456  |  val: sparse=0.0850 tv=0.0246 loss=0.0862 MAE=0.281 R2=-0.521
+epoch 10/50  train: sparse=0.0187 tv=0.0268  [hidden-map] MAE=0.140 R2=0.298  |  val: sparse=0.1943 tv=0.0383 loss=0.1962 MAE=0.415 R2=-1.869
+epoch 11/50  train: sparse=0.0150 tv=0.0259  [hidden-map] MAE=0.128 R2=0.658  |  val: sparse=0.1096 tv=0.0269 loss=0.1110 MAE=0.325 R2=-0.850
+epoch 12/50  train: sparse=0.0131 tv=0.0281  [hidden-map] MAE=0.127 R2=0.667  |  val: sparse=0.0991 tv=0.0339 loss=0.1008 MAE=0.279 R2=-0.394
+epoch 13/50  train: sparse=0.0131 tv=0.0283  [hidden-map] MAE=0.132 R2=0.647  |  val: sparse=0.0533 tv=0.0337 loss=0.0550 MAE=0.187 R2=0.337
+epoch 14/50  train: sparse=0.0083 tv=0.0277  [hidden-map] MAE=0.113 R2=0.755  |  val: sparse=0.0386 tv=0.0257 loss=0.0399 MAE=0.174 R2=0.406
+epoch 15/50  train: sparse=0.0118 tv=0.0279  [hidden-map] MAE=0.123 R2=0.612  |  val: sparse=0.1048 tv=0.0369 loss=0.1066 MAE=0.292 R2=-0.453
+epoch 16/50  train: sparse=0.0125 tv=0.0298  [hidden-map] MAE=0.134 R2=0.511  |  val: sparse=0.0190 tv=0.0284 loss=0.0204 MAE=0.098 R2=0.759
+epoch 17/50  train: sparse=0.0103 tv=0.0280  [hidden-map] MAE=0.124 R2=0.696  |  val: sparse=0.0813 tv=0.0274 loss=0.0827 MAE=0.280 R2=-0.379
+epoch 18/50  train: sparse=0.0101 tv=0.0281  [hidden-map] MAE=0.124 R2=0.668  |  val: sparse=0.0361 tv=0.0262 loss=0.0374 MAE=0.163 R2=0.468
+epoch 19/50  train: sparse=0.0100 tv=0.0281  [hidden-map] MAE=0.124 R2=0.650  |  val: sparse=0.1892 tv=0.0276 loss=0.1906 MAE=0.428 R2=-2.202
+epoch 20/50  train: sparse=0.0083 tv=0.0278  [hidden-map] MAE=0.117 R2=0.669  |  val: sparse=0.2064 tv=0.0353 loss=0.2082 MAE=0.423 R2=-2.135
+epoch 21/50  train: sparse=0.0100 tv=0.0288  [hidden-map] MAE=0.126 R2=0.666  |  val: sparse=0.0184 tv=0.0275 loss=0.0198 MAE=0.081 R2=0.806
+epoch 22/50  train: sparse=0.0099 tv=0.0279  [hidden-map] MAE=0.125 R2=0.635  |  val: sparse=0.0229 tv=0.0263 loss=0.0242 MAE=0.094 R2=0.762
+epoch 23/50  train: sparse=0.0092 tv=0.0272  [hidden-map] MAE=0.124 R2=0.673  |  val: sparse=0.1994 tv=0.0323 loss=0.2010 MAE=0.420 R2=-2.047
+epoch 24/50  train: sparse=0.0083 tv=0.0265  [hidden-map] MAE=0.119 R2=0.699  |  val: sparse=0.0251 tv=0.0272 loss=0.0265 MAE=0.101 R2=0.747
+epoch 25/50  train: sparse=0.0084 tv=0.0281  [hidden-map] MAE=0.123 R2=0.610  |  val: sparse=0.0551 tv=0.0264 loss=0.0564 MAE=0.212 R2=0.172
+epoch 26/50  train: sparse=0.0086 tv=0.0288  [hidden-map] MAE=0.126 R2=0.643  |  val: sparse=0.4563 tv=0.0395 loss=0.4583 MAE=0.650 R2=-6.158
+epoch 27/50  train: sparse=0.0088 tv=0.0276  [hidden-map] MAE=0.124 R2=0.598  |  val: sparse=0.0674 tv=0.0289 loss=0.0688 MAE=0.226 R2=0.071
+epoch 28/50  train: sparse=0.0065 tv=0.0275  [hidden-map] MAE=0.113 R2=0.708  |  val: sparse=0.0202 tv=0.0273 loss=0.0216 MAE=0.085 R2=0.788
+epoch 29/50  train: sparse=0.0070 tv=0.0265  [hidden-map] MAE=0.113 R2=0.712  |  val: sparse=0.0740 tv=0.0259 loss=0.0753 MAE=0.260 R2=-0.175
+epoch 30/50  train: sparse=0.0069 tv=0.0275  [hidden-map] MAE=0.119 R2=0.667  |  val: sparse=0.1082 tv=0.0307 loss=0.1098 MAE=0.299 R2=-0.598
+epoch 31/50  train: sparse=0.0108 tv=0.0282  [hidden-map] MAE=0.130 R2=0.362  |  val: sparse=0.0256 tv=0.0302 loss=0.0271 MAE=0.106 R2=0.715
+  Early stopping: val_loss hasn't improved in 10 epochs (best=0.0198).
+Saved loss curve to crn_5seed_final/seed_2\loss_curve.png
+Saved heatmap comparison to crn_5seed_final/seed_2\sanity_check_heatmap.png
+
+Done. Stopped after epoch 31/50 (early stop).
+Selected checkpoint: epoch 21 (lowest val_loss) -- val_R2=0.8057  val_MAE=0.0812 pH units (hidden-map check, sanity only).
+Checkpoint, loss curve, heatmap, history in crn_5seed_final/seed_2/
+=== seed 3 ===
+C:\Users\Nora\OneDrive\Documents\XpHectra\XPHECTRA\train_crn.py:208: UserWarning: You passed a edgecolor/edgecolors ('black') for an unfilled marker ('x').  Matplotlib is ignoring the edgecolor in favor of the facecolor.  This behavior may change in the future.
+  ax[1].scatter(cc, rr, c="white", edgecolors="black", s=30, marker="x")
+device: cpu  out_res: 256  n_points: 4  tv_weight: 0.05
+train samples: 300  val samples: 50
+
+Loss = sparse-point MSE + tv_weight * total-variation on the full
+predicted map. The 'MAE/R2 vs hidden dense map' columns are a
+SANITY CHECK only -- phtrue.npy is never used for gradients.
+
+epoch  1/50  train: sparse=0.0980 tv=0.0013  [hidden-map] MAE=0.267 R2=-0.184  |  val: sparse=0.1021 tv=0.0011 loss=0.1022 MAE=0.272 R2=-0.360
+epoch  2/50  train: sparse=0.0938 tv=0.0048  [hidden-map] MAE=0.261 R2=-0.188  |  val: sparse=0.1015 tv=0.0114 loss=0.1021 MAE=0.271 R2=-0.385
+epoch  3/50  train: sparse=0.0797 tv=0.0103  [hidden-map] MAE=0.240 R2=0.027  |  val: sparse=0.0639 tv=0.0123 loss=0.0645 MAE=0.210 R2=0.158
+epoch  4/50  train: sparse=0.0582 tv=0.0115  [hidden-map] MAE=0.207 R2=0.257  |  val: sparse=0.0735 tv=0.0162 loss=0.0743 MAE=0.218 R2=0.113
+epoch  5/50  train: sparse=0.0415 tv=0.0153  [hidden-map] MAE=0.179 R2=0.381  |  val: sparse=0.0391 tv=0.0171 loss=0.0399 MAE=0.164 R2=0.430
+epoch  6/50  train: sparse=0.0279 tv=0.0195  [hidden-map] MAE=0.153 R2=0.593  |  val: sparse=0.1195 tv=0.0262 loss=0.1208 MAE=0.306 R2=-0.609
+epoch  7/50  train: sparse=0.0206 tv=0.0237  [hidden-map] MAE=0.138 R2=0.605  |  val: sparse=0.0208 tv=0.0250 loss=0.0220 MAE=0.100 R2=0.754
+epoch  8/50  train: sparse=0.0169 tv=0.0249  [hidden-map] MAE=0.134 R2=0.613  |  val: sparse=0.0267 tv=0.0242 loss=0.0279 MAE=0.119 R2=0.700
+epoch  9/50  train: sparse=0.0152 tv=0.0279  [hidden-map] MAE=0.129 R2=0.584  |  val: sparse=0.0621 tv=0.0290 loss=0.0636 MAE=0.213 R2=0.175
+epoch 10/50  train: sparse=0.0114 tv=0.0269  [hidden-map] MAE=0.118 R2=0.709  |  val: sparse=0.0197 tv=0.0250 loss=0.0210 MAE=0.090 R2=0.788
+epoch 11/50  train: sparse=0.0107 tv=0.0284  [hidden-map] MAE=0.119 R2=0.717  |  val: sparse=0.4589 tv=0.0411 loss=0.4610 MAE=0.652 R2=-6.123
+epoch 12/50  train: sparse=0.0137 tv=0.0304  [hidden-map] MAE=0.127 R2=0.568  |  val: sparse=0.0450 tv=0.0329 loss=0.0466 MAE=0.177 R2=0.430
+epoch 13/50  train: sparse=0.0110 tv=0.0312  [hidden-map] MAE=0.122 R2=0.645  |  val: sparse=0.0868 tv=0.0345 loss=0.0886 MAE=0.263 R2=-0.206
+epoch 14/50  train: sparse=0.0094 tv=0.0313  [hidden-map] MAE=0.120 R2=0.694  |  val: sparse=0.0431 tv=0.0296 loss=0.0446 MAE=0.182 R2=0.378
+epoch 15/50  train: sparse=0.0089 tv=0.0309  [hidden-map] MAE=0.118 R2=0.693  |  val: sparse=0.0550 tv=0.0304 loss=0.0565 MAE=0.218 R2=0.158
+epoch 16/50  train: sparse=0.0083 tv=0.0303  [hidden-map] MAE=0.120 R2=0.681  |  val: sparse=0.0475 tv=0.0286 loss=0.0489 MAE=0.197 R2=0.269
+epoch 17/50  train: sparse=0.0059 tv=0.0306  [hidden-map] MAE=0.107 R2=0.759  |  val: sparse=0.0217 tv=0.0300 loss=0.0232 MAE=0.097 R2=0.752
+epoch 18/50  train: sparse=0.0102 tv=0.0324  [hidden-map] MAE=0.128 R2=0.590  |  val: sparse=0.0251 tv=0.0318 loss=0.0267 MAE=0.109 R2=0.721
+epoch 19/50  train: sparse=0.0087 tv=0.0318  [hidden-map] MAE=0.121 R2=0.664  |  val: sparse=0.0606 tv=0.0327 loss=0.0623 MAE=0.209 R2=0.206
+epoch 20/50  train: sparse=0.0090 tv=0.0320  [hidden-map] MAE=0.119 R2=0.694  |  val: sparse=0.1143 tv=0.0354 loss=0.1161 MAE=0.315 R2=-0.739
+  Early stopping: val_loss hasn't improved in 10 epochs (best=0.0210).
+Saved loss curve to crn_5seed_final/seed_3\loss_curve.png
+Saved heatmap comparison to crn_5seed_final/seed_3\sanity_check_heatmap.png
+
+Done. Stopped after epoch 20/50 (early stop).
+Selected checkpoint: epoch 10 (lowest val_loss) -- val_R2=0.7881  val_MAE=0.0904 pH units (hidden-map check, sanity only).
+Checkpoint, loss curve, heatmap, history in crn_5seed_final/seed_3/
+=== seed 4 ===
+C:\Users\Nora\OneDrive\Documents\XpHectra\XPHECTRA\train_crn.py:208: UserWarning: You passed a edgecolor/edgecolors ('black') for an unfilled marker ('x').  Matplotlib is ignoring the edgecolor in favor of the facecolor.  This behavior may change in the future.
+  ax[1].scatter(cc, rr, c="white", edgecolors="black", s=30, marker="x")
+device: cpu  out_res: 256  n_points: 4  tv_weight: 0.05
+train samples: 300  val samples: 50
+
+Loss = sparse-point MSE + tv_weight * total-variation on the full
+predicted map. The 'MAE/R2 vs hidden dense map' columns are a
+SANITY CHECK only -- phtrue.npy is never used for gradients.
+
+epoch  1/50  train: sparse=0.0976 tv=0.0013  [hidden-map] MAE=0.266 R2=-0.112  |  val: sparse=0.1021 tv=0.0022 loss=0.1022 MAE=0.272 R2=-0.360
+epoch  2/50  train: sparse=0.0891 tv=0.0064  [hidden-map] MAE=0.254 R2=-0.059  |  val: sparse=0.0804 tv=0.0100 loss=0.0809 MAE=0.237 R2=-0.071
+epoch  3/50  train: sparse=0.0698 tv=0.0101  [hidden-map] MAE=0.226 R2=0.057  |  val: sparse=0.0753 tv=0.0214 loss=0.0764 MAE=0.223 R2=0.084
+epoch  4/50  train: sparse=0.0486 tv=0.0146  [hidden-map] MAE=0.189 R2=0.339  |  val: sparse=0.0423 tv=0.0173 loss=0.0431 MAE=0.163 R2=0.497
+epoch  5/50  train: sparse=0.0342 tv=0.0165  [hidden-map] MAE=0.159 R2=0.491  |  val: sparse=0.1312 tv=0.0288 loss=0.1326 MAE=0.327 R2=-1.177
+epoch  6/50  train: sparse=0.0254 tv=0.0192  [hidden-map] MAE=0.144 R2=0.602  |  val: sparse=0.0212 tv=0.0215 loss=0.0223 MAE=0.105 R2=0.756
+epoch  7/50  train: sparse=0.0252 tv=0.0223  [hidden-map] MAE=0.145 R2=0.447  |  val: sparse=0.0521 tv=0.0265 loss=0.0534 MAE=0.212 R2=0.155
+epoch  8/50  train: sparse=0.0202 tv=0.0238  [hidden-map] MAE=0.136 R2=0.563  |  val: sparse=0.1212 tv=0.0305 loss=0.1227 MAE=0.330 R2=-0.973
+epoch  9/50  train: sparse=0.0161 tv=0.0225  [hidden-map] MAE=0.127 R2=0.654  |  val: sparse=0.0328 tv=0.0219 loss=0.0339 MAE=0.144 R2=0.614
+epoch 10/50  train: sparse=0.0144 tv=0.0252  [hidden-map] MAE=0.122 R2=0.620  |  val: sparse=0.0188 tv=0.0262 loss=0.0201 MAE=0.095 R2=0.792
+epoch 11/50  train: sparse=0.0118 tv=0.0264  [hidden-map] MAE=0.117 R2=0.694  |  val: sparse=0.0211 tv=0.0269 loss=0.0225 MAE=0.123 R2=0.706
+epoch 12/50  train: sparse=0.0110 tv=0.0245  [hidden-map] MAE=0.115 R2=0.722  |  val: sparse=0.0483 tv=0.0253 loss=0.0495 MAE=0.186 R2=0.397
+epoch 13/50  train: sparse=0.0133 tv=0.0258  [hidden-map] MAE=0.126 R2=0.641  |  val: sparse=0.0769 tv=0.0260 loss=0.0782 MAE=0.261 R2=-0.241
+epoch 14/50  train: sparse=0.0120 tv=0.0266  [hidden-map] MAE=0.119 R2=0.650  |  val: sparse=0.0243 tv=0.0299 loss=0.0258 MAE=0.110 R2=0.709
+epoch 15/50  train: sparse=0.0124 tv=0.0281  [hidden-map] MAE=0.121 R2=0.644  |  val: sparse=0.3443 tv=0.0382 loss=0.3462 MAE=0.586 R2=-4.816
+epoch 16/50  train: sparse=0.0169 tv=0.0293  [hidden-map] MAE=0.138 R2=0.439  |  val: sparse=0.0213 tv=0.0315 loss=0.0229 MAE=0.100 R2=0.769
+epoch 17/50  train: sparse=0.0102 tv=0.0277  [hidden-map] MAE=0.118 R2=0.723  |  val: sparse=0.0325 tv=0.0269 loss=0.0338 MAE=0.137 R2=0.630
+epoch 18/50  train: sparse=0.0094 tv=0.0271  [hidden-map] MAE=0.117 R2=0.682  |  val: sparse=0.0178 tv=0.0269 loss=0.0191 MAE=0.085 R2=0.817
+epoch 19/50  train: sparse=0.0101 tv=0.0279  [hidden-map] MAE=0.121 R2=0.670  |  val: sparse=0.1222 tv=0.0283 loss=0.1236 MAE=0.339 R2=-0.952
+epoch 20/50  train: sparse=0.0087 tv=0.0284  [hidden-map] MAE=0.117 R2=0.682  |  val: sparse=0.0246 tv=0.0306 loss=0.0262 MAE=0.108 R2=0.727
+epoch 21/50  train: sparse=0.0086 tv=0.0281  [hidden-map] MAE=0.118 R2=0.712  |  val: sparse=0.0934 tv=0.0296 loss=0.0949 MAE=0.293 R2=-0.465
+epoch 22/50  train: sparse=0.0095 tv=0.0294  [hidden-map] MAE=0.127 R2=0.646  |  val: sparse=0.0525 tv=0.0295 loss=0.0540 MAE=0.198 R2=0.223
+epoch 23/50  train: sparse=0.0094 tv=0.0294  [hidden-map] MAE=0.122 R2=0.656  |  val: sparse=0.0378 tv=0.0299 loss=0.0393 MAE=0.172 R2=0.446
+epoch 24/50  train: sparse=0.0072 tv=0.0284  [hidden-map] MAE=0.114 R2=0.726  |  val: sparse=0.0523 tv=0.0271 loss=0.0537 MAE=0.206 R2=0.227
+epoch 25/50  train: sparse=0.0090 tv=0.0283  [hidden-map] MAE=0.120 R2=0.679  |  val: sparse=0.0187 tv=0.0308 loss=0.0202 MAE=0.089 R2=0.796
+epoch 26/50  train: sparse=0.0075 tv=0.0284  [hidden-map] MAE=0.116 R2=0.720  |  val: sparse=0.0776 tv=0.0270 loss=0.0789 MAE=0.261 R2=-0.212
+epoch 27/50  train: sparse=0.0076 tv=0.0288  [hidden-map] MAE=0.118 R2=0.701  |  val: sparse=0.0199 tv=0.0304 loss=0.0214 MAE=0.087 R2=0.798
+epoch 28/50  train: sparse=0.0088 tv=0.0302  [hidden-map] MAE=0.128 R2=0.612  |  val: sparse=0.0246 tv=0.0293 loss=0.0260 MAE=0.123 R2=0.674
+  Early stopping: val_loss hasn't improved in 10 epochs (best=0.0191).
+Saved loss curve to crn_5seed_final/seed_4\loss_curve.png
+Saved heatmap comparison to crn_5seed_final/seed_4\sanity_check_heatmap.png
+
+Done. Stopped after epoch 28/50 (early stop).
+Selected checkpoint: epoch 18 (lowest val_loss) -- val_R2=0.8173  val_MAE=0.0851 pH units (hidden-map check, sanity only).
+Checkpoint, loss curve, heatmap, history in crn_5seed_final/seed_4/
+ALL SEEDS DONE

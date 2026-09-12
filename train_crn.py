@@ -241,7 +241,7 @@ def save_loss_curve(history, out_path):
     print(f"Saved loss curve to {out_path}")
 
 
-def main():
+def build_argparser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="ligtas_synthetic_dataset")
     ap.add_argument("--epochs", type=int, default=15)
@@ -279,8 +279,28 @@ def main():
                           "never drive any decision). Unset (default) = no "
                           "early stopping, runs the full --epochs, "
                           "checkpoints on val_mae -- unchanged prior behavior.")
-    args = ap.parse_args()
+    return ap
 
+
+def train(args):
+    """
+    Runs one full CRN training run for the given `args` (an
+    argparse.Namespace, or any object with the same attributes -- e.g.
+    built via `build_argparser().parse_args([...])` or
+    `argparse.Namespace(**kwargs)` from an external caller such as
+    sweep_denat_amplitude.py).
+
+    This is a STRUCTURAL EXTRACTION of the former main()'s body only --
+    no change to sparse_loss/tv_loss, the val_loss-only checkpoint
+    criterion under --patience, or the val_mae/val_r2 leakage-prevention
+    discipline (phtrue.npy still never touches gradients or, in
+    --patience mode, the checkpoint decision). Behavior via `main()` is
+    unchanged.
+
+    Returns: dict with best_val_r2, best_val_mae, best_epoch,
+    stopped_epoch, history (list of per-epoch dicts, same shape as
+    history.json).
+    """
     if args.seed is not None:
         torch.manual_seed(args.seed)
 
@@ -378,6 +398,14 @@ def main():
           f" -- val_R2={best_val_r2:.4f}  val_MAE={best_val_mae:.4f} pH units "
           f"(hidden-map check, sanity only).")
     print(f"Checkpoint, loss curve, heatmap, history in {args.out}/")
+
+    return dict(best_val_r2=best_val_r2, best_val_mae=best_val_mae,
+                best_epoch=best_epoch, stopped_epoch=stopped_epoch, history=history)
+
+
+def main():
+    args = build_argparser().parse_args()
+    train(args)
 
 
 if __name__ == "__main__":

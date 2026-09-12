@@ -4,3 +4,4 @@ h5py>=3.8
 opencv-python>=4.8
 matplotlib>=3.7
 torch>=2.1
+scikit-learn>=1.3

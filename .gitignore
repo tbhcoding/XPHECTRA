@@ -24,6 +24,14 @@ ligtas_dataset_new_plus_eps/
 crn_outputs*/
 *_run.log
 
+# Regenerated dataset copies from parameter sweeps -- bit-for-bit
+# reproducible from generate_dataset.py + the documented seed in each
+# sweep script, so not worth committing (confirmed 2026-09-12, see
+# docs/TEAM_LOG.md). The lightweight CRN result files that live
+# alongside these (history.json, loss_curve.png, sanity_check_heatmap.png)
+# are NOT covered by this rule and should still be committed.
+data_amp_*/
+
 # Downloaded NHSI cubes (large, not redistributable)
 data/
 *.mat
