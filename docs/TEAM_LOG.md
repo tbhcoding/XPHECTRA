@@ -93,11 +93,16 @@ what was done.
     confirmed by reading `_linear_baseline_once()` directly. A different
     question from "held-out R² on the frozen dataset" — correctly
     doesn't match, not a bug.
-  - An earlier interactive "hand deconfound" number (Linear=0.6136) does
-    **NOT** exactly reconcile with the freshly-computed 0.6212 (off by
-    0.0076) — flagged as an open, small, unexplained discrepancy rather
-    than claimed as resolved. The earlier number's exact method was
-    never saved to any file, so it can't be re-verified or re-derived.
+  - An earlier interactive "hand deconfound" number (Linear=0.6136)
+    does not exactly match the freshly-computed 0.6212 (off by 0.0076).
+    **This does not leave "which number is correct" open** — 0.6212 is
+    the verified, script-backed, reproducible one
+    (`compute_amp04_baselines.py`, reran and reconfirmed identical
+    before being adopted) and is what's reported everywhere going
+    forward. What's unresolved is narrower: *why* the old 0.6136
+    differs by exactly that much — its method was never saved to any
+    file, so that specific question can't be re-derived. Not a live
+    decision, just an unexplained footnote on a discarded draft number.
 - **Dataset regeneration reproducibility: empirically tested, confirmed
   bit-for-bit identical.** Regenerated `sample_001` from `data_amp_0.6/`
   fresh (same seed) and diffed against the on-disk copy — `_msi.npy`
@@ -119,22 +124,22 @@ what was done.
   result — it was underpowered (100/20 vs 300/50), confirmed by
   rerunning the same check at matched scale.
 - Repo cleanup: `archive/` holds everything superseded; nothing deleted.
-  Commit plan (not yet executed — pending go-ahead) is in "Context to
-  feed next session" below.
+  Commit plan below was executed and pushed to `origin/denat-amplitude-sweep`
+  (not `main`) — the split actually used is recorded in "Context to feed
+  next session" below for reference.
 
 **Still open:**
-- The 0.0076 gap between the two amp=0.4 Linear numbers (0.6136 vs
-  0.6212) — unexplained, likely a sampling-seed/ordering detail, not
-  re-derivable since the original method wasn't saved anywhere.
 - CRN training run-to-run reproducibility — not tested (see above).
 - Everything already open before this entry (team agreement on
   denat_amplitude/denat_width, NHSI pork tray-position confirmation,
   manuscript sync, GroupNorm fix) — unaffected by this entry, still open.
-- Nothing from this entry has been committed or pushed yet.
+- Committed and pushed to `origin/denat-amplitude-sweep` (not merged
+  to `main`) — awaiting actual team review/agreement, same as
+  denat_amplitude/denat_width above.
 
 **Context to feed next session — what to actually do with this:**
-1. **What to commit** (recommended split — confirm before pushing, same
-   standing rule as every other change in this project):
+1. **What was committed** (this split was actually used, pushed to
+   `origin/denat-amplitude-sweep`, not `main`):
    - **Commit:** all new/changed code (`sweep_denat_amplitude.py`,
      `deconfound_full_scale.py`, `compute_amp04_baselines.py`, the
      `train_crn.py`/`requirements.txt` diffs already in the working
