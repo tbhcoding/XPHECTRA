@@ -94,6 +94,111 @@ objection.
 
 ---
 
+## 2026-09-13 (cont. 8) — `find_meat()` fix VERIFIED on the real cubes and adopted (adapted): the published `sensor_sigma` was measured on BARE TRAY, not pork (via Claude session, tbhcoding's machine — the one with the cubes)
+
+**Picks up the handoff from cont. 4.** Ran that entry's 4-step recipe
+against the real NHSI cubes. Steps 1, 2 and 4 behaved as predicted. **Step
+3 did not**, and running down why produced the main finding below.
+
+**Verified (numbers, real cubes 01 and 19):**
+
+| cube | mask | flattest patch | patch is tissue? | `sensor_sigma` | 970nm |
+|---|---|---|---|---|---|
+| 01 | brightness (original) | (132, 492) | **0%** | **0.0054** | 0.1896 |
+| 01 | water-band | (420, 588) | 100% | 0.0352 | 0.2276 |
+| 19 | brightness | (516, 360) | **0%, below the tray** | 0.0043 | 0.1764 |
+| 19 | water-band | (324, 348) | 100% | 0.0571 | 0.2469 |
+
+- **Step 1 (baseline) PASS** — original code, cube 01 → `sensor_sigma`
+  0.0054, 970nm 0.1896. Matches the published values exactly.
+- **Step 2 (backward compat) PASS** — `5eedee7` + `--mask brightness` →
+  0.0054, same patch (132, 492), 970nm 0.1896. Bit-identical on real data.
+- **Step 3 did NOT match its prediction.** cont. 4 expected the water-band
+  mask to "agree closely" on cube 01. It gave `sensor_sigma` **0.0352 —
+  6.5x larger** — and moved the patch to (420, 588).
+- **Cause, and the headline finding: the published `sensor_sigma = 0.0054`
+  was measured on BARE TRAY.** The cube-01 patch at (132, 492) is **0%
+  tissue** by the water-band test (water-index −0.008 vs the ~0.108 tissue
+  threshold; reflectance 0.072). cont. 4's compounding mechanism is
+  confirmed, and it is not hypothetical — it already happened, on the one
+  cube every published number came from.
+- **Step 4 PASS, and worse than expected** — background leak grows
+  **29.6% (cube 01) → 50.2% (cube 19)**, and on cube 19 `flattest_patch()`
+  picks row **516**, outside the tray (85–480) entirely.
+
+**The nuance a synthetic cube could not have exposed — and why the fix was
+adapted rather than adopted as written:**
+
+Absolute per-band residual sd: **tray 0.00039, tissue 0.00377.** A 10x
+gap. Sensor read noise does not grow tenfold because the camera is pointed
+at meat — that difference is muscle micro-texture. So:
+
+- For a **read-noise** figure, a uniform untextured target is the CORRECT
+  thing to measure, and bare tray is an ideal one. **0.0054 stands.**
+- The water-band value (0.0352 / 0.0571) is **a different physical
+  quantity** — read noise *plus* biological texture — which double-counts
+  what `texture_amplitude` was introduced to model (and which was cut
+  2026-09-05).
+- Adopting `--mask auto` wholesale would have silently multiplied a cited
+  parameter by 6.5x **and changed its meaning**, with no one noticing.
+
+**What was actually broken is the LABEL, not the value.** `PARAMS`'
+`sensor_sigma` source reads "Measured from NHSI-meat-overtime **pork
+cube**". It was measured on tray.
+
+**Changed — `extract_sensor_params.py` only. No `PARAMS`, no model code:**
+- Adopted `5eedee7`'s `find_meat_brightness()` / `find_meat_waterband()` /
+  `find_meat()` dispatcher, `--mask`, `--tray-rows`, and the leak
+  diagnostic, **adapted so each measurement uses the mask appropriate to
+  what it measures**: `sensor_sigma` keeps the brightness/uniform-patch
+  search; texture and the 970nm check now use the tissue mask.
+- The script now **prints whether the noise patch is tissue**, and emits
+  the correct provenance string automatically (non-tissue → "read noise,
+  uniform NON-TISSUE (tray) region, NOT measured on pork"; tissue → "upper
+  bound, includes micro-texture").
+- Added a **warning when the noise patch falls outside `--tray-rows`** —
+  fires correctly on cube 19 (row 516).
+- Module docstring rewritten to record the two-mask rationale and the
+  tray-vs-tissue numbers.
+
+**Acceptance tests, real cubes:** default path on cube 01 → `sensor_sigma`
+**0.0054** (patch 132,492, correctly labelled tray); `--mask brightness`
+→ bit-identical to the original including 970nm 0.1896; cube 19 default →
+out-of-tray warning fires.
+
+**CONSEQUENCE — do not misread the new 970nm output.** With the tissue
+mask the script now reports cube 01's 970nm as **0.2276**, not 0.1896
+(0.1896 was the contaminated whole-frame figure). **0.2276 is the
+all-tissue mean — chicken + salmon + fat + all three red-meat columns —
+so it is NOT a pork reference either.** The per-column breakdown in
+`analysis/nhsi_970_breakdown.py` remains the right tool, and the
+species question (2026-09-11) is still open. Lean red-meat columns at the
+freshest timepoints were 0.18–0.21.
+
+**Still open:**
+- **Team decision: what should `sensor_sigma` MEAN?** Pure read noise
+  (tray, 0.0054, current) or meat-pixel variability (tissue, ~0.035, which
+  would need `texture_amplitude` reconsidered since it was cut). The code
+  now supports both and labels which one it produced.
+- **Normalisation question.** 0.0054 = absolute sd 0.00039 ÷ the *tray's*
+  mean (0.072). Applied as a relative noise to meat at ~0.2–0.4
+  reflectance it implies absolute noise of 0.0011–0.0022, i.e. **3–5x the
+  measured 0.00039**. Whether the denominator should be a tissue-level
+  signal is unexamined.
+- `PARAMS`' `sensor_sigma` source string still says "pork cube" — **not
+  changed here** (this session touched no `PARAMS`); needs the wording
+  corrected to match the tray finding.
+- Everything already open: spatial/per-sample calibration, manuscript
+  sync, `denat_amplitude`/`denat_width` agreement (0.4 confirmed), NHSI
+  pork tray-position, GroupNorm, `--patience` undocumented.
+
+**Context to feed next session:**
+- Reproduce any row above with
+  `python extract_sensor_params.py "NHSI dataset/mat_data/01.mat" [--mask brightness] [--tray-rows 85 480]`.
+- `--mask brightness` is the compatibility path. Use it for any
+  re-measurement that must match a published number.
+- The cubes are ~11GB and gitignored; they exist only on tbhcoding's
+  machine, which is why cont. 4 correctly refused to ship this unverified.
 ## 2026-09-13 (cont. 7) — Learning rate confirmed as 1e-4 (a conflict raised by the drafting session); Result Sheet verified claim-by-claim (via Claude session, Arrvsssogood's machine)
 
 **CHAPTER 3 MUST STATE lr = 1e-4.** A parallel session drafting the
