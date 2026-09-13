@@ -257,13 +257,30 @@ checkpoint on val_MAE) is unchanged unless these are passed.
 ### 6.6 Known open issue: training instability
 
 Even after the LR fix, validation performance swings epoch-to-epoch more
-than desired. Five independent seeded runs (with early stopping) gave:
-**val R² = 0.79 ± 0.07–0.08** (two independent replications landed within
-noise of each other), clearly beating the linear baseline (~0.68), but
-individual epochs can still be much worse than the selected best. Root
-cause not fully diagnosed — untried next steps logged in `TEAM_LOG.md`:
-more training epochs, swapping BatchNorm→GroupNorm, fixing a known
-imprecision in how the reported val_R² is averaged across batches.
+than desired, though **less than earlier entries in this file claimed** —
+see the correction below.
+
+**SUPERSEDED NUMBERS (2026-09-13).** This section previously reported
+**val R² = 0.79 ± 0.07–0.08** against a linear baseline of ~0.68. Both
+were wrong, for a reason this section itself had already flagged as an
+untried fix: `run_epoch()` computed R² per mini-batch and averaged the
+batches, which is not the epoch's R², while the baselines were scored
+pooled. That was found independently on a second machine and **fixed at
+source** in `train_crn.py`. Corrected figures, same checkpoints, no
+retraining:
+
+| | superseded | **current** |
+|---|---|---|
+| CRN val R² (5 seeds) | 0.79 ± 0.07 | **0.8486 ± 0.0368** |
+| CRN **test** R² (5 seeds, untouched split) | — | **0.8389 ± 0.0412** |
+| Linear baseline | ~0.68 | **0.6212** held-out / 0.6509 self-test |
+
+The same error **exaggerated the instability described here**: rescored,
+seed 0's epoch-1 val R² moves from −0.34 to +0.003 with MAE unchanged, so
+the "crashes to R² ≈ −6" quoted in older entries are partly a scoring
+artefact. The instability is real (val_loss genuinely spikes) but milder
+than logged. Early stopping on val_loss continues to select a good
+checkpoint. GroupNorm remains untried and is now lower priority.
 
 ---
 
@@ -309,12 +326,14 @@ flagged as an assumption. See §4.
 
 **"How do you know the problem isn't trivially easy for the model?"** A
 plain linear regression on raw pixel values is run as a baseline
-(`self_test()`, Test 2) — it only reaches R²≈0.587 ± 0.020 on the
-current generator (0.691 ± 0.018 on the candidate), averaged over 10
-random seeds (not a single lucky draw — this was itself a bug found and
-fixed: single-seed numbers were found to sit 0.05–0.08 above the true
-average). Well under 1.0, meaning the mapping genuinely requires
-non-trivial spatial/spectral reasoning.
+(`self_test()`, Test 2) — it reaches **R² = 0.6509 ± 0.0180**, averaged
+over 10 random seeds (not a single lucky draw — this was itself a bug
+found and fixed: single-seed numbers were found to sit 0.05–0.08 above
+the true average). On the frozen dataset's own held-out split a linear
+fit reaches **0.6212**, and PLSR **0.6206**. Well under 0.9, meaning the
+mapping genuinely requires non-trivial spatial/spectral reasoning.
+(Earlier figures of 0.587/0.691 in this file predate the retirement of
+`generate_dataset_new_plus_eps.py` and no longer apply.)
 
 **"Why only 4 points?"** Mirrors a realistic deployment: a few physical
 pH-probe measurements per sample, dense prediction everywhere else. This
@@ -322,11 +341,23 @@ is deliberately configurable (`--n-points`), though the current dataset
 only embeds 4 — ablating to more requires regenerating the dataset with
 more embedded probes (explicit, logged follow-up, not done yet).
 
-**"Is the model actually working?"** Yes, with a stated caveat: on the
-best/selected checkpoint it clearly beats the linear baseline (R²≈0.79
-vs ≈0.68, confirmed across 2 independent 5-seed experiments). Training
-instability epoch-to-epoch is a real, disclosed, not-fully-resolved
-limitation — not hidden.
+**"Is the model actually working?"** Yes, with two stated caveats. On the
+selected checkpoints it clearly beats both baselines: **R² = 0.8486 ±
+0.0368** on validation and **0.8389 ± 0.0412** on the untouched test
+split, versus 0.6212 (linear) and 0.6206 (PLSR). MAE is **0.090 pH** on
+both splits — identical, which is direct evidence of no overfitting to
+the split used for early stopping.
+
+The two caveats, both disclosed rather than hidden:
+1. **Training instability** epoch-to-epoch is real, though milder than
+   older entries claimed (see §6.6).
+2. **Spatial reconstruction is not yet reliable.** Per-sample (within-
+   sample) R² is negative — −1.39 on test, −2.30 on validation. The model
+   recovers genuine spatial structure (within-sample correlation ≈ +0.57)
+   but over-amplifies it by ~1.25–1.29×. Practically the heatmap still
+   holds up: **82.8% of test pixels fall within ±0.15 pH** and 85.1% land
+   in the correct quality class, +35.4 points over a majority-class
+   classifier. Run `evaluate_heatmap.py` for all of these together.
 
 **"What's your one real-world validation?"** 970nm is the only band
 where the simulated bands overlap a real, independently-measured
