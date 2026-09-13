@@ -122,33 +122,50 @@ def tv_loss(pred):
     return dy + dx
 
 
-def full_field_eval(pred, ph_dense, mask, in_res):
+def full_field_stats(pred, ph_dense, mask, in_res):
     """
     Sanity check ONLY -- never used for gradients. Upsamples pred to full
     resolution (if it's on a coarser grid) so it can be compared against
-    the hidden dense map. MAE + R^2 over meat pixels.
+    the hidden dense map.
+
+    Returns POOLING ACCUMULATORS for one batch, not a finished MAE/R^2, so
+    that run_epoch() can pool over the WHOLE epoch in one calculation.
+
+    Why this shape: R^2 is not linear in the data, so a per-batch R^2
+    averaged across batches is NOT the epoch's R^2 -- each batch gets
+    scored against its own batch mean, and a batch whose samples happen to
+    share a narrow pH range scores far lower for the same absolute error
+    (at 50 val samples / batch_size 8 the last batch holds only 2 samples).
+    That mismatch understated the CRN by ~0.06-0.08 R^2 against the
+    baselines, which were always scored pooled. Found 2026-09-13 by an
+    independent reproduction on a second machine; see docs/TEAM_LOG.md.
+
+    Returns (n_pixels, sum_abs_err, sum_sq_err, sum_y, sum_y_sq) as Python
+    floats -- enough to reconstruct pooled MAE and pooled R^2 exactly, in
+    O(1) memory rather than retaining every pixel of the epoch.
     """
     if pred.shape[-1] != in_res:
         pred = F.interpolate(pred.unsqueeze(1), size=in_res, mode="bilinear",
                               align_corners=False).squeeze(1)
-    diffs, y_all, p_all = [], [], []
+    y_all, p_all = [], []
     for b in range(pred.shape[0]):
         m = mask[b]
-        y = ph_dense[b][m]
-        p = pred[b][m]
-        diffs.append((y - p).abs())
-        y_all.append(y); p_all.append(p)
-    mae = torch.cat(diffs).mean().item()
-    y_all = torch.cat(y_all); p_all = torch.cat(p_all)
-    ss_res = ((y_all - p_all) ** 2).sum()
-    ss_tot = ((y_all - y_all.mean()) ** 2).sum()
-    r2 = (1 - ss_res / ss_tot).item()
-    return mae, r2
+        y_all.append(ph_dense[b][m]); p_all.append(pred[b][m])
+    y = torch.cat(y_all); p = torch.cat(p_all)
+    err = y - p
+    return (y.numel(),
+            err.abs().sum().item(),
+            (err ** 2).sum().item(),
+            y.sum().item(),
+            (y ** 2).sum().item())
 
 
 def run_epoch(model, loader, opt, device, args, train=True):
     model.train(train)
-    total_sparse, total_tv, total_mae, total_r2, n = 0.0, 0.0, 0.0, 0.0, 0
+    total_sparse, total_tv, n = 0.0, 0.0, 0
+    # Full-field sanity-check accumulators, pooled over the whole epoch
+    # rather than averaged per batch -- see full_field_stats() for why.
+    px, sum_abs, sum_sq, sum_y, sum_y2 = 0, 0.0, 0.0, 0.0, 0.0
     for x, coords, values, ph_dense, mask, _ in loader:
         x = x.to(device)
         coords_grid = map_coords_to_grid(coords, args.in_res, args.out_res).to(device)
@@ -168,12 +185,22 @@ def run_epoch(model, loader, opt, device, args, train=True):
         bs = x.shape[0]
         total_sparse += l_sparse.item() * bs
         total_tv += l_tv.item() * bs
-        mae, r2 = full_field_eval(pred.detach(), ph_dense, mask, args.in_res)
-        total_mae += mae * bs
-        total_r2 += r2 * bs
+        b_px, b_abs, b_sq, b_y, b_y2 = full_field_stats(
+            pred.detach(), ph_dense, mask, args.in_res)
+        px += b_px; sum_abs += b_abs; sum_sq += b_sq
+        sum_y += b_y; sum_y2 += b_y2
         n += bs
 
-    return total_sparse / n, total_tv / n, total_mae / n, total_r2 / n
+    # Pooled over every meat pixel in the epoch, one calculation -- matches
+    # how the Linear/PLSR baselines are scored, and how sklearn's r2_score
+    # works. ss_tot uses the epoch-wide mean, via the identity
+    # sum((y-ybar)^2) = sum(y^2) - (sum y)^2 / n (float64 throughout; pH
+    # values sit near 5.9 with small spread, so this retains ~12 significant
+    # digits -- far more than the 4 decimals ever reported).
+    mae = sum_abs / px
+    ss_tot = sum_y2 - (sum_y ** 2) / px
+    r2 = 1.0 - sum_sq / ss_tot
+    return total_sparse / n, total_tv / n, mae, r2
 
 
 def save_heatmap_figure(model, dataset, device, args, out_path, sample_idx=0):
