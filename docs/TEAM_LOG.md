@@ -20,10 +20,13 @@ Template:
 
 ---
 
-## 2026-09-13 (cont. 4) — `find_meat()` background leak FIXED; `sensor_sigma` confirmed NOT contaminated (via Claude session, Arrvsssogood's machine)
+## 2026-09-13 (cont. 4) — `find_meat()` leak analysed and `sensor_sigma` cleared; a fix was written, then REVERTED — handing it to whoever holds the cubes (via Claude session, Arrvsssogood's machine)
 
-**Closes the `find_meat()` background-leak item open since 2026-09-11** —
-the last unexamined thing touching a cited parameter.
+**Status: analysis done and useful; the code fix was deliberately backed
+out.** A water-band fix was written, synthetically verified, committed
+(`5eedee7`), then reverted (`5ff1c70`) the same session — see "Why
+reverted" at the end. `extract_sensor_params.py` is byte-identical to
+before. The item stays OPEN, now with the groundwork done.
 
 **First, the reassuring part — checked before changing anything:**
 `sensor_sigma = 0.0054` is **not** contaminated. It was measured from NHSI
@@ -41,7 +44,8 @@ patch — and empty tray is flatter than muscle tissue. So the two steps
 compound: a contaminated mask, then a search that actively prefers the
 contaminating pixels. `sensor_sigma` could have been measured on bare tray.
 
-**Changed — `extract_sensor_params.py` only. No `PARAMS`, no model code:**
+**What the reverted fix contained (recoverable from `5eedee7` — reuse it
+rather than starting from scratch):**
 - `find_meat_brightness()` — the ORIGINAL method, preserved and documented,
   reachable via `--mask brightness`, **so the published 0.0054 stays exactly
   reproducible.** Deliberately not deleted.
@@ -71,11 +75,28 @@ contaminating pixels. `sensor_sigma` could have been measured on bare tray.
 - File compiles clean.
 
 **NOT verified:** against real NHSI cubes — they are not on this machine
-(gitignored, ~11GB, never committed). **Before trusting any
-re-measurement, re-run on cube 01 with `--mask brightness` and confirm it
-still returns 0.0054.**
+(gitignored, ~11GB, never committed).
 
-**Still open (unchanged by this):** the spatial/per-sample calibration
+**Why reverted (decided by the user, and it is the right call):** the
+cubes live on tbhcoding's machine, not this one, so the fix could only
+ever be synthetically tested here. Shipping an unverified mask change into
+the measurement path — however well-reasoned — is exactly the kind of
+thing this project has refused to do elsewhere. **Handed to whoever holds
+the cubes.** The analysis above stands and is the useful part; the code in
+`5eedee7` is a starting point, not a finished answer.
+
+**To close this item, whoever picks it up should:**
+1. Run `extract_sensor_params.py` on cube 01 with the ORIGINAL code and
+   confirm it still returns 0.0054 (baseline check).
+2. Apply/adapt `5eedee7`, re-run cube 01 with `--mask brightness` →
+   must still give 0.0054 (proves backward compatibility on real data).
+3. Re-run cube 01 with `--mask auto` → the water-band mask should agree
+   closely, since cube 01 is the uncontaminated one.
+4. Run a late cube (e.g. 09 or 19) both ways — that is where the 62-71%
+   leak appears and where the two masks should visibly diverge.
+
+**Still open (unchanged by this):** `find_meat()` itself (above),
+the spatial/per-sample calibration
 issue, manuscript sync, team agreement on `denat_amplitude`/`denat_width`,
 NHSI pork tray-position, GroupNorm (now lower priority — see cont. 3),
 `--patience` undocumented in README.
