@@ -20,6 +20,75 @@ Template:
 
 ---
 
+## 2026-09-13 (cont. 7) — Learning rate confirmed as 1e-4 (a conflict raised by the drafting session); Result Sheet verified claim-by-claim (via Claude session, Arrvsssogood's machine)
+
+**CHAPTER 3 MUST STATE lr = 1e-4.** A parallel session drafting the
+chapters hit a conflict: `crn_model.py`'s docstring says the instability
+fix was lowering the learning rate 1e-3 → 1e-4, while a summary sheet
+built in this session listed 1e-3. It stopped and asked rather than
+picking one. **The docstring is right; the sheet was wrong.**
+
+**Resolved against the code, not by preference:**
+- `train_crn.py`'s `--lr` default is **1e-4**.
+- `crn_5seed_final` was run as `--seed {0..4} --patience 10 --epochs 50`
+  with **no `--lr` flag**, so it used that default.
+- The default changed 1e-3 → 1e-4 in `f4f0557` on **2026-08-31**, well
+  before the 2026-09-12 runs. Verified by reading `train_crn.py` **as it
+  existed at commit `8943a9d`** (the commit recording those runs), not
+  merely the current file: it already read `default=1e-4` there.
+- **Every reported result was trained at lr = 1e-4.** No result is
+  affected; only the summary sheet's description was wrong, now fixed.
+
+**A STALE LINE THAT LOOKS LIKE A CONTRADICTION — do not be misled by it.**
+The 2026-08-31 entry below says the LR fix *"needs `--lr 1e-4` passed
+explicitly."* That was true on 2026-08-31, when the default was still
+1e-3. It stopped being true later the same day. It is left in place as
+historical record. **Anything in this log dated 2026-08-31 or earlier
+about the learning rate should not be used to describe the final runs.**
+
+**Also worth stating in Chapter 3 as a finding, not just a setting:**
+lr = 1e-3 *caused* the validation instability, and lowering it to 1e-4
+was the remedy. Paired with the later discovery that the *remaining*
+instability was partly a scoring artefact (cont. 3), the story is clean:
+one real cause fixed, one apparent cause revealed as a measurement error.
+
+**Verified — the summary sheet re-checked claim by claim after the error.**
+The repository audit in cont. 6 covered the repo's own docs but **not the
+summary sheet itself**, which is how a transcribed value survived it.
+Closed now; each group re-derived mechanically:
+
+| Claim group | Checked against | Result |
+|---|---|---|
+| Wavelengths, architecture, all hyperparameters | `crn_model.py`, `build_argparser()`, live forward pass | 12/12 |
+| All 14 parameters + eps arrays | live `PARAMS` | 13/13 |
+| Per-seed R²/MAE/RMSE, best epoch, epochs run | re-scored checkpoints + each `history.json` | 25/25 |
+| Aggregates, all three evaluation sets | saved evaluation JSON | 22/22 |
+| Tolerance bands, class accuracy, baseline, lift | saved evaluation JSON | 7/7 |
+| Amplitude sweep, variance decomposition, negative counts | saved sweep/spatial JSON | 16/16 |
+| 970 nm value, pH-range narrowing table | recomputed from dataset + checkpoints | 4/4 |
+| Dataset splits and integrity | file counts, full pass over 400 cubes | 3/3 |
+
+**One error across ~100 claims — the learning rate — found and fixed.**
+Incidentally confirmed: per-seed best epochs are 9/14/21/10/18 over
+19/24/31/20/28 epochs, and the simulated 970 nm mean is 0.2645.
+
+**Decided:**
+- **When any document and the code disagree, the code wins** — it is what
+  actually ran. Verify hyperparameters against `build_argparser()`
+  directly, never against prose.
+- The drafting session's behaviour — stop and ask on a conflict rather
+  than choose — is correct. Keep it.
+
+**NOT verified by this session, and worth someone spot-checking before the
+defense:** the external citations themselves (Tang 2004, Bowen 1949,
+Cross 2018, Hale & Querry, Bergmann 2021, Wojtasik-Kalinowska). Earlier
+entries record checking them; nothing in this session re-opened the
+papers. If one is wrong, none of the checks above would catch it.
+
+**Still open:** unchanged from cont. 6.
+
+---
+
 ## 2026-09-13 (cont. 6) — Pre-writing audit; 500-sample extended test set; quality-class metric demoted; a stated rationale CORRECTED (via Claude session, Arrvsssogood's machine)
 
 **This is the entry to read before writing Chapter 4.** It supersedes every
