@@ -76,101 +76,17 @@ def orient(cube):
     return cube
 
 
-def _otsu(x, nbins=256):
-    """Otsu threshold. Same implementation as analysis/nhsi_970_breakdown.py."""
-    hist, e = np.histogram(x, bins=nbins)
-    c = (e[:-1] + e[1:]) / 2
-    w0 = np.cumsum(hist); w1 = w0[-1] - w0
-    m0 = np.cumsum(hist * c) / np.maximum(w0, 1)
-    m1 = (np.sum(hist * c) - np.cumsum(hist * c)) / np.maximum(w1, 1)
-    return c[np.argmax(w0 * w1 * (m0 - m1) ** 2)]
-
-
-def find_meat_brightness(cube):
+def find_meat(cube):
     """
-    ORIGINAL method: top-40%-brightest pixels. KEPT so the published
-    sensor_sigma = 0.0054 (NHSI cube 01) stays exactly reproducible --
-    do not delete.
-
-    KNOWN FAILURE MODE (measured 2026-09-11, docs/TEAM_LOG.md): this assumes
-    meat occupies ~40% of the frame. As tissue darkens over the NHSI time
-    series it does not: from cube 03 on, this mask pulls 62-71% of the known
-    background strip in. Cubes 01/02 were unaffected, which is why the
-    published value stands. Prefer find_meat_waterband() for anything else.
+    Meat is bright relative to the dark background in NIR.
+    Threshold on mean reflectance across bands.
     """
     bright = cube.mean(axis=2)
-    mask = bright > np.percentile(bright, 60)
-    print(f"  meat pixels (brightness, top 40%): {mask.sum()} of {mask.size} "
+    thr = np.percentile(bright, 60)
+    mask = bright > thr
+    print(f"  meat pixels: {mask.sum()} of {mask.size} "
           f"({100*mask.sum()/mask.size:.0f}%)")
     return mask
-
-
-def find_meat_waterband(cube, wl, tray_rows=None):
-    """
-    Tissue mask via the ~1450nm water absorption band -- meat is ~73% water
-    and shows a deep dip there, while tray/background is spectrally flat.
-    Index = mean R(1010-1090nm) - mean R(1440-1500nm), Otsu-thresholded.
-
-    Ported from analysis/nhsi_970_breakdown.py, where it was checked visually
-    on cubes 01/09/19: covers every piece, excludes background. A
-    brightness-only Otsu variant was tried there first and rejected (it split
-    bright tissue from lean tissue instead of tissue from background).
-
-    Requires a wavelength axis covering both bands; returns None if not.
-    tray_rows=(y0, y1) optionally restricts to the tray (NHSI: 85, 480).
-    """
-    if wl.min() > 1010 or wl.max() < 1500:
-        return None
-    on = (wl >= 1010) & (wl <= 1090)
-    water = (wl >= 1440) & (wl <= 1500)
-    if on.sum() == 0 or water.sum() == 0:
-        return None
-
-    index = cube[:, :, on].mean(axis=2) - cube[:, :, water].mean(axis=2)
-    region = np.zeros(index.shape, dtype=bool)
-    if tray_rows is None:
-        region[:] = True
-    else:
-        region[tray_rows[0]:tray_rows[1], :] = True
-    thr = _otsu(index[region])
-    mask = region & (index > thr)
-    print(f"  meat pixels (water-band, Otsu thr={thr:.4f}): {mask.sum()} of "
-          f"{mask.size} ({100*mask.sum()/mask.size:.0f}%)")
-    return mask
-
-
-def find_meat(cube, wl=None, method="auto", tray_rows=None):
-    """
-    Returns the tissue mask, preferring the water-band method when the
-    wavelength axis supports it. Also reports how much the two methods
-    disagree, which is the background-leak diagnostic.
-    """
-    want_wb = method in ("auto", "waterband")
-    wb = find_meat_waterband(cube, wl, tray_rows) if (want_wb and wl is not None) else None
-
-    if method == "waterband" and wb is None:
-        print("  ERROR: --mask waterband requested but the wavelength axis does")
-        print("         not cover 1010-1090nm and 1440-1500nm.")
-        sys.exit(1)
-
-    if method == "brightness":
-        return find_meat_brightness(cube)
-
-    br = find_meat_brightness(cube)
-    if wb is None:
-        print("  WARNING: wavelength axis does not cover the ~1450nm water band,")
-        print("           falling back to the brightness mask. That mask assumes")
-        print("           meat fills ~40% of the frame -- if it does not, background")
-        print("           leaks in (see docs/TEAM_LOG.md 2026-09-11). Check the mask.")
-        return br
-
-    leak = (br & ~wb).sum()
-    print(f"  background-leak check: {leak} px ({100*leak/max(br.sum(),1):.1f}% of the"
-          f" brightness mask) are NOT tissue by the water-band test.")
-    if leak / max(br.sum(), 1) > 0.10:
-        print("    ^ the original brightness mask would have been substantially")
-        print("      contaminated on this cube. Using the water-band mask.")
-    return wb
 
 
 def flattest_patch(cube, mask, size=24):
@@ -202,18 +118,6 @@ def main():
     ap.add_argument("--lam-min", type=float, default=900.0)
     ap.add_argument("--lam-max", type=float, default=1700.0)
     ap.add_argument("--patch", type=int, default=24)
-    ap.add_argument("--mask", choices=["auto", "waterband", "brightness"],
-                     default="auto",
-                     help="tissue mask method. 'auto' (default) uses the "
-                          "~1450nm water band when the wavelength axis allows "
-                          "and falls back to brightness otherwise. "
-                          "'brightness' is the ORIGINAL top-40%% method -- use "
-                          "it to reproduce the published sensor_sigma=0.0054 "
-                          "from NHSI cube 01 exactly.")
-    ap.add_argument("--tray-rows", type=int, nargs=2, metavar=("Y0", "Y1"),
-                     default=None,
-                     help="restrict the water-band mask to these rows "
-                          "(NHSI trays: 85 480). Default: whole frame.")
     a = ap.parse_args()
 
     print("Loading...")
@@ -227,7 +131,7 @@ def main():
     print()
 
     wl = np.linspace(a.lam_min, a.lam_max, B)
-    mask = find_meat(cube, wl, a.mask, a.tray_rows)
+    mask = find_meat(cube)
     r0, c0 = flattest_patch(cube, mask, a.patch)
     patch = cube[r0:r0+a.patch, c0:c0+a.patch, :]
     print()
