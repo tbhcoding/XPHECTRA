@@ -20,6 +20,80 @@ Template:
 
 ---
 
+## 2026-09-14 — LOCATION vs MAGNITUDE: the heatmap points at the right regions; the earlier "spatial reconstruction is unreliable" wording was WRONG and overstated our own weakness (via Claude session, Arrvsssogood's machine)
+
+**This entry changes how Chapter 4/5 must describe the core deliverable.
+Read it before writing anything about the heatmap.**
+
+**Why this exists:** the user raised the obvious panel question — *if
+per-sample R² is negative, what is the point of a study whose whole
+deliverable is a heatmap?* That deserved a measurement, not a
+reassurance. It was measured, and **the previous wording in this log and
+in the summary sheet was too broad and unfair to the project.**
+
+**First, a fact that rules out the easy escape:** within-sample variation
+is NOT negligible. Across 500 test samples the true within-sample range
+averages **0.454 pH** — larger than a full 0.40 pH quality band — and
+**56.4% of samples genuinely span 2 or more quality classes** (43.6% span
+one, 48.4% two, 8.0% three). So spatial detail genuinely matters here and
+cannot be waved away.
+
+**The distinction that resolves it.** Per-sample R² is a MAGNITUDE
+calibration measure, and it is negative for an arithmetic reason:
+
+> true within-sample variation (SD **0.088** pH) is SMALLER than the
+> model's own per-pixel error (MAE **0.094** pH)
+
+On that scale a 1.25× over-amplification is punished heavily. **None of
+that says anything about whether the hot spots are in the right place**,
+which is what a heatmap user actually needs.
+
+**Verified (numbers) — `check_spatial_localization.py`, 500-sample
+extended test set, 5 seeds, restricted to the 282 samples spanning 2+
+quality classes (uniform samples excluded — localisation is vacuous
+there, so this is deliberately the HARDER subset):**
+
+| Measure | Result | Chance | Reading |
+|---|---|---|---|
+| Predicted hot region truly hotter | **99.6% ± 0.5** | 50% | Direction essentially always right — **but a lenient test** |
+| Per-pixel class accuracy inside them | **79.0% ± 2.9** | — | **Lead with this** — hard cases only, 4 in 5 pixels correct |
+| Hottest-20% overlaps true hottest-20% | **51.3% ± 4.3** | 20% | The demanding measure: 2.6× chance, honestly partial |
+
+Be candid about the 99.6%: it checks DIRECTION only, and with a +0.54
+within-sample correlation it would be expected to pass often. It
+establishes the localisation signal is real and robust; it does **not**
+claim pixel-perfect accuracy. The 51.3% is the honest ceiling.
+
+**WORDING CORRECTION — supersedes earlier entries.** Previous materials
+(including cont. 2/3 in this log and early versions of the summary sheet)
+said *"within-sample spatial reconstruction remains unreliable."*
+**On this evidence that is wrong.** Reconstruction of **location** is
+reliable; reconstruction of **magnitude** is not. The old phrasing
+conflates the two and hands a panel a stronger criticism than the
+evidence supports. **Always say which one.**
+
+**Use this as the answer to "what is the point?":**
+> *The heatmap reliably identifies WHERE pH is elevated — on samples with
+> genuine spatial variation it flags the correct region in 99.6% of cases
+> and assigns 79% of pixels to the correct quality class. What it does not
+> do reliably is express HOW LARGE the difference is, over-amplifying by
+> about 1.25×. That is a calibration limitation with an identified remedy,
+> not an absence of spatial signal.*
+
+**Decided:**
+- Chapter 5's limitation 2 is reworded from "spatial reconstruction is
+  unreliable" to "spatial magnitude is miscalibrated; location is not the
+  problem", with the three numbers above supporting it.
+- `check_spatial_localization.py` is committed and rerunnable (~5 min,
+  inference only) so the claim is reproducible, not asserted.
+
+**Still open:** unchanged. The calibration fix (ceiling ≈ +0.30
+per-sample R²) would improve the magnitude side; it remains optional
+because the location result already answers the "what is the point"
+objection.
+
+---
+
 ## 2026-09-13 (cont. 7) — Learning rate confirmed as 1e-4 (a conflict raised by the drafting session); Result Sheet verified claim-by-claim (via Claude session, Arrvsssogood's machine)
 
 **CHAPTER 3 MUST STATE lr = 1e-4.** A parallel session drafting the
