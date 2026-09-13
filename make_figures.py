@@ -154,6 +154,7 @@ def main():
     ap.add_argument("--data", default="ligtas_synthetic_dataset")
     ap.add_argument("--sample", default="sample_351")
     ap.add_argument("--split", default="test")
+    ap.add_argument("--ckpt", default="crn_5seed_final/seed_1/crn_best.pt")
     ap.add_argument("--out", default="figures")
     a = ap.parse_args()
 
@@ -163,8 +164,111 @@ def main():
     fig_dataset_sample(d, a.sample, os.path.join(a.out, "fig_dataset_sample.png"))
     fig_ph_distribution(os.path.join(a.data, "*", "*_phtrue.npy"),
                         os.path.join(a.out, "fig_ph_distribution.png"))
+    ck = a.ckpt
+    if os.path.exists(ck):
+        fig_system_output(d, a.sample, ck, os.path.join(a.out, "fig_system_output.png"))
+        fig_prediction_gallery(d, ck, os.path.join(a.out, "fig_prediction_gallery.png"))
+    else:
+        print(f"  skipped model figures -- checkpoint not found: {ck}")
     print(f"\nFigures in {a.out}/ — 200 dpi, ready for the manuscript.")
 
+
+
+
+def fig_system_output(data_dir, sample_id, ckpt, out_path):
+    """
+    The deliverable as an operator would see it: a sample goes in, a pH
+    map comes out. Chapter 4 / Objective 3. Deliberately NOT the
+    diagnostic true/predicted/error view -- this is the product.
+    """
+    import torch, torch.nn.functional as F
+    from crn_model import CrudeCRN
+
+    cube = np.load(os.path.join(data_dir, f"{sample_id}_msi.npy"))
+    ph = np.load(os.path.join(data_dir, f"{sample_id}_phtrue.npy"))
+    mask = np.isfinite(ph)
+
+    model = CrudeCRN(in_res=256, out_res=256)
+    model.load_state_dict(torch.load(ckpt, map_location="cpu"))
+    model.eval()
+    with torch.no_grad():
+        x = torch.from_numpy(cube.transpose(2, 0, 1)).float().unsqueeze(0)
+        pred = model(x)
+        if pred.shape[-1] != 256:
+            pred = F.interpolate(pred.unsqueeze(1), size=256, mode="bilinear",
+                                 align_corners=False).squeeze(1)
+    pred = pred.squeeze(0).numpy()
+
+    fig, ax = plt.subplots(1, 2, figsize=(9.5, 4.6))
+    rgb = np.dstack([cube[:, :, 3], cube[:, :, 1], cube[:, :, 0]])
+    rgb = np.clip(rgb / max(rgb.max(), 1e-6), 0, 1)
+    ax[0].imshow(rgb); ax[0].axis("off")
+    ax[0].set_title("Input: six-band multispectral capture\n(RGB composite shown)", fontsize=10.5)
+
+    im = ax[1].imshow(np.where(mask, pred, np.nan), cmap="turbo")
+    ax[1].axis("off")
+    ax[1].set_title("Output: predicted pH distribution", fontsize=10.5)
+    cb = fig.colorbar(im, ax=ax[1], fraction=0.046, pad=0.03)
+    cb.set_label("pH", fontsize=9.5)
+
+    fig.text(0.5, 0.02, "The system requires no ground-truth pH at inference; "
+                        "the map is estimated from spectral reflectance alone.",
+             ha="center", fontsize=8.5, color="0.35")
+    fig.tight_layout(rect=[0, 0.05, 1, 1])
+    fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}")
+
+
+def fig_prediction_gallery(data_dir, ckpt, out_path, n=4):
+    """
+    Several samples spanning the range of per-sample accuracy, selected by
+    error percentile rather than by eye -- so the figure is representative
+    rather than curated. Includes the worst case on purpose.
+    """
+    import torch, torch.nn.functional as F
+    from crn_model import CrudeCRN
+
+    ids = sorted({f.split("_msi.npy")[0] for f in os.listdir(data_dir)
+                  if f.endswith("_msi.npy")})
+    model = CrudeCRN(in_res=256, out_res=256)
+    model.load_state_dict(torch.load(ckpt, map_location="cpu"))
+    model.eval()
+
+    recs = []
+    with torch.no_grad():
+        for sid in ids:
+            cube = np.load(os.path.join(data_dir, f"{sid}_msi.npy"))
+            ph = np.load(os.path.join(data_dir, f"{sid}_phtrue.npy"))
+            m = np.isfinite(ph)
+            x = torch.from_numpy(cube.transpose(2, 0, 1)).float().unsqueeze(0)
+            p = model(x)
+            if p.shape[-1] != 256:
+                p = F.interpolate(p.unsqueeze(1), size=256, mode="bilinear",
+                                  align_corners=False).squeeze(1)
+            p = p.squeeze(0).numpy()
+            recs.append((sid, np.abs(ph[m] - p[m]).mean(), ph, p, m))
+
+    recs.sort(key=lambda r: r[1])
+    picks = [recs[0], recs[len(recs)//3], recs[2*len(recs)//3], recs[-1]][:n]
+    labels = ["Best case", "Lower quartile", "Upper quartile", "Worst case"][:n]
+
+    fig, ax = plt.subplots(2, n, figsize=(3.1*n, 6.6))
+    for j, ((sid, mae, ph, p, m), lbl) in enumerate(zip(picks, labels)):
+        lo = np.nanmin(np.where(m, ph, np.nan)); hi = np.nanmax(np.where(m, ph, np.nan))
+        ax[0, j].imshow(np.where(m, ph, np.nan), cmap="turbo", vmin=lo, vmax=hi)
+        ax[0, j].set_title(f"{lbl}\nground truth", fontsize=9.5); ax[0, j].axis("off")
+        im = ax[1, j].imshow(np.where(m, p, np.nan), cmap="turbo", vmin=lo, vmax=hi)
+        ax[1, j].set_title(f"predicted — MAE {mae:.3f} pH", fontsize=9.5); ax[1, j].axis("off")
+        fig.colorbar(im, ax=ax[1, j], fraction=0.046, pad=0.03)
+
+    fig.text(0.5, 0.015, "Samples selected by per-sample error percentile, not by inspection. "
+                         "Each column shares a colour scale between truth and prediction.",
+             ha="center", fontsize=8.5, color="0.35")
+    fig.tight_layout(rect=[0, 0.04, 1, 1])
+    fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}  (MAE range {picks[0][1]:.3f} to {picks[-1][1]:.3f} pH)")
 
 if __name__ == "__main__":
     main()
