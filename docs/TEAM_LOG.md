@@ -20,6 +20,74 @@ Template:
 
 ---
 
+## 2026-09-13 (cont. 3) — Metric mismatch FIXED at the source in train_crn.py; instability crashes found to be partly a scoring artifact too (via Claude session, Arrvsssogood's machine)
+
+**Changed:**
+- `train_crn.py`: `full_field_eval()` → `full_field_stats()`. It now
+  returns per-batch pooling accumulators (`n_pixels`, `sum|err|`,
+  `sum err²`, `sum y`, `sum y²`) and `run_epoch()` computes pooled MAE and
+  pooled R² once at the end of the epoch, in O(1) memory. Previously
+  `run_epoch()` computed R² per batch and weighted-averaged it, which is
+  not the epoch's R² and did not match how the baselines are scored.
+  **This is the source-level fix for the mismatch documented in the two
+  entries below** — future runs log the correct number without anyone
+  having to remember to rescore afterwards.
+
+**Verified (numbers) — not assumed:**
+- Patched `run_epoch()` reproduces the independent rescore of all five
+  `crn_5seed_final` checkpoints **to 4 decimals**: 0.7802 / 0.8887 /
+  0.8598 / 0.8465 / 0.8676, mean **0.8486 ± 0.0368**. Two different code
+  paths, same answer.
+- 2-epoch end-to-end smoke test runs clean (exit 0). `val_sparse` matches
+  the original seed-0 run to 4 decimals (0.1014, 0.0914) — **training is
+  bit-unchanged; only the reported metric moved.**
+- **Cannot change any already-reported result.** Every official run used
+  `--patience`, where the checkpoint criterion is `val_loss` only
+  (`val_r2`/`val_mae` are reporting-only in that branch). Confirmed by
+  reading the selection logic directly.
+
+**BONUS FINDING — answers the open question "does the batch-averaged
+metric also exaggerate the mid-training crashes to R² ≈ −6?" Answer: YES,
+partly.** Controlled comparison, seed 0, same data, only scoring changed:
+
+| epoch | old val R² | new val R² | val MAE (old → new) |
+|---|---|---|---|
+| 1 | −0.338 | **+0.003** | 0.2704 → 0.270 |
+| 2 | −0.268 | **+0.087** | 0.2592 → 0.259 |
+
+MAE is unchanged; R² moves a lot. The bias is largest when the fit is
+worst, which is exactly why early epochs looked catastrophic. **The
+"crashes to R² = −6.16" quoted in earlier entries are partly a scoring
+artifact, not purely model behaviour.** This does not make the
+instability imaginary (val_loss genuinely does spike), but any Chapter
+4/5 sentence quoting those large negative R² values should be re-derived
+from a re-scored run rather than copied from the old logs.
+
+**Decided:**
+- Pooled R² is now the only R² this code reports. Batch-averaged R² is
+  gone, not kept as an option — it was never a deliberate metric choice.
+
+**Still open:**
+- The spatial/per-sample calibration issue (entry below) — **unaffected by
+  this fix**, still the one substantive open technical item. Team has not
+  yet decided fix-vs-disclose.
+- Old `history.json` files in `crn_5seed_final/`, `sweep_outputs/`,
+  `deconfound_outputs/` still contain batch-averaged R² values. They were
+  **not** rewritten — the corrected aggregates are recorded in these log
+  entries and in `metric_check_outputs/`. Don't quote R² straight out of
+  an old `history.json`.
+- Everything else already open is unchanged: team agreement on
+  `denat_amplitude`/`denat_width`, NHSI pork tray-position, manuscript
+  sync, GroupNorm, `find_meat()` background leak, `--patience` undocumented.
+
+**Context to feed next session:**
+- Re-running any old experiment now logs pooled R² directly; no rescoring
+  step needed any more.
+- `check_metric_mismatch.py` and `check_spatial_skill.py` still work and
+  are still the way to score checkpoints that were trained before this fix.
+
+---
+
 ## 2026-09-13 (cont. 2) — Spatial-skill finding independently confirmed on the official crn_5seed_final checkpoints, not just the reproduction (via Claude session, Arrvsssogood's machine)
 
 **Why this entry exists:** the entry below was verified against `crn_check/`
