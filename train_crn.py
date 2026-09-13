@@ -47,6 +47,7 @@ Usage:
 
 import os
 import json
+import math
 import argparse
 import numpy as np
 import torch
@@ -198,9 +199,10 @@ def run_epoch(model, loader, opt, device, args, train=True):
     # values sit near 5.9 with small spread, so this retains ~12 significant
     # digits -- far more than the 4 decimals ever reported).
     mae = sum_abs / px
+    rmse = math.sqrt(sum_sq / px)      # same accumulator as R^2, so it is free
     ss_tot = sum_y2 - (sum_y ** 2) / px
     r2 = 1.0 - sum_sq / ss_tot
-    return total_sparse / n, total_tv / n, mae, r2
+    return total_sparse / n, total_tv / n, mae, rmse, r2
 
 
 def save_heatmap_figure(model, dataset, device, args, out_path, sample_idx=0):
@@ -357,27 +359,29 @@ def train(args):
 
     print()
     print("Loss = sparse-point MSE + tv_weight * total-variation on the full")
-    print("predicted map. The 'MAE/R2 vs hidden dense map' columns are a")
+    print("predicted map. The 'MAE/RMSE/R2 vs hidden dense map' columns are a")
     print("SANITY CHECK only -- phtrue.npy is never used for gradients.\n")
 
     history = []
     best_val_mae = float("inf")
+    best_val_rmse = float("nan")
     best_val_r2 = float("nan")
     best_val_loss = float("inf")
     best_epoch = 0
     epochs_since_improve = 0
     stopped_epoch = args.epochs
     for epoch in range(1, args.epochs + 1):
-        tr_sparse, tr_tv, tr_mae, tr_r2 = run_epoch(model, train_loader, opt, device, args, train=True)
-        val_sparse, val_tv, val_mae, val_r2 = run_epoch(model, val_loader, opt, device, args, train=False)
+        tr_sparse, tr_tv, tr_mae, tr_rmse, tr_r2 = run_epoch(model, train_loader, opt, device, args, train=True)
+        val_sparse, val_tv, val_mae, val_rmse, val_r2 = run_epoch(model, val_loader, opt, device, args, train=False)
         val_loss = val_sparse + args.tv_weight * val_tv
         print(f"epoch {epoch:2d}/{args.epochs}  "
               f"train: sparse={tr_sparse:.4f} tv={tr_tv:.4f}  "
-              f"[hidden-map] MAE={tr_mae:.3f} R2={tr_r2:.3f}  |  "
+              f"[hidden-map] MAE={tr_mae:.3f} RMSE={tr_rmse:.3f} R2={tr_r2:.3f}  |  "
               f"val: sparse={val_sparse:.4f} tv={val_tv:.4f} loss={val_loss:.4f} "
-              f"MAE={val_mae:.3f} R2={val_r2:.3f}")
+              f"MAE={val_mae:.3f} RMSE={val_rmse:.3f} R2={val_r2:.3f}")
         history.append(dict(epoch=epoch, train_sparse=tr_sparse, val_sparse=val_sparse,
                              val_loss=val_loss, train_mae=tr_mae, val_mae=val_mae,
+                             train_rmse=tr_rmse, val_rmse=val_rmse,
                              train_r2=tr_r2, val_r2=val_r2))
 
         if args.patience is not None:
@@ -387,6 +391,7 @@ def train(args):
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 best_val_mae = val_mae  # for reporting only, not the criterion
+                best_val_rmse = val_rmse
                 best_val_r2 = val_r2
                 best_epoch = epoch
                 epochs_since_improve = 0
@@ -402,6 +407,7 @@ def train(args):
             # Unchanged prior behavior: no early stopping, checkpoint on val_mae.
             if val_mae < best_val_mae:
                 best_val_mae = val_mae
+                best_val_rmse = val_rmse
                 best_val_r2 = val_r2
                 best_epoch = epoch
                 torch.save(model.state_dict(), os.path.join(args.out, "crn_best.pt"))
@@ -422,11 +428,13 @@ def train(args):
           f"{' (early stop)' if stopped_epoch < args.epochs else ''}.")
     print(f"Selected checkpoint: epoch {best_epoch}"
           f"{' (lowest val_loss)' if args.patience is not None else ' (lowest val_mae)'}"
-          f" -- val_R2={best_val_r2:.4f}  val_MAE={best_val_mae:.4f} pH units "
+          f" -- val_R2={best_val_r2:.4f}  val_MAE={best_val_mae:.4f} pH units  "
+          f"val_RMSE={best_val_rmse:.4f} pH units "
           f"(hidden-map check, sanity only).")
     print(f"Checkpoint, loss curve, heatmap, history in {args.out}/")
 
     return dict(best_val_r2=best_val_r2, best_val_mae=best_val_mae,
+                best_val_rmse=best_val_rmse,
                 best_epoch=best_epoch, stopped_epoch=stopped_epoch, history=history)
 
 
