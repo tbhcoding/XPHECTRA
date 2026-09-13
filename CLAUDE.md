@@ -48,7 +48,7 @@ confirmed with adviser... Settled — do not re-litigate").
 | File | What it is |
 |---|---|
 | `generate_dataset.py` | The simulator — **the only generator now.** Contains `PARAMS` — the forward model's physical constants, each tagged with a citation status. This dict **mirrors the Parameterized Data Sheet** and must be kept in sync with it. Also has `--selftest`, which runs two sanity checks (see below). A parallel candidate file, `generate_dataset_new_plus_eps.py`, existed 2026-09-04 through 09-07 to test scattering/eps changes in isolation before adopting them; it has since been fully merged and retired — don't look for it. |
-| `extract_sensor_params.py` | Measures real sensor noise and texture statistics from an external real dataset (NHSI pork cubes, Wang et al. 2026) — the closest thing this project has to real measurements. |
+| `extract_sensor_params.py` | Measures real sensor noise and texture statistics from an external real dataset (NHSI meat cubes, Wang et al. 2026 -- mixed tray, species not established) — the closest thing this project has to real measurements. |
 | `crn_model.py` | The CRN (`CrudeCRN`): a small U-Net that predicts a dense pH map from a 6-band image. This is the actual model being evaluated — the thing the synthetic dataset exists to test. |
 | `train_crn.py` | Trains the CRN on 4 sparse pH points per sample (never the full dense map — that's held out as a hidden evaluation target, which is the core experimental design: can the CRN reconstruct a full field from 4 points using spectral shape alone?). |
 | `docs/TEAM_LOG.md` | Session-by-session log: what was changed, what was actually verified (with numbers), what was decided, what's still open. **This is the most current and most trustworthy record in the repo** — more current than `README.md`'s status table, which is dated 2026-09-03 and predates later sessions. |
@@ -106,7 +106,7 @@ into four tabs, that `generate_dataset.py`'s `PARAMS` dict must mirror:
    and verified in `mu_a()`.
 3. **Validation Checks** — outputs, not inputs: the sign check, the
    isosbestic check, the non-triviality (linear baseline) check, and the
-   970nm external reality check against real NHSI pork data (still
+   970nm external reality check against real NHSI lean-tissue data (species unconfirmed; still
    **not closed**, but much improved — simulated ~0.27 vs real ~0.19,
    was ~0.53-0.58).
 4. **Proposed Cuts** — simplification ideas that have been evaluated but
@@ -124,7 +124,8 @@ values, they're derivations and measurements of the model's output.
 
 **Done (7):**
 - `c_Mb_mean`, `c_Mb_sd` — myoglobin concentration (Cross et al. 2018)
-- `sensor_sigma` — measured directly from real NHSI pork cubes
+- `sensor_sigma` — measured directly from real NHSI meat cubes (species
+  unconfirmed; camera read noise is sensor-dependent, not tissue-dependent)
 - `mua_water` — Hale & Querry 1973 via omlc.org, linearly interpolated
 - `water_fraction` — 0.732, Wojtasik-Kalinowska et al. 2016
 - `denat_midpoint` — kept 5.70 as a labelled proxy (decided, not a TODO)

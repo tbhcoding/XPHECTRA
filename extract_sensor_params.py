@@ -2,7 +2,8 @@
 Extract measurable parameters from the NHSI-meat-overtime dataset
 ==================================================================
 
-Pulls three things out of an NHSI pork cube:
+Pulls three things out of an NHSI cube (a MIXED TRAY -- chicken, salmon
+and three unidentified red-meat/fat columns; NOT established as pork):
 
     sensor_sigma       -> measured additive read noise  (USED: 0.0054)
     texture amplitude  -> fine-scale surface structure  (see caveat below)
@@ -157,7 +158,7 @@ def main():
     print()
     print(f'  -> sensor_sigma value: {rel:.4f}')
     print('     status: "MEASURED"')
-    print('     source: "Measured from NHSI-meat-overtime pork cube,')
+    print('     source: "Measured from NHSI-meat-overtime cube,')
     print('              Wang et al. 2026"')
     print()
 

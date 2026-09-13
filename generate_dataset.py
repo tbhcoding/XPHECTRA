@@ -351,18 +351,27 @@ PARAMS = {
     },
 
     # ---- Table F: sensor ----------------------------------------------
-    # BOTH can be MEASURED from the NHSI-meat-overtime cubes (Wang et al.
-    # 2026). Run extract_sensor_params.py on a downloaded pork cube and
-    # paste the numbers here. Watch the ">1.0 = raw sensor counts, not
-    # calibrated reflectance" caveat from the README.
+    # MEASURED from the NHSI-meat-overtime cubes (Wang et al. 2026). Run
+    # extract_sensor_params.py on a downloaded cube and paste the number
+    # here. Watch the ">1.0 = raw sensor counts, not calibrated
+    # reflectance" caveat from the README. NOTE: each cube images a MIXED
+    # TRAY (chicken, salmon and three unidentified red-meat/fat columns),
+    # not a pork sample -- see the species caveat in the source string.
     "sensor_sigma": {
         "value": 0.0054,
         "status": "MEASURED",
-        "source": "Measured from NHSI-meat-overtime pork cube 01.mat (Wang et al. 2026) via "
+        "source": "Measured from NHSI-meat-overtime cube 01.mat (Wang et al. 2026) via "
                    "extract_sensor_params.py: additive noise std relative to signal = 0.0054, "
-                   "on a calibrated reflectance cube (values 0-1). Ch.5 caveats: different "
-                   "camera (not the intended Arducam OV9281), NIR sensor, their illumination "
-                   "and working distance -- transfers only approximately.",
+                   "on a calibrated reflectance cube (values 0-1). "
+                   "SPECIES CAVEAT (corrected 2026-09-13): this was previously labelled a "
+                   "'pork cube'. It is not established that it is. Each NHSI cube images one "
+                   "mixed tray -- chicken and salmon are identified at the ends, the three "
+                   "middle columns are not identified by species in the dataset or its source "
+                   "paper. The VALUE stands regardless: this is camera read noise, a property "
+                   "of the sensor and not of the tissue imaged. Only the label was wrong. "
+                   "Ch.5 caveats: different camera (not the intended Arducam OV9281), NIR "
+                   "sensor, their illumination and working distance -- transfers only "
+                   "approximately.",
     },
     # texture_amplitude (muscle-fibre/marbling mottle) was CUT -- was an
     # ASSUMED, uncited multiplicative nuisance term. extract_sensor_params.py
