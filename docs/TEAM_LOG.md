@@ -20,6 +20,46 @@ Template:
 
 ---
 
+## 2026-09-13 (cont. 2) — Spatial-skill finding independently confirmed on the official crn_5seed_final checkpoints, not just the reproduction (via Claude session, Arrvsssogood's machine)
+
+**Why this entry exists:** the entry below was verified against `crn_check/`
+(tbhcoding's independent reproduction), not the actual official
+`crn_5seed_final/` checkpoints the thesis result is based on. Ran
+`check_spatial_skill.py` unmodified against the real ones before treating
+the finding as settled — same standard applied to every other number in
+this log.
+
+**Verified (numbers) — `crn_5seed_final/seed_{0-4}`, unmodified script:**
+
+| Metric | tbhcoding's `crn_check/` | **Official `crn_5seed_final/`** |
+|---|---|---|
+| Pooled R² | 0.8359 ± 0.0363 | 0.8486 ± 0.0412 |
+| MAE | 0.0965 ± 0.0134 | 0.0902 ± 0.0150 |
+| Per-sample R² | −2.5672 ± 0.7493 | **−2.2988 ± 0.8530** |
+| Negative on (of 50) | 33–44, every seed | **33–43, every seed** |
+| Within-sample corr | +0.505 ± 0.061 | +0.5410 ± 0.0691 |
+| Amplitude ratio | 1.31x ± 0.12 | 1.2902x ± 0.1089 |
+| Per-sample R² ceiling if rescaled | +0.258 ± 0.059 | +0.2965 ± 0.0708 |
+
+**Holds, on the actual result the thesis reports, not just the
+reproduction.** Every figure lands within the reproduction's range —
+same conclusion, same diagnosis (real spatial correlation, ~1.3x
+over-amplified), same order of magnitude on the rescaling ceiling
+(~0.26–0.30). Raw output: `metric_check_outputs/spatial_skill_official.json`.
+
+**Decided:**
+- Nothing beyond what the entry below already recommends — this entry
+  only removes the one gap in it (untested on the actual reported
+  checkpoints). Same three recommendations stand: report pooled R² (not
+  batch-averaged), lead with MAE/RMSE, disclose per-sample R² alongside
+  pooled rather than quoting +0.85 alone.
+
+**Still open:** identical to the entry below — the amplitude-miscalibration
+fix (target: per-sample R² −2.30 → ~+0.30) is the concrete, actionable
+next technical step, not yet attempted.
+
+---
+
 ## 2026-09-13 (cont.) — The reported R² does not measure the thesis's actual claim: per-sample (spatial) R² is NEGATIVE on every seed (via Claude session, tbhcoding's machine)
 
 **Read this before writing any Chapter 4/5 result sentence.** The headline
