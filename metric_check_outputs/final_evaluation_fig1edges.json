@@ -5,7 +5,7 @@
     5.4,
     5.8
   ],
-  "class_edges_source": "midpoints interpolated from Figure 1 anchors, DOI: 10.55002/mr.5.3.117 (anchors cited; midpoints are our interpolation)",
+  "class_edges_cited": false,
   "class_names": [
     "PSE (low)",
     "normal",
@@ -24,13 +24,6 @@
         "0.20": 83.07841019554436
       },
       "class_accuracy_pct": 86.54970823999176,
-      "majority_baseline_pct": 62.865654097970086,
-      "class_lift_pct": 23.684054142021672,
-      "class_true_proportions_pct": [
-        4.6137498752871124,
-        32.5205960267428,
-        62.865654097970086
-      ],
       "class_confusion": [
         [
           174,
@@ -66,13 +59,6 @@
         "0.20": 94.31603636000835
       },
       "class_accuracy_pct": 89.67987905439554,
-      "majority_baseline_pct": 62.865654097970086,
-      "class_lift_pct": 26.814224956425456,
-      "class_true_proportions_pct": [
-        4.6137498752871124,
-        32.5205960267428,
-        62.865654097970086
-      ],
       "class_confusion": [
         [
           46568,
@@ -108,13 +94,6 @@
         "0.20": 91.3321953339116
       },
       "class_accuracy_pct": 88.97832476380879,
-      "majority_baseline_pct": 62.865654097970086,
-      "class_lift_pct": 26.1126706658387,
-      "class_true_proportions_pct": [
-        4.6137498752871124,
-        32.5205960267428,
-        62.865654097970086
-      ],
       "class_confusion": [
         [
           50562,
@@ -150,13 +129,6 @@
         "0.20": 90.13669622884584
       },
       "class_accuracy_pct": 88.58845728385961,
-      "majority_baseline_pct": 62.865654097970086,
-      "class_lift_pct": 25.722803185889525,
-      "class_true_proportions_pct": [
-        4.6137498752871124,
-        32.5205960267428,
-        62.865654097970086
-      ],
       "class_confusion": [
         [
           4215,
@@ -192,13 +164,6 @@
         "0.20": 92.35328721364422
       },
       "class_accuracy_pct": 88.24493120482735,
-      "majority_baseline_pct": 62.865654097970086,
-      "class_lift_pct": 25.379277106857266,
-      "class_true_proportions_pct": [
-        4.6137498752871124,
-        32.5205960267428,
-        62.865654097970086
-      ],
       "class_confusion": [
         [
           7088,
@@ -238,14 +203,6 @@
     },
     "class_accuracy_pct": {
       "mean": 88.40826010937661,
-      "std": 1.044543044159577
-    },
-    "majority_baseline_pct": {
-      "mean": 62.86565409797008,
-      "std": 7.105427357601002e-15
-    },
-    "class_lift_pct": {
-      "mean": 25.542606011406527,
       "std": 1.044543044159577
     },
     "per_sample_r2_mean": {

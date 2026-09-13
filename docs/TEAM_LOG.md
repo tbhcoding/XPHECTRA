@@ -20,7 +20,7 @@ Template:
 
 ---
 
-## 2026-09-13 (cont. 5) — `find_meat()` fix VERIFIED on the real cubes and adopted (adapted): the published `sensor_sigma` was measured on BARE TRAY, not pork (via Claude session, tbhcoding's machine — the one with the cubes)
+## 2026-09-13 (cont. 8) — `find_meat()` fix VERIFIED on the real cubes and adopted (adapted): the published `sensor_sigma` was measured on BARE TRAY, not pork (via Claude session, tbhcoding's machine — the one with the cubes)
 
 **Picks up the handoff from cont. 4.** Ran that entry's 4-step recipe
 against the real NHSI cubes. Steps 1, 2 and 4 behaved as predicted. **Step
@@ -125,6 +125,222 @@ freshest timepoints were 0.18–0.21.
   re-measurement that must match a published number.
 - The cubes are ~11GB and gitignored; they exist only on tbhcoding's
   machine, which is why cont. 4 correctly refused to ship this unverified.
+## 2026-09-13 (cont. 7) — Learning rate confirmed as 1e-4 (a conflict raised by the drafting session); Result Sheet verified claim-by-claim (via Claude session, Arrvsssogood's machine)
+
+**CHAPTER 3 MUST STATE lr = 1e-4.** A parallel session drafting the
+chapters hit a conflict: `crn_model.py`'s docstring says the instability
+fix was lowering the learning rate 1e-3 → 1e-4, while a summary sheet
+built in this session listed 1e-3. It stopped and asked rather than
+picking one. **The docstring is right; the sheet was wrong.**
+
+**Resolved against the code, not by preference:**
+- `train_crn.py`'s `--lr` default is **1e-4**.
+- `crn_5seed_final` was run as `--seed {0..4} --patience 10 --epochs 50`
+  with **no `--lr` flag**, so it used that default.
+- The default changed 1e-3 → 1e-4 in `f4f0557` on **2026-08-31**, well
+  before the 2026-09-12 runs. Verified by reading `train_crn.py` **as it
+  existed at commit `8943a9d`** (the commit recording those runs), not
+  merely the current file: it already read `default=1e-4` there.
+- **Every reported result was trained at lr = 1e-4.** No result is
+  affected; only the summary sheet's description was wrong, now fixed.
+
+**A STALE LINE THAT LOOKS LIKE A CONTRADICTION — do not be misled by it.**
+The 2026-08-31 entry below says the LR fix *"needs `--lr 1e-4` passed
+explicitly."* That was true on 2026-08-31, when the default was still
+1e-3. It stopped being true later the same day. It is left in place as
+historical record. **Anything in this log dated 2026-08-31 or earlier
+about the learning rate should not be used to describe the final runs.**
+
+**Also worth stating in Chapter 3 as a finding, not just a setting:**
+lr = 1e-3 *caused* the validation instability, and lowering it to 1e-4
+was the remedy. Paired with the later discovery that the *remaining*
+instability was partly a scoring artefact (cont. 3), the story is clean:
+one real cause fixed, one apparent cause revealed as a measurement error.
+
+**Verified — the summary sheet re-checked claim by claim after the error.**
+The repository audit in cont. 6 covered the repo's own docs but **not the
+summary sheet itself**, which is how a transcribed value survived it.
+Closed now; each group re-derived mechanically:
+
+| Claim group | Checked against | Result |
+|---|---|---|
+| Wavelengths, architecture, all hyperparameters | `crn_model.py`, `build_argparser()`, live forward pass | 12/12 |
+| All 14 parameters + eps arrays | live `PARAMS` | 13/13 |
+| Per-seed R²/MAE/RMSE, best epoch, epochs run | re-scored checkpoints + each `history.json` | 25/25 |
+| Aggregates, all three evaluation sets | saved evaluation JSON | 22/22 |
+| Tolerance bands, class accuracy, baseline, lift | saved evaluation JSON | 7/7 |
+| Amplitude sweep, variance decomposition, negative counts | saved sweep/spatial JSON | 16/16 |
+| 970 nm value, pH-range narrowing table | recomputed from dataset + checkpoints | 4/4 |
+| Dataset splits and integrity | file counts, full pass over 400 cubes | 3/3 |
+
+**One error across ~100 claims — the learning rate — found and fixed.**
+Incidentally confirmed: per-seed best epochs are 9/14/21/10/18 over
+19/24/31/20/28 epochs, and the simulated 970 nm mean is 0.2645.
+
+**Decided:**
+- **When any document and the code disagree, the code wins** — it is what
+  actually ran. Verify hyperparameters against `build_argparser()`
+  directly, never against prose.
+- The drafting session's behaviour — stop and ask on a conflict rather
+  than choose — is correct. Keep it.
+
+**NOT verified by this session, and worth someone spot-checking before the
+defense:** the external citations themselves (Tang 2004, Bowen 1949,
+Cross 2018, Hale & Querry, Bergmann 2021, Wojtasik-Kalinowska). Earlier
+entries record checking them; nothing in this session re-opened the
+papers. If one is wrong, none of the checks above would catch it.
+
+**Still open:** unchanged from cont. 6.
+
+---
+
+## 2026-09-13 (cont. 6) — Pre-writing audit; 500-sample extended test set; quality-class metric demoted; a stated rationale CORRECTED (via Claude session, Arrvsssogood's machine)
+
+**This is the entry to read before writing Chapter 4.** It supersedes every
+earlier number in this log where they disagree.
+
+**Audit performed before declaring results final — all re-run, not recalled:**
+
+| Check | Result |
+|---|---|
+| Sign test | PASS — reflectance falls as pH rises, all 6 bands |
+| Non-triviality | Linear baseline R² = 0.6509 ± 0.0180 (10 seeds) |
+| Blocking parameters | 0 of 14 |
+| Dataset integrity | 400/400 cubes: 0 NaN, 0 negative, 0 > 1.0 |
+| Splits | 300 / 50 / 50, generation seed 42 |
+| Everything pushed | yes |
+
+**The audit found three real problems, all now fixed:**
+1. **Stale figures in `docs/SYSTEM_ARCHITECTURE.md`** — still quoting the
+   pre-fix `val R² = 0.79 ± 0.07` against a linear baseline of `~0.68`, and
+   an obsolete `0.587/0.691` baseline predating the retirement of
+   `generate_dataset_new_plus_eps.py`. Corrected, superseded values kept
+   visible beside the current ones.
+2. **All reported numbers were on the VALIDATION split**, which early
+   stopping used for checkpoint selection. The test split had never been
+   touched. Now evaluated — see below.
+3. **`sensor_sigma`'s provenance claimed a "pork cube"** — unsupported. The
+   2026-09-11 entry flagged this and it was never fixed in code. Corrected
+   in all 7 places that asserted it. **Value unchanged (0.0054): camera read
+   noise is a sensor property, not a tissue property. Only the label was
+   wrong.**
+
+**Verified (numbers) — three evaluation sets, same 5 checkpoints:**
+
+| | R² | MAE | RMSE | within ±0.15 pH |
+|---|---|---|---|---|
+| val, n=50 | 0.8486 ± 0.0368 | 0.0902 | 0.1223 | 82.5% |
+| test, n=50 (untouched) | 0.8389 ± 0.0412 | 0.0902 | 0.1234 | 82.8% |
+| **test, n=500 (extended)** | **0.8472 ± 0.0384** | **0.0936** | **0.1282** | **81.5%** |
+
+**Report the n=500 figures.** They are the most trustworthy: largest set,
+wholly unseen, and they show the n=50 sets were slightly OPTIMISTIC
+(MAE 0.0902 → 0.0936; within-±0.15 82.5% → 81.5%).
+
+**Changed:**
+- `evaluate_heatmap.py`: tolerance bands promoted to the headline and
+  labelled "REPORT THESE"; quality class demoted to section 2b with both
+  caveats printed inline; `--no-class` added to omit it entirely.
+- Generated `ligtas_test_extended/` — 500 samples, **seed 777, NOT 42**
+  (seed 42 reproduces the frozen dataset's own draws and would overlap
+  training data). Frozen PARAMS, gitignored, 940MB, regenerable in 36s.
+
+**CORRECTION TO A RATIONALE STATED EARLIER THIS SESSION.** The extended
+test set was built on the claim that more evaluation data would tighten the
+reported error bars. **That reasoning was wrong.** The ± figures are the
+spread ACROSS THE 5 TRAINING SEEDS, not sampling error of the evaluation
+set — so more test samples cannot reduce them, and measurably did not
+(±0.0368 at n=50 → ±0.0384 at n=500). **The only lever on those bars is
+training more seeds**: 10 seeds would take the standard error from ~0.017
+to ~0.012, at roughly 35 min/seed. Recording this so the false rationale
+does not get repeated or written into the manuscript.
+
+**Decided:**
+- **Lead with threshold-free tolerance bands**, not quality-class accuracy.
+  The bands depend on no class definition and no class balance; the class
+  figure depends on interpolated edges AND the sampling design, so it is
+  weaker evidence twice over. Keep it as support or drop it.
+- **Report n=500 test figures** as the primary result.
+
+**Still open — unchanged:** spatial calibration (fix or disclose),
+`find_meat()` (with the cube holder), team ratification of
+`denat_amplitude`/`denat_width`, NHSI tray position, 970 nm gap,
+manuscript sync. None blocks writing.
+
+---
+
+## 2026-09-13 (cont. 5) — Practical heatmap metrics added; pH sampling range examined and DELIBERATELY KEPT (via Claude session, Arrvsssogood's machine)
+
+**Read before writing the Chapter 4 results section or touching
+`make_ph_field()`.**
+
+**Changed:**
+- Added `evaluate_heatmap.py` — the single script to run for Chapter 4.
+  Reports three families in ONE printed block so the favourable numbers
+  cannot be quoted without the limitation beside them: (1) pooled R²/MAE/
+  RMSE, (2) practical heatmap accuracy, (3) the spatial limitation.
+- `train_crn.py`: RMSE is now a native per-epoch metric (train and val),
+  in `history.json`, the best-checkpoint line, and `train()`'s return —
+  previously it had to be computed post-hoc.
+- `generate_dataset.py`: `make_ph_field()` docstring now states the
+  sampling design and its two consequences. No code change, no PARAMS
+  change, dataset unaffected.
+
+**Verified (numbers) — `crn_5seed_final`, held-out val, 5 seeds:**
+
+| | |
+|---|---|
+| Pixels within ±0.05 pH | 38.8% ± 5.7 |
+| Pixels within ±0.10 pH | 67.2% ± 7.9 |
+| **Pixels within ±0.15 pH** | **82.5% ± 6.6** |
+| **Pixels within ±0.20 pH** | **90.2% ± 3.8** |
+| Correct quality class | 88.4% ± 1.0 |
+| Majority-class baseline | 62.9% |
+| **Lift over baseline** | **+25.5 pts ± 1.0** |
+
+- Native RMSE reproduces the earlier post-hoc values EXACTLY on all five
+  checkpoints (0.1484/0.1056/0.1185/0.1240/0.1151, mean 0.1223 ± 0.0143).
+- **Why the tolerance bands matter:** per-sample R² (−2.30) and these
+  figures are both true and not in conflict. True within-sample variation
+  is only ±0.084 pH, so per-sample R² measures against a minuscule scale;
+  quality-class bands are ~0.4 pH wide, ~5× larger. Same errors, two
+  scales. Report both.
+
+**QUALITY-CLASS THRESHOLDS — now sourced, with one honest caveat.** The
+manuscript's Figure 1 (DOI: 10.55002/mr.5.3.117) anchors pH 5.2 = PSE,
+5.6 = normal, 6.0 = DFD. It gives **anchor points, not boundaries.** The
+defaults 5.40/5.80 are the **midpoints between those anchors — our
+interpolation, not a value the source states.** Say so if asked. The
+tolerance bands need no threshold at all and are the safer number if the
+edges are ever challenged.
+
+**Decided — the pH sampling range STAYS at `uniform(5.35, 6.45)`.**
+The question was raised whether to narrow it to match Figure 1's 5.2–6.0.
+Measured before deciding, same trained model, same predictions, only the
+scored subset changing:
+
+| Scored on | pooled R² | MAE |
+|---|---|---|
+| Full range (current) | **0.8486** | 0.0902 |
+| Restricted to ≤6.0 | **0.6533** | 0.0846 |
+| Restricted to 5.4–6.0 | **0.6565** | 0.0816 |
+
+**Narrowing the range would drop headline R² by ~0.20 while the model got
+slightly MORE accurate (MAE improves).** R² is variance-explained relative
+to variance available; less range means less to explain. At 0.65 the CRN
+would sit barely above the linear baseline (0.62). Changing it would also
+force a full dataset regeneration and retraining of every seed, for a
+strictly worse reported result and no real improvement. **Not done.**
+
+Instead, disclose it. Suggested methodology sentence: *"Sample pH was
+drawn uniformly across 5.35–6.45 to cover the full physiological range
+evenly, including values beyond the PSE–DFD span of Figure 1. This is a
+sampling design for even coverage, not a model of the population
+distribution of commercial pork."*
+
+**Still open:** unchanged — spatial calibration (fix or disclose),
+`find_meat()` (with the cube holder), team ratification of
+`denat_amplitude`/`denat_width`, NHSI tray position, manuscript sync.
 
 ---
 

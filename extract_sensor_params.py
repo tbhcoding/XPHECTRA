@@ -2,7 +2,8 @@
 Extract measurable parameters from the NHSI-meat-overtime dataset
 ==================================================================
 
-Pulls three things out of an NHSI cube:
+Pulls three things out of an NHSI cube (a MIXED TRAY -- chicken, salmon
+and three unidentified red-meat/fat columns; NOT established as pork):
 
     sensor_sigma       -> measured additive read noise  (USED: 0.0054)
     texture amplitude  -> fine-scale surface structure  (see caveat below)
@@ -304,15 +305,19 @@ def main():
         print('     source: "Read noise measured from NHSI-meat-overtime cube')
         print('              01 (Wang et al. 2026): flattest 24x24 patch, which')
         print('              is a UNIFORM NON-TISSUE (tray) region -- the correct')
-        print('              target for sensor read noise. NOT measured on pork;')
-        print('              earlier wording saying so was inaccurate. Absolute')
+        print('              target for sensor read noise. NOT measured on pork,')
+        print('              nor on any tissue; earlier wording saying so was')
+        print('              inaccurate. Read noise is a property of the sensor,')
+        print('              not of what was imaged, so the VALUE stands. Absolute')
         print(f'              residual sd {np.median(sigmas):.5f}, normalised by the')
         print(f'              patch mean {patch.mean():.4f}."')
     else:
         print('     source: "Measured from NHSI-meat-overtime cube (Wang et al.')
         print('              2026) on a TISSUE patch -- includes muscle')
         print('              micro-texture, so this is an upper bound on read')
-        print('              noise, not pure read noise."')
+        print('              noise, not pure read noise. Species NOT established:')
+        print('              each cube is a mixed tray and the red-meat columns')
+        print('              are unidentified."')
     print()
 
     # --- 2. TEXTURE AMPLITUDE (fine-scale) --------------------------------

@@ -22,28 +22,52 @@ prints them in ONE block so the favourable ones cannot be quoted without
 the limitation beside them:
 
   1. Standard regression metrics : pooled R^2, MAE, RMSE
-  2. Practical heatmap accuracy  : % of pixels within a pH tolerance, and
-                                   agreement on quality class
+  2. Practical heatmap accuracy  : % of pixels within a pH tolerance
+                                   (THRESHOLD-FREE -- report these), with
+                                   quality-class agreement demoted to 2b as
+                                   weaker, caveated evidence
   3. Spatial honesty            : per-sample R^2, within-sample correlation,
                                    and the amplitude ratio that explains it
 
+WHICH NUMBER TO PUT IN THE MANUSCRIPT
+-------------------------------------
+Lead with the tolerance bands, e.g. "82.8% of test pixels fall within
++/-0.15 pH of ground truth". They depend on no class definition and no
+class balance, so there is no interpretive choice in them to challenge.
+
+The quality-class figure is more evocative for a meat-science audience but
+is weaker evidence twice over -- the boundaries are interpolated and the
+class mix follows the sampling design. Use it as support, never as the
+headline, or omit it with --no-class.
+
 QUALITY-CLASS THRESHOLDS -- READ BEFORE QUOTING
 -----------------------------------------------
-The default boundaries (5.60, 6.00) are CONVENTIONAL values in common use
-for PSE / normal / DFD, but they are **NOT CITED ANYWHERE IN THIS PROJECT**
-and no source has been verified for them here. They are configurable via
---class-edges precisely so they are not mistaken for a settled constant.
+Defaults are 5.40 and 5.80, DERIVED from the manuscript's own Figure 1
+(DOI: 10.55002/mr.5.3.117), which anchors pH 5.2 = PSE, 5.6 = normal,
+6.0 = DFD. Note what that figure does and does not give:
 
-Before any class-accuracy figure goes into the manuscript, either cite a
-source for the boundaries or report the tolerance-band numbers instead,
-which depend on no threshold at all. Treat this the same way the parameter
-sheet treats `denat_width`: usable, clearly labelled, not presented as
-measured fact.
+  - It GIVES three labelled anchor points on a continuum.
+  - It does NOT give class boundaries.
+
+5.40 and 5.80 are the MIDPOINTS between those anchors -- a reasonable
+interpolation, but an interpolation, not a value the source states. Say so
+if asked; do not present the edges themselves as cited.
+
+Class proportions also inherit the generator's sampling design, which draws
+between-sample pH uniformly over 5.35-6.45 for even coverage rather than
+imitating the population distribution of commercial pork. Under the edges
+above that puts ~63% of pixels in the DFD class, so a classifier that
+always guessed DFD would already score ~63%. The script therefore reports
+the MAJORITY-CLASS BASELINE next to the accuracy, and the lift over it --
+quote the lift, not the raw accuracy alone.
+
+The tolerance-band figures depend on no threshold and no class balance, so
+they are the safer number if the boundaries are ever challenged.
 
 Usage:
     python evaluate_heatmap.py
     python evaluate_heatmap.py --ckpt-glob "crn_5seed_final/seed_*/crn_best.pt"
-    python evaluate_heatmap.py --class-edges 5.5 6.1
+    python evaluate_heatmap.py --class-edges 5.60 6.00
 """
 
 import argparse
@@ -103,8 +127,17 @@ def score_checkpoint(ckpt, loader, class_edges):
                                    for t in TOLERANCES}
     y_cls = np.digitize(y, class_edges)
     p_cls = np.digitize(p, class_edges)
-    out["class_accuracy_pct"] = float(100 * (y_cls == p_cls).mean())
     n_cls = len(class_edges) + 1
+    counts = np.bincount(y_cls, minlength=n_cls)
+    # A classifier that always guessed the commonest true class would score
+    # this. Report the LIFT over it, never the raw accuracy alone -- the
+    # class balance here is a product of the generator's sampling design.
+    majority = float(100 * counts.max() / len(y_cls))
+    acc = float(100 * (y_cls == p_cls).mean())
+    out["class_accuracy_pct"] = acc
+    out["majority_baseline_pct"] = majority
+    out["class_lift_pct"] = acc - majority
+    out["class_true_proportions_pct"] = [float(100 * c / len(y_cls)) for c in counts]
     out["class_confusion"] = [[int(((y_cls == a) & (p_cls == b)).sum())
                                for b in range(n_cls)] for a in range(n_cls)]
 
@@ -133,9 +166,15 @@ def main():
     ap.add_argument("--data", default="ligtas_synthetic_dataset")
     ap.add_argument("--split", default="val")
     ap.add_argument("--ckpt-glob", default="crn_5seed_final/seed_*/crn_best.pt")
-    ap.add_argument("--class-edges", type=float, nargs="+", default=[5.60, 6.00],
-                     help="pH boundaries between quality classes. NOT CITED -- "
-                          "see the module docstring before quoting the result.")
+    ap.add_argument("--class-edges", type=float, nargs="+", default=[5.40, 5.80],
+                     help="pH boundaries between quality classes. Default: "
+                          "midpoints between the PSE/normal/DFD anchors in "
+                          "Figure 1 (DOI: 10.55002/mr.5.3.117). The anchors are "
+                          "cited; these midpoints are interpolated from them.")
+    ap.add_argument("--no-class", action="store_true",
+                     help="omit the quality-class section entirely. The "
+                          "tolerance bands in section 2 make the same point "
+                          "without importing any threshold choice.")
     ap.add_argument("--out", default="metric_check_outputs/final_evaluation.json")
     a = ap.parse_args()
 
@@ -168,14 +207,31 @@ def main():
         m, s = agg(rows, k)
         print(f"   {lbl:<22} {m:.4f} +/- {s:.4f}")
 
-    print("\n2. PRACTICAL HEATMAP ACCURACY")
+    print("\n2. PRACTICAL HEATMAP ACCURACY  <-- REPORT THESE")
+    print("   Threshold-free: depends on no class definition and no class")
+    print("   balance, so there is nothing in them to dispute.")
     for t in TOLERANCES:
         v = np.array([r["within_tolerance_pct"][f"{t:.2f}"] for r in rows])
-        print(f"   pixels within +/-{t:.2f} pH   {v.mean():5.1f}% +/- {v.std():.1f}")
-    m, s = agg(rows, "class_accuracy_pct")
-    edges = ", ".join(f"{e:.2f}" for e in a.class_edges)
-    print(f"   correct quality class  {m:5.1f}% +/- {s:.1f}   "
-          f"(edges {edges} -- NOT CITED, see docstring)")
+        star = "  <- headline" if abs(t - 0.15) < 1e-9 else ""
+        print(f"   pixels within +/-{t:.2f} pH   {v.mean():5.1f}% +/- {v.std():.1f}{star}")
+
+    if not a.no_class:
+        m, s = agg(rows, "class_accuracy_pct")
+        mb, _ = agg(rows, "majority_baseline_pct")
+        ml, mls = agg(rows, "class_lift_pct")
+        edges = ", ".join(f"{e:.2f}" for e in a.class_edges)
+        props = " / ".join(f"{n} {p:.0f}%" for n, p in
+                           zip(CLASS_NAMES, rows[0]["class_true_proportions_pct"]))
+        print("\n   2b. SECONDARY -- quality class. Weaker evidence; see caveats.")
+        print(f"       correct quality class  {m:5.1f}% +/- {s:.1f}   (edges {edges})")
+        print(f"       majority-class baseline{mb:5.1f}%      (true mix: {props})")
+        print(f"       LIFT over baseline     {ml:+5.1f} pts +/- {mls:.1f}")
+        print("       CAVEAT 1: the edges are OUR interpolation of Figure 1's")
+        print("                 anchors (5.2/5.6/6.0); the source states no")
+        print("                 boundaries. Different edges give a different %.")
+        print("       CAVEAT 2: the class mix follows the uniform sampling")
+        print("                 design, not a real pork population.")
+        print("       If challenged, fall back on section 2 -- it needs neither.")
 
     print("\n3. SPATIAL LIMITATION  --  report this alongside section 1")
     m, s = agg(rows, "per_sample_r2_mean")
@@ -192,6 +248,7 @@ def main():
 
     summary = {}
     for k in ("pooled_r2", "mae", "rmse", "class_accuracy_pct",
+              "majority_baseline_pct", "class_lift_pct",
               "per_sample_r2_mean", "within_sample_corr", "amplitude_ratio"):
         m, s = agg(rows, k)
         summary[k] = dict(mean=m, std=s)
@@ -205,7 +262,7 @@ def main():
     with open(a.out, "w") as f:
         json.dump(dict(data=f"{a.data}/{a.split}", n_samples=len(ds),
                        class_edges=a.class_edges,
-                       class_edges_cited=False,
+                       class_edges_source="midpoints interpolated from Figure 1 anchors, DOI: 10.55002/mr.5.3.117 (anchors cited; midpoints are our interpolation)",
                        class_names=CLASS_NAMES,
                        per_checkpoint=rows, summary=summary), f, indent=2)
     print(f"\nWrote {a.out}")

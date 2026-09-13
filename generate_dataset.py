@@ -351,18 +351,38 @@ PARAMS = {
     },
 
     # ---- Table F: sensor ----------------------------------------------
-    # BOTH can be MEASURED from the NHSI-meat-overtime cubes (Wang et al.
-    # 2026). Run extract_sensor_params.py on a downloaded pork cube and
-    # paste the numbers here. Watch the ">1.0 = raw sensor counts, not
-    # calibrated reflectance" caveat from the README.
+    # MEASURED from the NHSI-meat-overtime cubes (Wang et al. 2026). Run
+    # extract_sensor_params.py on a downloaded cube and paste the number
+    # here. Watch the ">1.0 = raw sensor counts, not calibrated
+    # reflectance" caveat from the README. NOTE: each cube images a MIXED
+    # TRAY (chicken, salmon and three unidentified red-meat/fat columns),
+    # not a pork sample -- see the species caveat in the source string.
     "sensor_sigma": {
         "value": 0.0054,
         "status": "MEASURED",
-        "source": "Measured from NHSI-meat-overtime pork cube 01.mat (Wang et al. 2026) via "
+        "source": "Measured from NHSI-meat-overtime cube 01.mat (Wang et al. 2026) via "
                    "extract_sensor_params.py: additive noise std relative to signal = 0.0054, "
-                   "on a calibrated reflectance cube (values 0-1). Ch.5 caveats: different "
-                   "camera (not the intended Arducam OV9281), NIR sensor, their illumination "
-                   "and working distance -- transfers only approximately.",
+                   "on a calibrated reflectance cube (values 0-1). "
+                   "SPECIES CAVEAT (corrected 2026-09-13): this was previously labelled a "
+                   "'pork cube'. It is not established that it is. Each NHSI cube images one "
+                   "mixed tray -- chicken and salmon are identified at the ends, the three "
+                   "middle columns are not identified by species in the dataset or its source "
+                   "paper. The VALUE stands regardless: this is camera read noise, a property "
+                   "of the sensor and not of what was imaged. Only the label was wrong. "
+                   "MEASUREMENT-SITE CAVEAT (verified on the real cubes 2026-09-13): the "
+                   "24x24 patch this was measured on is not tissue AT ALL -- it is bare tray "
+                   "(0% tissue by the water-band test on cube 01; flattest_patch() prefers it "
+                   "because empty tray is flatter than muscle). That is the CORRECT target "
+                   "for read noise, and is why the value stands: absolute per-band residual "
+                   "sd is 0.00039 on tray vs 0.00377 on muscle, the 10x difference being "
+                   "biological micro-texture rather than electronics. Measuring on tissue "
+                   "instead gives ~0.035 (cube 01) / ~0.057 (cube 19) -- a different quantity "
+                   "that double-counts the since-cut texture_amplitude. OPEN: 0.0054 "
+                   "normalises by the tray's mean (0.072); applied to meat at ~0.2-0.4 "
+                   "reflectance it implies 3-5x the measured absolute noise. "
+                   "Ch.5 caveats: different camera (not the intended Arducam OV9281), NIR "
+                   "sensor, their illumination and working distance -- transfers only "
+                   "approximately.",
     },
     # texture_amplitude (muscle-fibre/marbling mottle) was CUT -- was an
     # ASSUMED, uncited multiplicative nuisance term. extract_sensor_params.py
@@ -572,6 +592,30 @@ def make_ph_field(shape, rng):
     rather than the smooth gradient described above. Raised to 77.0
     (~1.5 cm, at 256 px / 5 cm = 51.2 px/cm) for a visibly smoother,
     few-blob field closer to what a real 5x5 cm sample should look like.
+
+    SAMPLING DESIGN -- STATE THIS IN THE METHODOLOGY (2026-09-13).
+    `base` is drawn UNIFORMLY over 5.35-6.45. That is a deliberate design
+    for even coverage of the physiological range, NOT a model of the
+    population distribution of commercial pork, which clusters near normal
+    pH with thinner tails. Two consequences worth stating rather than
+    discovering under questioning:
+
+      - Class proportions inherit the design. Against the PSE/normal/DFD
+        anchors of the manuscript's Figure 1 (DOI: 10.55002/mr.5.3.117;
+        5.2 / 5.6 / 6.0), roughly 63% of pixels fall in the DFD band. That
+        reflects uniform sampling over a wide range, not a claim that most
+        pork is DFD.
+      - R^2 depends on the range sampled. Measured on the frozen dataset:
+        scoring the SAME trained model only on samples within Figure 1's
+        range (<=6.0) drops pooled R^2 from 0.8486 to 0.6533 while MAE
+        IMPROVES (0.0902 -> 0.0846). Narrowing the range leaves less
+        variance to explain, so identical accuracy scores lower. This is a
+        property of R^2, not of the model -- which is why MAE/RMSE in pH
+        units should be quoted alongside it.
+
+    Do NOT narrow this range to match Figure 1 without understanding the
+    above: it would cost ~0.20 of headline R^2, require regenerating the
+    dataset and retraining every seed, and make the model no better.
     """
     base = rng.uniform(5.35, 6.45)
     spread = rng.uniform(0.04, 0.14)
