@@ -20,6 +20,251 @@ Template:
 
 ---
 
+## 2026-09-13 (cont.) — The reported R² does not measure the thesis's actual claim: per-sample (spatial) R² is NEGATIVE on every seed (via Claude session, tbhcoding's machine)
+
+**Read this before writing any Chapter 4/5 result sentence.** The headline
+R² and the project's stated research question are not the same quantity.
+
+**Changed:**
+- Added `check_spatial_skill.py` — separates pooled R² from per-sample
+  (within-sample) R², reports the variance decomposition, a level-only
+  reference, and spatial diagnostics. Reports numbers only; touches no
+  `PARAMS`, `CrudeCRN`, or `train_crn.py`.
+- Added `metric_check_outputs/spatial_skill.json` (raw output).
+
+**CORRECTION to an earlier claim made in this session (recorded so nobody
+repeats it):** it was asserted mid-session that the CRN "is handed 4 real
+pH values per sample as input." **That is false.** `run_epoch()` calls
+`model(x)` with the 6-band cube ONLY; `coords`/`values` enter exclusively
+through `sparse_loss()`. Verified by reading `crn_model.CrudeCRN.forward`
+(signature `forward(self, x)`) and `train_crn.run_epoch` directly.
+**Consequence: the CRN-vs-Linear/PLSR comparison IS fair** — both sides
+predict from spectra alone — so the 2026-09-12/13 sweep and
+metric-mismatch conclusions are unaffected and stand.
+
+**Verified (numbers) — `ligtas_synthetic_dataset/val` (50 samples), the 5
+`crn_check/` checkpoints, all scored pooled (no batch-averaging):**
+
+| Metric | Value | Question it answers |
+|---|---|---|
+| Pooled R² | **+0.8359 ± 0.0363** | "Can it measure pH from an image?" |
+| MAE | 0.0965 ± 0.0134 pH | absolute accuracy |
+| RMSE | 0.1276 ± 0.0143 pH | absolute accuracy |
+| **Per-sample R²** | **−2.5672 ± 0.7493** | **"Can it reconstruct the spatial field?"** |
+
+- **Per-sample R² is negative on every seed**, and negative on 33–44 of the
+  50 val samples individually (seed 0: 44/50, seed 4: 33/50). Negative here
+  means the predicted map is **worse than a flat map at that sample's own
+  mean pH**. Per-sample R² = `1 - SS_res/SS_tot` with `SS_tot` taken about
+  each sample's own mean, averaged over samples.
+- **Why pooled R² still looks good — variance decomposition:**
+  between-sample pH std (over sample means) = **0.3036**; within-sample pH
+  std (mean over samples) = **0.0843**. Between-sample spread is **3.6x**
+  larger, so pooled R² is dominated by getting each sample's pH LEVEL
+  right, not its spatial detail.
+- **Level-only reference: pooled R² = 0.8995** (predict a constant = the
+  mean of that sample's 4 sparse points). **This is an ORACLE, not a
+  competing baseline** — it uses sparse pH values at test time, which the
+  CRN never receives. It is recorded only to quantify that **~90% of the
+  pooled figure is attributable to level alone.** Do NOT report it as
+  something the CRN "loses to"; that comparison would be invalid.
+- **Diagnosis — the spatial signal is REAL but mis-scaled, on every seed:**
+
+  | seed | within-sample corr | pred std / true std | level err (pH) |
+  |---|---|---|---|
+  | 0 | +0.410 | 1.47x | 0.0699 |
+  | 1 | +0.537 | 1.26x | 0.0654 |
+  | 2 | +0.478 | 1.20x | 0.0754 |
+  | 3 | +0.546 | 1.21x | 0.0720 |
+  | 4 | +0.555 | 1.41x | 0.0295 |
+  | **mean** | **+0.505 ± 0.061** | **1.31x ± 0.12** | — |
+
+  True within-sample spatial std is 0.0843 pH in every case. So the model
+  recovers genuine spatial structure (correlation ~+0.5, far from noise)
+  and then **over-amplifies it by ~1.3x**, and the overshoot exceeds the
+  structure recovered — which is exactly how correlation can be positive
+  while R² is strongly negative. It is NOT over-smoothed (that would give
+  pred_std << true_std) and it is NOT signal-free.
+- **Reachable target if the amplitude were calibrated: per-sample R² ≈
+  +0.258 ± 0.059** (= corr², the ceiling for optimal linear rescaling of
+  this model's existing spatial pattern). An upper bound, not a promise.
+
+**Decided (recommendation, NOT unilaterally applied — team's call):**
+- **Report pooled R², never batch-averaged.** Batch-averaged R² is
+  batch-size dependent (rerun at `batch_size=16` and the number moves while
+  the model does not), is a mean-of-ratios rather than R², and does not
+  match the baselines' own pooled scoring. See the entry below for the
+  measured size of that discrepancy.
+- **Lead with MAE/RMSE in pH units.** They are immune to the pooling issue
+  (batch-averaged MAE 0.0966 vs pooled 0.0965) and are directly
+  interpretable to a meat-science panel.
+- **Report per-sample R² alongside pooled, and disclose that it is
+  negative.** Quoting +0.84 alone, next to a research question phrased as
+  "reconstruct a full field," would overstate what was demonstrated — and
+  is the single most likely thing for a panelist to probe.
+
+**Still open:**
+- **Fix the amplitude miscalibration.** Concrete levers, none attempted
+  here: shrink the predicted map toward its own per-sample mean; revisit
+  `tv_weight` (0.05 is evidently not constraining spatial amplitude);
+  check whether the known training instability inflates output variance.
+  Target: per-sample R² from −2.57 to ≈ +0.26.
+- Whether `denat_amplitude` affects spatial skill specifically — all
+  numbers here are at the adopted 0.4 only. The 4-amplitude sweep measured
+  pooled R² only, so it cannot answer this.
+- Whether the batch-averaged metric also exaggerates the reported
+  mid-training crashes to R² ≈ −6 (same mechanism). Still not investigated.
+- Everything already open is unaffected: team agreement on
+  `denat_amplitude`/`denat_width` (0.4 confirmed by the user), NHSI pork
+  tray-position, manuscript sync, GroupNorm, `find_meat()` background leak,
+  `--patience` undocumented.
+
+**Context to feed next session:**
+- Re-run with `python check_spatial_skill.py` (~1 min, inference only, no
+  retraining). Point `--ckpt-glob` at any other run's checkpoints.
+- **The sweep and metric-mismatch findings in the entry below are NOT
+  invalidated by this one.** They concern pooled R², which remains a valid
+  measure of absolute-pH accuracy; this entry concerns a different question
+  the same number was being read as answering.
+- If someone says "the CRN loses to a trivial baseline" — that is a
+  misreading of the level-only ORACLE row above. Correct it.
+
+---
+
+## 2026-09-13 — 5-seed CRN result independently reproduced on a 2nd machine; CRN-vs-baseline comparison found metric-inconsistent; amp=0.8 verdict FLIPS to YES (via Claude session, tbhcoding's machine)
+
+**Why this entry exists:** ran the reproduction steps Arrvsssogood supplied
+for the 2026-09-12 result, on a different machine. The result reproduces.
+While checking it, found that the CRN-vs-baseline comparison in
+`deconfound_full_scale.py` compares two differently-computed R² values, and
+that correcting it flips the amp=0.8 row from NO to YES.
+
+**Changed:**
+- Added `check_metric_mismatch.py` — scores the same CRN checkpoints three
+  ways (`batch_avg` / `pooled_all` / `pooled_sub`) against the baselines'
+  own method, so the two sides can be compared like-for-like. Does not
+  modify `PARAMS` (restored in `finally`), `CrudeCRN`, `train_crn.py`, or
+  any baseline method.
+- Committed `crn_check/seed_0..4/` (the independent 5-seed reproduction)
+  and `metric_check_outputs/` — `history.json` + PNGs + summary JSON only,
+  matching the retention precedent of the older `crn_5seed_*` folders.
+  `.pt` and `data_amp_*/` excluded by existing rules (660MB of regenerable
+  dataset correctly not committed).
+
+**Verified (numbers):**
+
+*1. Reproduction of the 2026-09-12 5-seed result, 2nd machine
+(torch 2.13.0, Python 3.14.7, 4 threads, CPU, macOS arm64; 48 min total):*
+
+| | Arrvsssogood | This machine | Δ |
+|---|---|---|---|
+| R² mean ± std | 0.7884 ± 0.0510 | **0.7685 ± 0.0525** | −0.020 (0.4 std) |
+| MAE mean ± std | 0.0903 ± 0.0134 | **0.0966 ± 0.0134** | +0.006 |
+| RMSE mean ± std | 0.1223 ± 0.0143 | **0.1270 ± 0.0143** | +0.005 |
+
+Per-seed R²: 0.6942 / 0.7812 / 0.7482 / 0.7816 / 0.8373. Means land within
+0.4 std; **MAE and RMSE std match to four decimals**. Seed 0 is again the
+low outlier (3rd independent confirmation). Mid-training crashes to
+negative R² reproduced on every seed.
+
+**This closes the "CRN training reproducibility — NOT empirically tested"
+open risk from the entry below.** Answer: the *aggregate* reproduces
+across machines; *per-seed* numbers do not (seed 1: 0.7812 here vs 0.8388
+there). Arrvsssogood's decision to commit result files rather than assume
+regeneration is correct and is now evidence-backed.
+
+*2. Preconditions, all matched exactly:* `--selftest` 0 blocking
+parameters, sign PASS, linear baseline R² mean=0.6509 std=0.0180.
+Dataset regenerated (400 samples, 300/50/50) — the copy on this machine
+was previously the stale Aug-31 one, since datasets aren't shared via git.
+Reproducibility receipts, combined SHA-256 over all 400 cubes:
+`msi` = `86536eb633e05e02e319650962113f8527990b229694d07b1b020328584b2108`,
+`phtrue` = `e3f4ecb661cf7998dfc9bc523244638ec92cea83ea96689c428519e98bca3c94`.
+
+*3. `train_crn.py`'s main()→build_argparser()/train() refactor verified
+behavior-preserving* — extracted body diffed against the original main()
+body: **all 123 lines identical**, only function scaffolding differs.
+
+*4. THE METRIC MISMATCH.* `deconfound_full_scale.py` compares:
+- baselines → **one pooled R²** over all sampled held-out val pixels
+  (`1 - ss_res/ss_tot`, and sklearn `r2_score`);
+- CRN → `train_crn.train()`'s `best_val_r2`, which `run_epoch()` computes
+  **batch-averaged** (per-batch R², weighted by batch size, averaged).
+
+R² is not linear in the data: each batch's R² is measured against the
+variance *within that batch*, so a batch whose samples share a narrow pH
+range scores far lower for the same absolute error. At 50 val samples /
+batch_size 8, the last batch holds only 2 samples. Measured per-batch on
+seed 0 (amp=0.4): batch R² ranged 0.452–0.775, tracking each batch's pH
+spread (0.748–1.392), not model quality.
+
+Same checkpoints, three scorings (3 seeds, seeds 0–2, both amplitudes;
+baselines unchanged from the original scripts and **reproduced exactly**):
+
+| amp | Linear | PLSR | CRN `batch_avg` | CRN `pooled_all` | CRN `pooled_sub` | verdict `batch_avg` | verdict `pooled_sub` |
+|---|---|---|---|---|---|---|---|
+| 0.4 | 0.6212 | 0.6206 | 0.7412 ± 0.0359 | 0.8185 ± 0.0264 | 0.8143 ± 0.0268 | YES (+0.120) | YES (+0.193) |
+| 0.8 | 0.8308 | 0.8299 | 0.8669 ± 0.0176 | 0.9061 ± 0.0111 | 0.9031 ± 0.0111 | **NO (+0.036)** | **YES (+0.072)** |
+
+- **`amp=0.8`'s "NO" is a scoring artifact. Under a like-for-like
+  comparison it beats both baselines by >0.05 and the row flips to YES.**
+- Linear/PLSR at both amplitudes reproduced Arrvsssogood's table to four
+  decimals (0.6212/0.6206, 0.8308/0.8299) — the baseline side is sound and
+  machine-independent; only the CRN side was scored inconsistently.
+- The bias is **not constant**: 0.073 at amp=0.4, 0.036 at amp=0.8 (it
+  shrinks as the fit improves). Don't apply a fixed correction — rescore.
+- **The pixel-subsampling mismatch is negligible** (`pooled_all` vs
+  `pooled_sub`: 0.004 at amp=0.4, 0.003 at amp=0.8). Batch-averaging is
+  the entire effect — a clean single cause.
+- Only amp=0.4 and 0.8 were rescored. **amp=0.2 and 0.6 were not** — their
+  `batch_avg` margins (large, and +0.078) are likely also understated, but
+  that is inference, not measurement.
+
+**Decided:**
+- `denat_amplitude` **stays 0.4** — confirmed by the user this session.
+  Note the amp=0.8 flip does **not** argue for 0.8: at that amplitude the
+  linear baseline alone reaches 0.8308 held-out (and 0.8406 in-sample per
+  the 2026-09-09 sweep), pressing against this project's own
+  "linear must stay comfortably under 0.9" non-triviality requirement.
+  0.8 is ruled out on non-triviality grounds, independent of the CRN
+  margin. 0.4 remains correct for the reason it always was.
+- Nothing in `train_crn.py` changed to "fix" the metric — which number the
+  project reports is a team decision, not a unilateral one. See below.
+
+**Still open:**
+- **Which R² the project reports — team decision, now unavoidable.**
+  Pooled is the conventional definition and the one the baselines already
+  use; batch-averaged is an artifact of computing the metric inside the
+  epoch loop. If pooled is adopted, the headline 5-seed result becomes
+  **~0.836 pooled** rather than 0.7685/0.7884 batch-averaged, and
+  `train_crn.py` should be changed to log both. Do not quote an R² in the
+  manuscript until this is settled — it moves the headline number by ~0.07.
+- Rescore amp=0.2 and 0.6 pooled to complete the table (cheap: their
+  checkpoints exist on Arrvsssogood's machine; `.pt` files aren't
+  committed, so either he reruns `check_metric_mismatch.py` there or they
+  get retrained here, ~30 min for 3 seeds).
+- Whether the batch-averaged metric also exaggerates the reported
+  mid-training "crashes to R² = −6.16" — same mechanism (a low-spread or
+  2-sample batch can produce a large negative R² from a modest error).
+  Not investigated. Bears on the GroupNorm question below, which assumes
+  the instability magnitude is real.
+- Everything already open is unaffected: team agreement on
+  `denat_amplitude`/`denat_width`, NHSI pork tray-position, manuscript
+  sync, GroupNorm, `find_meat()` background leak, `--patience` still
+  undocumented in README/`--help`.
+
+**Context to feed next session:**
+- Pushed to `origin/review/metric-mismatch`, branched off
+  `origin/denat-amplitude-sweep` (NOT main) — same unreviewed-work
+  convention Arrvsssogood used.
+- To re-run any of this: `python check_metric_mismatch.py`. amp=0.4 reuses
+  `crn_check/` checkpoints; amp=0.8 regenerates and retrains (~30 min).
+- The reproduction and the metric finding are independent. Even if the
+  team keeps batch-averaged scoring, the reproduction stands; even if the
+  reproduction is set aside, the metric mismatch stands.
+
+---
+
 ## 2026-09-12 (session 2) — CRN-vs-baseline robustness sweep across denat_amplitude; amp=0.4 reconciliation; repo cleanup (via Claude session)
 
 **Why this entry exists:** the CRN's win over Linear/PLSR baselines (see the
