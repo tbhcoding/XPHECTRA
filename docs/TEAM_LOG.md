@@ -20,6 +20,68 @@ Template:
 
 ---
 
+## 2026-09-13 (cont. 4) — `find_meat()` background leak FIXED; `sensor_sigma` confirmed NOT contaminated (via Claude session, Arrvsssogood's machine)
+
+**Closes the `find_meat()` background-leak item open since 2026-09-11** —
+the last unexamined thing touching a cited parameter.
+
+**First, the reassuring part — checked before changing anything:**
+`sensor_sigma = 0.0054` is **not** contaminated. It was measured from NHSI
+**cube 01**, and the 2026-09-11 entry already established that cubes 01/02
+were unaffected ("Cube 01 was unaffected, so no previously logged number is
+wrong"). This was a *forward-looking* hazard only, exactly as that entry
+framed it ("fix before running on any cube other than 01/02"). No
+previously reported number moves.
+
+**The mechanism, stated precisely (it is worse than "a slightly loose
+threshold"):** the original mask takes the top-40%-brightest pixels, i.e.
+it assumes meat fills ~40% of the frame. It does not, as tissue darkens.
+Then `flattest_patch()` searches inside that mask for the **lowest-variance**
+patch — and empty tray is flatter than muscle tissue. So the two steps
+compound: a contaminated mask, then a search that actively prefers the
+contaminating pixels. `sensor_sigma` could have been measured on bare tray.
+
+**Changed — `extract_sensor_params.py` only. No `PARAMS`, no model code:**
+- `find_meat_brightness()` — the ORIGINAL method, preserved and documented,
+  reachable via `--mask brightness`, **so the published 0.0054 stays exactly
+  reproducible.** Deliberately not deleted.
+- `find_meat_waterband()` — the fix. Ported from
+  `analysis/nhsi_970_breakdown.py`, where it was already validated visually
+  on cubes 01/09/19 ("covers every piece, excludes background"). Index =
+  mean R(1010–1090nm) − mean R(1440–1500nm), Otsu-thresholded; tissue is
+  ~73% water and dips at ~1450nm, tray is spectrally flat. Optional
+  `--tray-rows` (NHSI: `85 480`).
+- `find_meat()` — dispatcher, `--mask auto` by default: water-band where the
+  wavelength axis allows, else brightness **with a loud warning**. Always
+  prints a background-leak diagnostic comparing the two masks.
+
+**Verified (numbers) — synthetic cube built to reproduce the failure mode
+(bright but spectrally flat tray; tissue only 11% of frame):**
+
+| mask | tray pixels wrongly called meat | true tissue recovered |
+|---|---|---|
+| brightness (original) | **71.9%** | — |
+| water-band (fix) | **0.0%** | **100%** |
+
+- The synthetic 71.9% closely matches the **62–71%** measured on the real
+  cubes, so the test reflects the real failure rather than a contrived one.
+- Dispatcher detected the leak, warned, and selected the safe mask.
+- `--mask brightness` reproduces the original mask **bit-identically**.
+- Visible-range cube (no water band) falls back gracefully with a warning.
+- File compiles clean.
+
+**NOT verified:** against real NHSI cubes — they are not on this machine
+(gitignored, ~11GB, never committed). **Before trusting any
+re-measurement, re-run on cube 01 with `--mask brightness` and confirm it
+still returns 0.0054.**
+
+**Still open (unchanged by this):** the spatial/per-sample calibration
+issue, manuscript sync, team agreement on `denat_amplitude`/`denat_width`,
+NHSI pork tray-position, GroupNorm (now lower priority — see cont. 3),
+`--patience` undocumented in README.
+
+---
+
 ## 2026-09-13 (cont. 3) — Metric mismatch FIXED at the source in train_crn.py; instability crashes found to be partly a scoring artifact too (via Claude session, Arrvsssogood's machine)
 
 **Changed:**
