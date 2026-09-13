@@ -572,6 +572,30 @@ def make_ph_field(shape, rng):
     rather than the smooth gradient described above. Raised to 77.0
     (~1.5 cm, at 256 px / 5 cm = 51.2 px/cm) for a visibly smoother,
     few-blob field closer to what a real 5x5 cm sample should look like.
+
+    SAMPLING DESIGN -- STATE THIS IN THE METHODOLOGY (2026-09-13).
+    `base` is drawn UNIFORMLY over 5.35-6.45. That is a deliberate design
+    for even coverage of the physiological range, NOT a model of the
+    population distribution of commercial pork, which clusters near normal
+    pH with thinner tails. Two consequences worth stating rather than
+    discovering under questioning:
+
+      - Class proportions inherit the design. Against the PSE/normal/DFD
+        anchors of the manuscript's Figure 1 (DOI: 10.55002/mr.5.3.117;
+        5.2 / 5.6 / 6.0), roughly 63% of pixels fall in the DFD band. That
+        reflects uniform sampling over a wide range, not a claim that most
+        pork is DFD.
+      - R^2 depends on the range sampled. Measured on the frozen dataset:
+        scoring the SAME trained model only on samples within Figure 1's
+        range (<=6.0) drops pooled R^2 from 0.8486 to 0.6533 while MAE
+        IMPROVES (0.0902 -> 0.0846). Narrowing the range leaves less
+        variance to explain, so identical accuracy scores lower. This is a
+        property of R^2, not of the model -- which is why MAE/RMSE in pH
+        units should be quoted alongside it.
+
+    Do NOT narrow this range to match Figure 1 without understanding the
+    above: it would cost ~0.20 of headline R^2, require regenerating the
+    dataset and retraining every seed, and make the model no better.
     """
     base = rng.uniform(5.35, 6.45)
     spread = rng.uniform(0.04, 0.14)

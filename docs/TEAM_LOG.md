@@ -20,6 +20,81 @@ Template:
 
 ---
 
+## 2026-09-13 (cont. 5) — Practical heatmap metrics added; pH sampling range examined and DELIBERATELY KEPT (via Claude session, Arrvsssogood's machine)
+
+**Read before writing the Chapter 4 results section or touching
+`make_ph_field()`.**
+
+**Changed:**
+- Added `evaluate_heatmap.py` — the single script to run for Chapter 4.
+  Reports three families in ONE printed block so the favourable numbers
+  cannot be quoted without the limitation beside them: (1) pooled R²/MAE/
+  RMSE, (2) practical heatmap accuracy, (3) the spatial limitation.
+- `train_crn.py`: RMSE is now a native per-epoch metric (train and val),
+  in `history.json`, the best-checkpoint line, and `train()`'s return —
+  previously it had to be computed post-hoc.
+- `generate_dataset.py`: `make_ph_field()` docstring now states the
+  sampling design and its two consequences. No code change, no PARAMS
+  change, dataset unaffected.
+
+**Verified (numbers) — `crn_5seed_final`, held-out val, 5 seeds:**
+
+| | |
+|---|---|
+| Pixels within ±0.05 pH | 38.8% ± 5.7 |
+| Pixels within ±0.10 pH | 67.2% ± 7.9 |
+| **Pixels within ±0.15 pH** | **82.5% ± 6.6** |
+| **Pixels within ±0.20 pH** | **90.2% ± 3.8** |
+| Correct quality class | 88.4% ± 1.0 |
+| Majority-class baseline | 62.9% |
+| **Lift over baseline** | **+25.5 pts ± 1.0** |
+
+- Native RMSE reproduces the earlier post-hoc values EXACTLY on all five
+  checkpoints (0.1484/0.1056/0.1185/0.1240/0.1151, mean 0.1223 ± 0.0143).
+- **Why the tolerance bands matter:** per-sample R² (−2.30) and these
+  figures are both true and not in conflict. True within-sample variation
+  is only ±0.084 pH, so per-sample R² measures against a minuscule scale;
+  quality-class bands are ~0.4 pH wide, ~5× larger. Same errors, two
+  scales. Report both.
+
+**QUALITY-CLASS THRESHOLDS — now sourced, with one honest caveat.** The
+manuscript's Figure 1 (DOI: 10.55002/mr.5.3.117) anchors pH 5.2 = PSE,
+5.6 = normal, 6.0 = DFD. It gives **anchor points, not boundaries.** The
+defaults 5.40/5.80 are the **midpoints between those anchors — our
+interpolation, not a value the source states.** Say so if asked. The
+tolerance bands need no threshold at all and are the safer number if the
+edges are ever challenged.
+
+**Decided — the pH sampling range STAYS at `uniform(5.35, 6.45)`.**
+The question was raised whether to narrow it to match Figure 1's 5.2–6.0.
+Measured before deciding, same trained model, same predictions, only the
+scored subset changing:
+
+| Scored on | pooled R² | MAE |
+|---|---|---|
+| Full range (current) | **0.8486** | 0.0902 |
+| Restricted to ≤6.0 | **0.6533** | 0.0846 |
+| Restricted to 5.4–6.0 | **0.6565** | 0.0816 |
+
+**Narrowing the range would drop headline R² by ~0.20 while the model got
+slightly MORE accurate (MAE improves).** R² is variance-explained relative
+to variance available; less range means less to explain. At 0.65 the CRN
+would sit barely above the linear baseline (0.62). Changing it would also
+force a full dataset regeneration and retraining of every seed, for a
+strictly worse reported result and no real improvement. **Not done.**
+
+Instead, disclose it. Suggested methodology sentence: *"Sample pH was
+drawn uniformly across 5.35–6.45 to cover the full physiological range
+evenly, including values beyond the PSE–DFD span of Figure 1. This is a
+sampling design for even coverage, not a model of the population
+distribution of commercial pork."*
+
+**Still open:** unchanged — spatial calibration (fix or disclose),
+`find_meat()` (with the cube holder), team ratification of
+`denat_amplitude`/`denat_width`, NHSI tray position, manuscript sync.
+
+---
+
 ## 2026-09-13 (cont. 4) — `find_meat()` leak analysed and `sensor_sigma` cleared; a fix was written, then REVERTED — handing it to whoever holds the cubes (via Claude session, Arrvsssogood's machine)
 
 **Status: analysis done and useful; the code fix was deliberately backed
