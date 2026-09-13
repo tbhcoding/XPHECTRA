@@ -20,6 +20,81 @@ Template:
 
 ---
 
+## 2026-09-13 (cont. 6) — Pre-writing audit; 500-sample extended test set; quality-class metric demoted; a stated rationale CORRECTED (via Claude session, Arrvsssogood's machine)
+
+**This is the entry to read before writing Chapter 4.** It supersedes every
+earlier number in this log where they disagree.
+
+**Audit performed before declaring results final — all re-run, not recalled:**
+
+| Check | Result |
+|---|---|
+| Sign test | PASS — reflectance falls as pH rises, all 6 bands |
+| Non-triviality | Linear baseline R² = 0.6509 ± 0.0180 (10 seeds) |
+| Blocking parameters | 0 of 14 |
+| Dataset integrity | 400/400 cubes: 0 NaN, 0 negative, 0 > 1.0 |
+| Splits | 300 / 50 / 50, generation seed 42 |
+| Everything pushed | yes |
+
+**The audit found three real problems, all now fixed:**
+1. **Stale figures in `docs/SYSTEM_ARCHITECTURE.md`** — still quoting the
+   pre-fix `val R² = 0.79 ± 0.07` against a linear baseline of `~0.68`, and
+   an obsolete `0.587/0.691` baseline predating the retirement of
+   `generate_dataset_new_plus_eps.py`. Corrected, superseded values kept
+   visible beside the current ones.
+2. **All reported numbers were on the VALIDATION split**, which early
+   stopping used for checkpoint selection. The test split had never been
+   touched. Now evaluated — see below.
+3. **`sensor_sigma`'s provenance claimed a "pork cube"** — unsupported. The
+   2026-09-11 entry flagged this and it was never fixed in code. Corrected
+   in all 7 places that asserted it. **Value unchanged (0.0054): camera read
+   noise is a sensor property, not a tissue property. Only the label was
+   wrong.**
+
+**Verified (numbers) — three evaluation sets, same 5 checkpoints:**
+
+| | R² | MAE | RMSE | within ±0.15 pH |
+|---|---|---|---|---|
+| val, n=50 | 0.8486 ± 0.0368 | 0.0902 | 0.1223 | 82.5% |
+| test, n=50 (untouched) | 0.8389 ± 0.0412 | 0.0902 | 0.1234 | 82.8% |
+| **test, n=500 (extended)** | **0.8472 ± 0.0384** | **0.0936** | **0.1282** | **81.5%** |
+
+**Report the n=500 figures.** They are the most trustworthy: largest set,
+wholly unseen, and they show the n=50 sets were slightly OPTIMISTIC
+(MAE 0.0902 → 0.0936; within-±0.15 82.5% → 81.5%).
+
+**Changed:**
+- `evaluate_heatmap.py`: tolerance bands promoted to the headline and
+  labelled "REPORT THESE"; quality class demoted to section 2b with both
+  caveats printed inline; `--no-class` added to omit it entirely.
+- Generated `ligtas_test_extended/` — 500 samples, **seed 777, NOT 42**
+  (seed 42 reproduces the frozen dataset's own draws and would overlap
+  training data). Frozen PARAMS, gitignored, 940MB, regenerable in 36s.
+
+**CORRECTION TO A RATIONALE STATED EARLIER THIS SESSION.** The extended
+test set was built on the claim that more evaluation data would tighten the
+reported error bars. **That reasoning was wrong.** The ± figures are the
+spread ACROSS THE 5 TRAINING SEEDS, not sampling error of the evaluation
+set — so more test samples cannot reduce them, and measurably did not
+(±0.0368 at n=50 → ±0.0384 at n=500). **The only lever on those bars is
+training more seeds**: 10 seeds would take the standard error from ~0.017
+to ~0.012, at roughly 35 min/seed. Recording this so the false rationale
+does not get repeated or written into the manuscript.
+
+**Decided:**
+- **Lead with threshold-free tolerance bands**, not quality-class accuracy.
+  The bands depend on no class definition and no class balance; the class
+  figure depends on interpolated edges AND the sampling design, so it is
+  weaker evidence twice over. Keep it as support or drop it.
+- **Report n=500 test figures** as the primary result.
+
+**Still open — unchanged:** spatial calibration (fix or disclose),
+`find_meat()` (with the cube holder), team ratification of
+`denat_amplitude`/`denat_width`, NHSI tray position, 970 nm gap,
+manuscript sync. None blocks writing.
+
+---
+
 ## 2026-09-13 (cont. 5) — Practical heatmap metrics added; pH sampling range examined and DELIBERATELY KEPT (via Claude session, Arrvsssogood's machine)
 
 **Read before writing the Chapter 4 results section or touching
