@@ -40,3 +40,7 @@ NHSI dataset/
 
 # OS
 .DS_Store
+
+# Manuscript figures are regenerable via make_figures.py, but they are
+# small and worth committing so the team can use them without rerunning.
+# (no ignore rule -- listed here only to record the decision)
