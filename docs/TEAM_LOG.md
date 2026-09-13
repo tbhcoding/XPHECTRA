@@ -20,6 +20,117 @@ Template:
 
 ---
 
+## 2026-09-13 (cont.) — The reported R² does not measure the thesis's actual claim: per-sample (spatial) R² is NEGATIVE on every seed (via Claude session, tbhcoding's machine)
+
+**Read this before writing any Chapter 4/5 result sentence.** The headline
+R² and the project's stated research question are not the same quantity.
+
+**Changed:**
+- Added `check_spatial_skill.py` — separates pooled R² from per-sample
+  (within-sample) R², reports the variance decomposition, a level-only
+  reference, and spatial diagnostics. Reports numbers only; touches no
+  `PARAMS`, `CrudeCRN`, or `train_crn.py`.
+- Added `metric_check_outputs/spatial_skill.json` (raw output).
+
+**CORRECTION to an earlier claim made in this session (recorded so nobody
+repeats it):** it was asserted mid-session that the CRN "is handed 4 real
+pH values per sample as input." **That is false.** `run_epoch()` calls
+`model(x)` with the 6-band cube ONLY; `coords`/`values` enter exclusively
+through `sparse_loss()`. Verified by reading `crn_model.CrudeCRN.forward`
+(signature `forward(self, x)`) and `train_crn.run_epoch` directly.
+**Consequence: the CRN-vs-Linear/PLSR comparison IS fair** — both sides
+predict from spectra alone — so the 2026-09-12/13 sweep and
+metric-mismatch conclusions are unaffected and stand.
+
+**Verified (numbers) — `ligtas_synthetic_dataset/val` (50 samples), the 5
+`crn_check/` checkpoints, all scored pooled (no batch-averaging):**
+
+| Metric | Value | Question it answers |
+|---|---|---|
+| Pooled R² | **+0.8359 ± 0.0363** | "Can it measure pH from an image?" |
+| MAE | 0.0965 ± 0.0134 pH | absolute accuracy |
+| RMSE | 0.1276 ± 0.0143 pH | absolute accuracy |
+| **Per-sample R²** | **−2.5672 ± 0.7493** | **"Can it reconstruct the spatial field?"** |
+
+- **Per-sample R² is negative on every seed**, and negative on 33–44 of the
+  50 val samples individually (seed 0: 44/50, seed 4: 33/50). Negative here
+  means the predicted map is **worse than a flat map at that sample's own
+  mean pH**. Per-sample R² = `1 - SS_res/SS_tot` with `SS_tot` taken about
+  each sample's own mean, averaged over samples.
+- **Why pooled R² still looks good — variance decomposition:**
+  between-sample pH std (over sample means) = **0.3036**; within-sample pH
+  std (mean over samples) = **0.0843**. Between-sample spread is **3.6x**
+  larger, so pooled R² is dominated by getting each sample's pH LEVEL
+  right, not its spatial detail.
+- **Level-only reference: pooled R² = 0.8995** (predict a constant = the
+  mean of that sample's 4 sparse points). **This is an ORACLE, not a
+  competing baseline** — it uses sparse pH values at test time, which the
+  CRN never receives. It is recorded only to quantify that **~90% of the
+  pooled figure is attributable to level alone.** Do NOT report it as
+  something the CRN "loses to"; that comparison would be invalid.
+- **Diagnosis — the spatial signal is REAL but mis-scaled, on every seed:**
+
+  | seed | within-sample corr | pred std / true std | level err (pH) |
+  |---|---|---|---|
+  | 0 | +0.410 | 1.47x | 0.0699 |
+  | 1 | +0.537 | 1.26x | 0.0654 |
+  | 2 | +0.478 | 1.20x | 0.0754 |
+  | 3 | +0.546 | 1.21x | 0.0720 |
+  | 4 | +0.555 | 1.41x | 0.0295 |
+  | **mean** | **+0.505 ± 0.061** | **1.31x ± 0.12** | — |
+
+  True within-sample spatial std is 0.0843 pH in every case. So the model
+  recovers genuine spatial structure (correlation ~+0.5, far from noise)
+  and then **over-amplifies it by ~1.3x**, and the overshoot exceeds the
+  structure recovered — which is exactly how correlation can be positive
+  while R² is strongly negative. It is NOT over-smoothed (that would give
+  pred_std << true_std) and it is NOT signal-free.
+- **Reachable target if the amplitude were calibrated: per-sample R² ≈
+  +0.258 ± 0.059** (= corr², the ceiling for optimal linear rescaling of
+  this model's existing spatial pattern). An upper bound, not a promise.
+
+**Decided (recommendation, NOT unilaterally applied — team's call):**
+- **Report pooled R², never batch-averaged.** Batch-averaged R² is
+  batch-size dependent (rerun at `batch_size=16` and the number moves while
+  the model does not), is a mean-of-ratios rather than R², and does not
+  match the baselines' own pooled scoring. See the entry below for the
+  measured size of that discrepancy.
+- **Lead with MAE/RMSE in pH units.** They are immune to the pooling issue
+  (batch-averaged MAE 0.0966 vs pooled 0.0965) and are directly
+  interpretable to a meat-science panel.
+- **Report per-sample R² alongside pooled, and disclose that it is
+  negative.** Quoting +0.84 alone, next to a research question phrased as
+  "reconstruct a full field," would overstate what was demonstrated — and
+  is the single most likely thing for a panelist to probe.
+
+**Still open:**
+- **Fix the amplitude miscalibration.** Concrete levers, none attempted
+  here: shrink the predicted map toward its own per-sample mean; revisit
+  `tv_weight` (0.05 is evidently not constraining spatial amplitude);
+  check whether the known training instability inflates output variance.
+  Target: per-sample R² from −2.57 to ≈ +0.26.
+- Whether `denat_amplitude` affects spatial skill specifically — all
+  numbers here are at the adopted 0.4 only. The 4-amplitude sweep measured
+  pooled R² only, so it cannot answer this.
+- Whether the batch-averaged metric also exaggerates the reported
+  mid-training crashes to R² ≈ −6 (same mechanism). Still not investigated.
+- Everything already open is unaffected: team agreement on
+  `denat_amplitude`/`denat_width` (0.4 confirmed by the user), NHSI pork
+  tray-position, manuscript sync, GroupNorm, `find_meat()` background leak,
+  `--patience` undocumented.
+
+**Context to feed next session:**
+- Re-run with `python check_spatial_skill.py` (~1 min, inference only, no
+  retraining). Point `--ckpt-glob` at any other run's checkpoints.
+- **The sweep and metric-mismatch findings in the entry below are NOT
+  invalidated by this one.** They concern pooled R², which remains a valid
+  measure of absolute-pH accuracy; this entry concerns a different question
+  the same number was being read as answering.
+- If someone says "the CRN loses to a trivial baseline" — that is a
+  misreading of the level-only ORACLE row above. Correct it.
+
+---
+
 ## 2026-09-13 — 5-seed CRN result independently reproduced on a 2nd machine; CRN-vs-baseline comparison found metric-inconsistent; amp=0.8 verdict FLIPS to YES (via Claude session, tbhcoding's machine)
 
 **Why this entry exists:** ran the reproduction steps Arrvsssogood supplied

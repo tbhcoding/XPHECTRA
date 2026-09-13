@@ -1,0 +1,121 @@
+{
+  "between_sample_ph_std": 0.3036405146121979,
+  "within_sample_ph_std": 0.08431927859783173,
+  "level_only_oracle": {
+    "pooled_r2": 0.8995267748832703,
+    "mae": 0.07602541893720627,
+    "rmse": 0.10030398517847061
+  },
+  "per_checkpoint": [
+    {
+      "checkpoint": "crn_check/seed_0/crn_best.pt",
+      "pooled_r2": 0.7865249514579773,
+      "mae": 0.11261808127164841,
+      "rmse": 0.14620643854141235,
+      "per_sample_r2_mean": -3.5347534799575806,
+      "per_sample_r2_median": -1.7305554151535034,
+      "per_sample_r2_negative_count": 44,
+      "n_samples": 50,
+      "true_spatial_std": 0.08431927859783173,
+      "pred_spatial_std": 0.12433498352766037,
+      "amplitude_ratio": 1.4745736122131348,
+      "within_sample_corr": 0.409726645867745,
+      "level_error": 0.06985030323266983,
+      "per_sample_r2_ceiling_if_rescaled": 0.1678759243340325
+    },
+    {
+      "checkpoint": "crn_check/seed_1/crn_best.pt",
+      "pooled_r2": 0.851248025894165,
+      "mae": 0.09519234299659729,
+      "rmse": 0.12204623222351074,
+      "per_sample_r2_mean": -2.3754840624332427,
+      "per_sample_r2_median": -0.8753055334091187,
+      "per_sample_r2_negative_count": 41,
+      "n_samples": 50,
+      "true_spatial_std": 0.08431927859783173,
+      "pred_spatial_std": 0.10594847798347473,
+      "amplitude_ratio": 1.2565155029296875,
+      "within_sample_corr": 0.5364942693678563,
+      "level_error": 0.06540264189243317,
+      "per_sample_r2_ceiling_if_rescaled": 0.2878261010645499
+    },
+    {
+      "checkpoint": "crn_check/seed_2/crn_best.pt",
+      "pooled_r2": 0.817761242389679,
+      "mae": 0.1038917675614357,
+      "rmse": 0.13508693873882294,
+      "per_sample_r2_mean": -2.9761532628536225,
+      "per_sample_r2_median": -1.20914888381958,
+      "per_sample_r2_negative_count": 37,
+      "n_samples": 50,
+      "true_spatial_std": 0.08431927859783173,
+      "pred_spatial_std": 0.10149919241666794,
+      "amplitude_ratio": 1.203748345375061,
+      "within_sample_corr": 0.47810992846600037,
+      "level_error": 0.07539919763803482,
+      "per_sample_r2_ceiling_if_rescaled": 0.228589103697764
+    },
+    {
+      "checkpoint": "crn_check/seed_3/crn_best.pt",
+      "pooled_r2": 0.8408053517341614,
+      "mae": 0.09399440139532089,
+      "rmse": 0.1262575089931488,
+      "per_sample_r2_mean": -2.4244665515422823,
+      "per_sample_r2_median": -0.6173167824745178,
+      "per_sample_r2_negative_count": 34,
+      "n_samples": 50,
+      "true_spatial_std": 0.08431927859783173,
+      "pred_spatial_std": 0.10202006995677948,
+      "amplitude_ratio": 1.2099257707595825,
+      "within_sample_corr": 0.5456514275038354,
+      "level_error": 0.07199393212795258,
+      "per_sample_r2_ceiling_if_rescaled": 0.2977354803369734
+    },
+    {
+      "checkpoint": "crn_check/seed_4/crn_best.pt",
+      "pooled_r2": 0.8831865191459656,
+      "mae": 0.07672533392906189,
+      "rmse": 0.10815323144197464,
+      "per_sample_r2_mean": -1.5253880870342256,
+      "per_sample_r2_median": -0.4026358127593994,
+      "per_sample_r2_negative_count": 33,
+      "n_samples": 50,
+      "true_spatial_std": 0.08431927859783173,
+      "pred_spatial_std": 0.11910656094551086,
+      "amplitude_ratio": 1.4125661849975586,
+      "within_sample_corr": 0.5551098481861579,
+      "level_error": 0.02945876121520996,
+      "per_sample_r2_ceiling_if_rescaled": 0.30814694355325933
+    }
+  ],
+  "aggregate": {
+    "pooled_r2": {
+      "mean": 0.8359052181243897,
+      "std": 0.036271714453050524
+    },
+    "mae": {
+      "mean": 0.09648438543081284,
+      "std": 0.013355288857895687
+    },
+    "rmse": {
+      "mean": 0.1275500699877739,
+      "std": 0.014257145294655665
+    },
+    "per_sample_r2_mean": {
+      "mean": -2.5672490887641906,
+      "std": 0.7493167547424877
+    },
+    "amplitude_ratio": {
+      "mean": 1.3114658832550048,
+      "std": 0.12425619599109672
+    },
+    "within_sample_corr": {
+      "mean": 0.5050184238783191,
+      "std": 0.06114636273702571
+    },
+    "per_sample_r2_ceiling_if_rescaled": {
+      "mean": 0.2580347105973158,
+      "std": 0.059098571179586494
+    }
+  }
+}
