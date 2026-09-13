@@ -22,10 +22,23 @@ prints them in ONE block so the favourable ones cannot be quoted without
 the limitation beside them:
 
   1. Standard regression metrics : pooled R^2, MAE, RMSE
-  2. Practical heatmap accuracy  : % of pixels within a pH tolerance, and
-                                   agreement on quality class
+  2. Practical heatmap accuracy  : % of pixels within a pH tolerance
+                                   (THRESHOLD-FREE -- report these), with
+                                   quality-class agreement demoted to 2b as
+                                   weaker, caveated evidence
   3. Spatial honesty            : per-sample R^2, within-sample correlation,
                                    and the amplitude ratio that explains it
+
+WHICH NUMBER TO PUT IN THE MANUSCRIPT
+-------------------------------------
+Lead with the tolerance bands, e.g. "82.8% of test pixels fall within
++/-0.15 pH of ground truth". They depend on no class definition and no
+class balance, so there is no interpretive choice in them to challenge.
+
+The quality-class figure is more evocative for a meat-science audience but
+is weaker evidence twice over -- the boundaries are interpolated and the
+class mix follows the sampling design. Use it as support, never as the
+headline, or omit it with --no-class.
 
 QUALITY-CLASS THRESHOLDS -- READ BEFORE QUOTING
 -----------------------------------------------
@@ -158,6 +171,10 @@ def main():
                           "midpoints between the PSE/normal/DFD anchors in "
                           "Figure 1 (DOI: 10.55002/mr.5.3.117). The anchors are "
                           "cited; these midpoints are interpolated from them.")
+    ap.add_argument("--no-class", action="store_true",
+                     help="omit the quality-class section entirely. The "
+                          "tolerance bands in section 2 make the same point "
+                          "without importing any threshold choice.")
     ap.add_argument("--out", default="metric_check_outputs/final_evaluation.json")
     a = ap.parse_args()
 
@@ -190,19 +207,31 @@ def main():
         m, s = agg(rows, k)
         print(f"   {lbl:<22} {m:.4f} +/- {s:.4f}")
 
-    print("\n2. PRACTICAL HEATMAP ACCURACY")
+    print("\n2. PRACTICAL HEATMAP ACCURACY  <-- REPORT THESE")
+    print("   Threshold-free: depends on no class definition and no class")
+    print("   balance, so there is nothing in them to dispute.")
     for t in TOLERANCES:
         v = np.array([r["within_tolerance_pct"][f"{t:.2f}"] for r in rows])
-        print(f"   pixels within +/-{t:.2f} pH   {v.mean():5.1f}% +/- {v.std():.1f}")
-    m, s = agg(rows, "class_accuracy_pct")
-    mb, _ = agg(rows, "majority_baseline_pct")
-    ml, mls = agg(rows, "class_lift_pct")
-    edges = ", ".join(f"{e:.2f}" for e in a.class_edges)
-    props = " / ".join(f"{n} {p:.0f}%" for n, p in
-                       zip(CLASS_NAMES, rows[0]["class_true_proportions_pct"]))
-    print(f"   correct quality class  {m:5.1f}% +/- {s:.1f}   (edges {edges})")
-    print(f"   majority-class baseline{mb:5.1f}%          (true mix: {props})")
-    print(f"   LIFT over baseline     {ml:+5.1f} pts +/- {mls:.1f}   <- quote this, not the raw %")
+        star = "  <- headline" if abs(t - 0.15) < 1e-9 else ""
+        print(f"   pixels within +/-{t:.2f} pH   {v.mean():5.1f}% +/- {v.std():.1f}{star}")
+
+    if not a.no_class:
+        m, s = agg(rows, "class_accuracy_pct")
+        mb, _ = agg(rows, "majority_baseline_pct")
+        ml, mls = agg(rows, "class_lift_pct")
+        edges = ", ".join(f"{e:.2f}" for e in a.class_edges)
+        props = " / ".join(f"{n} {p:.0f}%" for n, p in
+                           zip(CLASS_NAMES, rows[0]["class_true_proportions_pct"]))
+        print("\n   2b. SECONDARY -- quality class. Weaker evidence; see caveats.")
+        print(f"       correct quality class  {m:5.1f}% +/- {s:.1f}   (edges {edges})")
+        print(f"       majority-class baseline{mb:5.1f}%      (true mix: {props})")
+        print(f"       LIFT over baseline     {ml:+5.1f} pts +/- {mls:.1f}")
+        print("       CAVEAT 1: the edges are OUR interpolation of Figure 1's")
+        print("                 anchors (5.2/5.6/6.0); the source states no")
+        print("                 boundaries. Different edges give a different %.")
+        print("       CAVEAT 2: the class mix follows the uniform sampling")
+        print("                 design, not a real pork population.")
+        print("       If challenged, fall back on section 2 -- it needs neither.")
 
     print("\n3. SPATIAL LIMITATION  --  report this alongside section 1")
     m, s = agg(rows, "per_sample_r2_mean")
