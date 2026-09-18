@@ -6,13 +6,18 @@ the tray/background is spectrally flat. Index = mean R(~1010-1090 nm) -
 mean R(~1440-1500 nm), Otsu-thresholded inside the tray. (A brightness-only
 Otsu split bright tissue from lean tissue instead of tissue from background.)
 
-Tray layout (HSI frame, from cube 01 render; RGB photo is rotated 90 deg):
-  C1 x<137   : 6 small pale pieces  -> chicken (RGB bottom row)
-  C2 137-292 : 2 long red pieces    -> RGB row 4
-  C3 292-492 : fatty mixed pieces   -> RGB row 3
-  C4 492-660 : 3 pink slices        -> RGB row 2
-  C5 x>=660  : striped fillet       -> salmon (RGB top row)
-Species of C2-C4 is NOT established here.
+Tray layout (HSI frame, from cube 01 render; RGB photo is rotated 90 deg).
+SPECIES ESTABLISHED 2026-09-18 from the dataset authors' own annotated
+RGB photo, which labels the five rows top-to-bottom: Salmon, Pork,
+Mutton, Beef, Chicken.
+  C1 x<137   : 6 small pale pieces  -> CHICKEN (RGB bottom row)
+  C2 137-292 : 2 long red pieces    -> BEEF    (RGB row 4)
+  C3 292-492 : fatty mixed pieces   -> MUTTON  (RGB row 3)
+  C4 492-660 : 3 pink slices        -> PORK    (RGB row 2)   <-- the reference
+  C5 x>=660  : striped fillet       -> SALMON  (RGB top row)
+Corroboration: both endpoints (C1 chicken, C5 salmon) had already been
+identified visually before the annotation was obtained, and both match,
+so the ordering is independently supported rather than merely assumed.
 
 Reads each cube in one go (~770 MB); per-band h5py slicing re-decompresses
 chunks and is far slower. All 18 cubes take several minutes.

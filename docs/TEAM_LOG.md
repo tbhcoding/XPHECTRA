@@ -20,6 +20,71 @@ Template:
 
 ---
 
+## 2026-09-18 — NHSI tray species ESTABLISHED by the dataset authors: column C4 is PORK. The 970 nm reference is now a pork reference (via Claude session, Arrvsssogood's machine)
+
+**This closes the longest-standing open question in the project** — open
+since 2026-09-11 — and upgrades the 970 nm external check from "lean
+tissue, species unconfirmed" to a genuine pork comparison.
+
+**Evidence:** the dataset authors supplied their own annotated RGB photo
+of the tray (timestamp 2025/12/23 11:52), labelling the five rows
+top-to-bottom: **Salmon, Pork, Mutton, Beef, Chicken.**
+
+**Mapping onto the HSI column layout** already used in
+`analysis/nhsi_970_breakdown.py` (RGB photo is rotated 90° from the HSI
+frame):
+
+| HSI column | previously | NOW ESTABLISHED |
+|---|---|---|
+| C1 (x<137) | chicken *(visually identified)* | **Chicken** ✓ |
+| C2 (137–292) | "2 long red pieces", RGB row 4 | **Beef** |
+| C3 (292–492) | "fatty mixed pieces", RGB row 3 | **Mutton** |
+| C4 (492–660) | "3 pink slices", RGB row 2 | **PORK** ← the reference |
+| C5 (x≥660) | salmon *(visually identified)* | **Salmon** ✓ |
+
+**Independent corroboration, worth stating when asked:** both endpoints
+(C1 chicken, C5 salmon) had already been identified visually from the
+cube renders *before* the annotation was obtained, and both match. The
+ordering is therefore supported by two independent routes, not merely
+adopted on the authors' say-so.
+
+**Verified (numbers) — the 970 nm check, now against confirmed pork
+(C4). No re-measurement was needed; the per-column values were already
+computed on 2026-09-11 and only the species label changed:**
+
+| reference | real | simulated | ratio | difference |
+|---|---|---|---|---|
+| cube 01 (freshest timepoint) | 0.1981 | 0.2645 | **1.335×** | +0.0664 |
+| cube 02 | 0.1840 | 0.2645 | 1.438× | +0.0805 |
+| 18-cube mean | 0.2170 | 0.2645 | **1.219×** | +0.0475 |
+
+**A previously live contingency is now RULED OUT.** The 2026-09-11 entry
+recorded: *"if the pork on the tray is the fatty column (C3, 0.26–0.29),
+the gap closes and the 970nm decision changes."* **C3 is mutton.** That
+scenario is dead, and `mu_a_baseline` = 0.8 stands unchanged on the same
+reasoning as before.
+
+**Changed — labels only. No PARAMS value, no dataset, no model:**
+- `analysis/nhsi_970_breakdown.py` — tray layout docstring now names all
+  five species and records the corroboration.
+- `generate_dataset.py` — `sensor_sigma`'s species note updated. **The
+  value stays 0.0054 and its label stays correct**: the measured patch is
+  bare tray, so no species applies to it regardless of what the tray held.
+  Establishing the species does not make this a "pork" measurement.
+- `CLAUDE.md` — the three "species unconfirmed" references corrected.
+
+**Decided:**
+- The 970 nm limitation should now be written as a **pork** reference.
+  Chapter 5 wording changes from "lean tissue of unconfirmed species,
+  therefore constrains rather than validates" to a genuine
+  species-matched comparison with a stated residual gap of 1.22–1.34×.
+- `sensor_sigma` is unaffected and must NOT be relabelled as pork.
+
+**Still open:** the 970 nm gap itself is still not closed (1.22–1.34×),
+and remains a disclosed Chapter 5 limitation — but it is now a
+quantified disagreement against the right species, rather than a
+comparison whose validity was itself in question.
+
 ## 2026-09-14 — LOCATION vs MAGNITUDE: the heatmap points at the right regions; the earlier "spatial reconstruction is unreliable" wording was WRONG and overstated our own weakness (via Claude session, Arrvsssogood's machine)
 
 **This entry changes how Chapter 4/5 must describe the core deliverable.

@@ -355,20 +355,23 @@ PARAMS = {
     # extract_sensor_params.py on a downloaded cube and paste the number
     # here. Watch the ">1.0 = raw sensor counts, not calibrated
     # reflectance" caveat from the README. NOTE: each cube images a MIXED
-    # TRAY (chicken, salmon and three unidentified red-meat/fat columns),
-    # not a pork sample -- see the species caveat in the source string.
+    # TRAY of five species (salmon, pork, mutton, beef, chicken -- see
+    # analysis/nhsi_970_breakdown.py), not a pork sample. The patch this
+    # value came from is bare tray regardless -- see the source string.
     "sensor_sigma": {
         "value": 0.0054,
         "status": "MEASURED",
         "source": "Measured from NHSI-meat-overtime cube 01.mat (Wang et al. 2026) via "
                    "extract_sensor_params.py: additive noise std relative to signal = 0.0054, "
                    "on a calibrated reflectance cube (values 0-1). "
-                   "SPECIES CAVEAT (corrected 2026-09-13): this was previously labelled a "
-                   "'pork cube'. It is not established that it is. Each NHSI cube images one "
-                   "mixed tray -- chicken and salmon are identified at the ends, the three "
-                   "middle columns are not identified by species in the dataset or its source "
-                   "paper. The VALUE stands regardless: this is camera read noise, a property "
-                   "of the sensor and not of what was imaged. Only the label was wrong. "
+                   "SPECIES NOTE (established 2026-09-18): each NHSI cube images one "
+                   "MIXED TRAY of five species. The dataset authors' own annotated RGB "
+                   "photo labels the rows top-to-bottom as salmon, pork, mutton, beef, "
+                   "chicken, which fixes tray column C4 as pork (see "
+                   "analysis/nhsi_970_breakdown.py). This does NOT make the cube a 'pork "
+                   "cube' and does not change this value: read noise is a property of the "
+                   "sensor, not of what was imaged, and the measured patch is bare tray "
+                   "rather than any tissue at all -- see the measurement-site caveat below. "
                    "MEASUREMENT-SITE CAVEAT (verified on the real cubes 2026-09-13): the "
                    "24x24 patch this was measured on is not tissue AT ALL -- it is bare tray "
                    "(0% tissue by the water-band test on cube 01; flattest_patch() prefers it "
