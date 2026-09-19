@@ -61,11 +61,11 @@ separate the two effects, not just overall brightness. This is verified
 empirically: a plain linear regression on raw pixel values only reaches
 R²≈0.651 ± 0.018 on the current `generate_dataset.py` (10-seed mean,
 post scatter_a/b + fully digitized eps + retuned `mu_a_baseline` +
-swept `denat_amplitude`=0.4, **pushed for team review, not yet
-formally agreed** — this number has moved several times as parameters
-got resolved; always re-run `--selftest` rather than trust a snapshot),
-well under 1.0, proving the
-mapping isn't trivial (see §6.5 and `self_test()`).
+swept `denat_amplitude`=0.4, now **reviewed, agreed, and frozen**),
+well under 1.0, proving the mapping isn't trivial (see §6.5 and
+`self_test()`). Note this ~0.65 is the *linear non-triviality baseline*,
+deliberately kept under 0.9 — it is NOT the headline result. The headline
+is the CRN's 0.8472; see §8.
 
 ### 3.1 Scattering — `mu_s_prime(pH)`
 
@@ -157,11 +157,11 @@ against the live output before quoting it.
 2026-09-08 (fully digitized, superseding `188e76a`'s haemoglobin
 proxy), and `denat_amplitude`/`denat_width` dropped off 2026-09-09
 (swept and verified). This is the first time the parameter table has
-been fully clean. **The 2026-09-09 change is pushed to `origin/main`
-for team review** — it still needs a real team conversation and
-explicit agreement, same as the eps override, before being treated as
-final. Verified live via `check_params()` — always re-run rather than
-trust a snapshot.
+been fully clean. The 2026-09-09 change was pushed to `origin/main`,
+**reviewed, agreed, and is now frozen** — the full experiment has been
+run on these values. The two SWEPT entries stay labelled as swept rather
+than cited; the amplitude sweep is what establishes the conclusion
+survives their uncertainty. Verified live via `check_params()`.
 
 ---
 
@@ -254,7 +254,7 @@ sets `torch.manual_seed()` for reproducible weight init + data shuffling.
 Both default to off/unset — old behavior (run the full `--epochs`,
 checkpoint on val_MAE) is unchanged unless these are passed.
 
-### 6.6 Known open issue: training instability
+### 6.6 Training instability — characterised and disclosed, not open
 
 Even after the LR fix, validation performance swings epoch-to-epoch more
 than desired, though **less than earlier entries in this file claimed** —
@@ -341,55 +341,83 @@ is deliberately configurable (`--n-points`), though the current dataset
 only embeds 4 — ablating to more requires regenerating the dataset with
 more embedded probes (explicit, logged follow-up, not done yet).
 
-**"Is the model actually working?"** Yes, with two stated caveats. On the
-selected checkpoints it clearly beats both baselines: **R² = 0.8486 ±
-0.0368** on validation and **0.8389 ± 0.0412** on the untouched test
-split, versus 0.6212 (linear) and 0.6206 (PLSR). MAE is **0.090 pH** on
-both splits — identical, which is direct evidence of no overfitting to
-the split used for early stopping.
+**"Is the model actually working?"** Yes, with two stated caveats. The
+reported figure is **R² = 0.8472 ± 0.0384** with **MAE 0.0936 pH** and
+**RMSE 0.1282 pH**, measured on 500 fresh held-out samples (seed 777),
+five seeds. It clearly beats both baselines: 0.6212 (linear) and 0.6206
+(PLSR). Validation (n=50) gives 0.8486 ± 0.0368 and MAE 0.0902 — close
+enough to the held-out figure to be direct evidence of no overfitting to
+the split used for early stopping. **Quote the 500-sample number**; the
+n=50 splits are supporting detail.
+
+All R² values here are **pooled over all pixels**, not averaged over
+batches. An earlier batch-averaged implementation understated the
+headline as 0.7884; it was found, fixed at source in `train_crn.py`, and
+the correction is documented in `docs/TEAM_LOG.md`.
 
 The two caveats, both disclosed rather than hidden:
 1. **Training instability** epoch-to-epoch is real, though milder than
    older entries claimed (see §6.6).
-2. **Spatial reconstruction is not yet reliable.** Per-sample (within-
-   sample) R² is negative — −1.39 on test, −2.30 on validation. The model
-   recovers genuine spatial structure (within-sample correlation ≈ +0.57)
-   but over-amplifies it by ~1.25–1.29×. Practically the heatmap still
-   holds up: **82.8% of test pixels fall within ±0.15 pH** and 85.1% land
-   in the correct quality class, +35.4 points over a majority-class
-   classifier. Run `evaluate_heatmap.py` for all of these together.
+2. **Spatial MAGNITUDE is over-expressed — but LOCATION is reliable.**
+   These are two different claims and must not be collapsed into one.
+   **Never write "spatial reconstruction is unreliable."** It is not what
+   the measurements say, and it overstates our own weakness.
+
+   - *LOCATION (reliable):* the predicted hot region is genuinely hotter
+     **99.6%** of the time; hottest-20% overlap with truth is **51.3%**
+     against 20% chance; per-pixel class accuracy on multi-class samples
+     is **79.0%**. Measured by `check_spatial_localization.py`.
+   - *MAGNITUDE (weak):* per-sample within-sample R² is negative. This is
+     a calibration measure, and it goes negative because true
+     within-sample variation (SD ≈ 0.088 pH) is *smaller* than the
+     model's own per-pixel error (MAE ≈ 0.094 pH) — so a ~1.25×
+     over-amplification is heavily penalised on that scale. Measured by
+     `check_spatial_skill.py`.
+
+   Practically the heatmap holds up: **81.5% of held-out pixels fall
+   within ±0.15 pH**. Run `evaluate_heatmap.py` for the full set.
+
+3. **A tissue-boundary artefact**, quantified rather than hidden:
+   interior MAE is **0.070** against the 0.094 headline. It is
+   convolutional context loss at the mask edge. See
+   `check_edge_effect.py`.
 
 **"What's your one real-world validation?"** 970nm is the only band
 where the simulated bands overlap a real, independently-measured
-hyperspectral pork dataset (Wang et al. 2026). Currently the simulated
-970nm value is roughly 2× the real measured value — reported honestly as
-an open gap, not concealed.
+hyperspectral pork dataset (Wang et al. 2026). The simulated 970nm value
+is **0.2645** against real pork **0.198** (freshest cube) / **0.217**
+(18-cube mean) — about 1.2–1.3×, down from ~0.54 before the scattering
+and eps work. The species question behind it is closed: tray column C4 is
+pork, established 2026-09-18 from the dataset authors' own annotation.
+The residual gap is **reported honestly as a stated Chapter 5
+limitation**, not concealed and not being chased further.
 
 ---
 
-## 9. What's left to assign
+## 9. Status — FROZEN as of 2026-09-19
 
-From §4/§6, the concrete open work items, roughly independent of each
-other (good for splitting across people):
+**Nothing in this section is open work.** Every item that used to be
+listed here is closed:
 
-1. **Get team agreement on the 2026-09-09 `denat_amplitude`/
-   `denat_width` resolution** — done, verified, and pushed to
-   `origin/main` for review (parameter table now fully clean, 0
-   blockers), but still needs an actual team conversation and explicit
-   agreement before being treated as final, same process as the eps
-   override (`eps_met` @ 481/600nm, closed 2026-09-08 by digitizing
-   Bowen 1949/Tang 2004 directly, superseding the earlier
-   haemoglobin-proxy approach that couldn't reach metMb).
-2. **Model stabilization**: pick one of the three untried diagnostic
-   ideas in §6.6 and actually test it.
-3. **970nm gap decision**: tune further, or formally document as a
-   stated Chapter 5 limitation.
-4. **Manuscript**: hasn't been touched by any of the recent technical
-   work — worth an explicit status check.
-5. **Once the above is pushed**: regenerate the dataset fresh, re-run
-   `--selftest`, and run the actual CRN experiment (`train_crn.py` on
-   the frozen dataset) — hasn't been touched by any recent session and
-   is the actual point of the pipeline.
+1. **Team agreement on the 2026-09-09 `denat_amplitude`/`denat_width`
+   resolution** — obtained. Parameters frozen.
+2. **Model stabilization** — not pursued further. The instability is
+   characterised in §6.6, mitigated by the LR fix and early stopping, and
+   disclosed. Five-seed reporting (mean ± std) is what makes the
+   headline robust to it, per Henderson et al. 2018.
+3. **970nm gap** — decided: documented as a stated Chapter 5 limitation
+   (see §8). Not being tuned further.
+4. **Manuscript** — the only remaining work on the project, and it is
+   writing, not computation. Any chapter text saying "spatial
+   reconstruction is unreliable" must be corrected per §8.
+5. **Regenerate + run the CRN experiment** — done. It is the headline
+   result: R² = 0.8472 ± 0.0384 over five seeds on 500 held-out samples.
+   Evidence: `metric_check_outputs/final_evaluation_TEST500.json`.
+
+`RESULTS.md` is the single source of truth for every reportable number
+and names the evidence file behind each one. `CLAUDE.md` carries the
+current status block and a list of things that look like bugs but are
+deliberate and already investigated — read it before raising a finding.
 
 See `docs/TEAM_LOG.md` for the full dated history behind every number and
 decision above.
