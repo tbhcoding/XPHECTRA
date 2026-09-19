@@ -54,9 +54,12 @@ def main():
     if not os.path.isdir(split_dir):
         raise SystemExit(
             "Dataset not found: {}\n\n"
-            "The datasets are not committed (~1.7 GB together) but they\n"
-            "regenerate deterministically from the frozen PARAMS. Run:\n\n"
-            "    python make_datasets.py\n".format(split_dir))
+            "The datasets are not committed (~1.7 GB together) but both\n"
+            "regenerate bit-for-bit from the frozen PARAMS:\n\n"
+            "    python generate_dataset.py\n"
+            "        the frozen 400-sample set (seed 42, 300/50/50)\n\n"
+            "    python generate_dataset.py --n 500 --seed 777 --all-test --out ligtas_test_extended\n"
+            "        the 500-sample held-out set the headline figures use".format(split_dir))
 
     ds = SparseLIGTASDataset(os.path.join(a.data, a.split), N_POINTS, IN_RES)
     loader = DataLoader(ds, batch_size=BATCH, shuffle=False)

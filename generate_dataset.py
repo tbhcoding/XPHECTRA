@@ -800,9 +800,24 @@ def self_test(n_seeds=10):
 
 
 def main():
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(
+        epilog="The two datasets the evaluation scripts expect:\n"
+               "  python generate_dataset.py\n"
+               "      the frozen 400-sample set (seed 42, 300/50/50) the model was trained on\n"
+               "  python generate_dataset.py --n 500 --seed 777 --all-test "
+               "--out ligtas_test_extended\n"
+               "      the 500-sample held-out set the reported headline figures come from.\n"
+               "      Seed 777 is deliberately NOT 42: reusing 42 reproduces the training\n"
+               "      draws exactly and would overlap the training data.\n"
+               "Neither is committed (~1.7 GB together); both regenerate bit-for-bit.",
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", default="ligtas_synthetic_dataset")
     ap.add_argument("--n", type=int, default=400)
+    ap.add_argument("--seed", type=int, default=42,
+                     help="generation seed (default 42, the frozen dataset)")
+    ap.add_argument("--all-test", action="store_true",
+                     help="put every sample in test/ instead of splitting, "
+                          "for building an extra held-out set")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
 
@@ -811,20 +826,26 @@ def main():
         self_test()
         return
 
-    rng = np.random.default_rng(42)
-    splits = [("train", int(args.n * 0.75)),
-              ("val", int(args.n * 0.125)),
-              ("test", args.n - int(args.n * 0.75) - int(args.n * 0.125))]
+    rng = np.random.default_rng(args.seed)
+    if args.all_test:
+        splits = [("test", args.n)]
+        prefix = "xtest"
+    else:
+        splits = [("train", int(args.n * 0.75)),
+                  ("val", int(args.n * 0.125)),
+                  ("test", args.n - int(args.n * 0.75) - int(args.n * 0.125))]
+        prefix = "sample"
 
     idx = 1
     for name, count in splits:
         d = os.path.join(args.out, name)
         os.makedirs(d, exist_ok=True)
         for _ in range(count):
-            generate_sample(f"sample_{idx:03d}", d, rng)
+            generate_sample(f"{prefix}_{idx:03d}" if prefix == "sample"
+                            else f"{prefix}_{idx:04d}", d, rng)
             idx += 1
         print(f"  {name}: {count} samples -> {d}")
-    print(f"\nDone. {args.n} samples in {args.out}/")
+    print(f"\nDone. {args.n} samples in {args.out}/  (seed {args.seed})")
 
 
 if __name__ == "__main__":

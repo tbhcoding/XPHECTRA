@@ -1,6 +1,6 @@
 # LIGTAS-pH — Final Results
 
-*Consolidated 2026-09-18 by `collect_results.py`, which reads the saved
+*Consolidated 2026-09-19 by `collect_results.py`, which reads the saved
 evidence files rather than recomputing anything. Every figure is traceable to a file
 listed under **Where each number comes from**. If this document and the source code
 ever disagree, the code is correct — it is what was executed.*
@@ -291,6 +291,20 @@ python make_figures.py                     # manuscript figures
 python collect_results.py                  # regenerate this document
 ```
 
-The dataset and checkpoints are excluded from the repository by size, but the dataset
-regenerates in about 30 seconds from `generate_dataset.py` at the recorded seed, and was
-verified bit-for-bit reproducible.
+The five official checkpoints **are** committed (`crn_5seed_final/seed_*/crn_best.pt`,
+2.4 MB) because per-seed results do not reproduce across machines — the same seed on
+different hardware yields different weights, verified on two machines — so those files
+are the only evidence for any per-seed figure.
+
+The two datasets are not committed (~1.7 GB together) but regenerate bit-for-bit from
+the frozen PARAMS:
+
+```
+python generate_dataset.py
+    # the frozen 400-sample set, seed 42, split 300/50/50
+
+python generate_dataset.py --n 500 --seed 777 --all-test --out ligtas_test_extended
+    # the 500-sample held-out set the headline figures come from.
+    # Seed 777 is deliberately not 42: reusing 42 would reproduce the
+    # training draws exactly and overlap the training data.
+```
