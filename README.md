@@ -381,20 +381,23 @@ Say the second line out loud before the panel asks.
 
 | File | When |
 |---|---|
-| `LIGTAS_calibration.ipynb` | **Start here.** Filling in parameters, checking physics, making figures. |
+| `generate_dataset.py --selftest` | **Start here.** Checks the physics direction and the non-triviality baseline. |
 | `generate_dataset.py` | Edit the `PARAMS` table here. Run from terminal to build the 400 samples. |
 | `extract_sensor_params.py` | Once, on a downloaded NHSI cube, to measure sensor noise. |
 | `train_crn.py` | Once a dataset exists. Trains the CRN — see Step 5. |
 | `docs/TEAM_LOG.md` | Before touching the CRN or dataset params — check what's actually settled vs. still open. |
 
-The notebook imports the script, so the physics lives in one place only.
-Edit `PARAMS` in the `.py`, then **restart the notebook kernel** to pick
-up the change.
+The physics lives in one place only: `PARAMS` in
+`generate_dataset.py`. Edit it there, then re-run `--selftest` to see
+what the change did.
 
 ```bash
-pip install -r requirements.txt jupyter matplotlib
-jupyter notebook LIGTAS_calibration.ipynb
+pip install -r requirements.txt
+python generate_dataset.py --selftest
 ```
 
-In VS Code you can open the `.ipynb` directly — pick the venv as the
-kernel when prompted.
+The old `LIGTAS_calibration.ipynb` was removed in `42e3deb`. Everything
+it did is now a script: figures come from `make_figures.py`, and the
+parameter checks come from `--selftest`. Do not recreate it — a notebook
+that imports `generate_dataset.py` drifts out of sync the same way
+`generate_dataset_new_plus_eps.py` did.
