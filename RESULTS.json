@@ -1,0 +1,234 @@
+{
+  "generated": "2026-09-18",
+  "sources": {
+    "headline": "metric_check_outputs/final_evaluation_TEST500.json",
+    "validation_n50": "metric_check_outputs/final_evaluation.json",
+    "test_n50": "metric_check_outputs/final_evaluation_TEST.json",
+    "amplitude_sweep": "deconfound_outputs/full_table.json",
+    "spatial_localisation": "metric_check_outputs/spatial_localization.json",
+    "spatial_magnitude": "metric_check_outputs/spatial_skill_official.json",
+    "boundary_artefact": "metric_check_outputs/edge_effect.json"
+  },
+  "headline": {
+    "evaluated_on": "ligtas_test_extended/test (500 samples, unseen)",
+    "seeds": 5,
+    "r2": [
+      0.8471678987145423,
+      0.038350002517254914
+    ],
+    "mae_ph": [
+      0.09359995424747466,
+      0.014756197780796943
+    ],
+    "rmse_ph": [
+      0.12823552936315535,
+      0.01562635307158443
+    ],
+    "within_0.15_ph_pct": [
+      81.51095139617539,
+      6.746152505104424
+    ],
+    "within_0.20_ph_pct": [
+      89.25389214145248,
+      4.050340336542282
+    ]
+  },
+  "other_evaluation_sets": {
+    "validation_n50": {
+      "r2": [
+        0.8485575288534164,
+        0.036814659807950546
+      ],
+      "mae_ph": [
+        0.09017369747161866,
+        0.013375535999660857
+      ],
+      "rmse_ph": [
+        0.122308050096035,
+        0.014333084090602608
+      ]
+    },
+    "test_n50": {
+      "r2": [
+        0.8389080420136452,
+        0.04119527483132384
+      ],
+      "mae_ph": [
+        0.09022956639528275,
+        0.01442721139735897
+      ],
+      "rmse_ph": [
+        0.12343868762254714,
+        0.015598789724001118
+      ]
+    }
+  },
+  "per_seed": [
+    {
+      "checkpoint": "crn_5seed_final\\seed_0\\crn_best.pt",
+      "r2": 0.7777974307537079,
+      "mae_ph": 0.12097955495119095,
+      "rmse_ph": 0.1557673215866089
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_1\\crn_best.pt",
+      "r2": 0.890469066798687,
+      "mae_ph": 0.0801033228635788,
+      "rmse_ph": 0.10936294496059418
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_2\\crn_best.pt",
+      "r2": 0.8603836596012115,
+      "mae_ph": 0.08275128155946732,
+      "rmse_ph": 0.12347240746021271
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_3\\crn_best.pt",
+      "r2": 0.8392926156520844,
+      "mae_ph": 0.09624382108449936,
+      "rmse_ph": 0.13247066736221313
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_4\\crn_best.pt",
+      "r2": 0.8678967207670212,
+      "mae_ph": 0.08792179077863693,
+      "rmse_ph": 0.12010430544614792
+    }
+  ],
+  "amplitude_sweep": [
+    {
+      "denat_amplitude": 0.2,
+      "linear_r2": 0.3113311734837614,
+      "plsr_r2": 0.3110097140201148,
+      "crn_r2": 0.727,
+      "crn_r2_std": 0.082
+    },
+    {
+      "denat_amplitude": 0.4,
+      "linear_r2": 0.6212,
+      "plsr_r2": 0.6206,
+      "crn_r2": 0.8486,
+      "crn_r2_std": 0.0368
+    },
+    {
+      "denat_amplitude": 0.6,
+      "linear_r2": 0.7616,
+      "plsr_r2": 0.7608,
+      "crn_r2": 0.8862,
+      "crn_r2_std": 0.0139
+    },
+    {
+      "denat_amplitude": 0.8,
+      "linear_r2": 0.8308,
+      "plsr_r2": 0.8299,
+      "crn_r2": 0.8999,
+      "crn_r2_std": 0.0169
+    }
+  ],
+  "spatial_localisation": {
+    "note": "restricted to samples spanning 2+ quality classes",
+    "n_multiclass": 282,
+    "n_total": 500,
+    "correct_region_pct": [
+      99.57446808510637,
+      0.5211680303793976
+    ],
+    "pixel_class_acc_pct": [
+      78.98572368239783,
+      2.8639616058694504
+    ],
+    "hot_region_overlap_pct": [
+      51.26412313444505,
+      4.338707220052342
+    ]
+  },
+  "spatial_magnitude": {
+    "per_sample_r2": [
+      -2.2987995537519454,
+      0.8529871863765729
+    ],
+    "within_sample_corr": [
+      0.5409632685930466,
+      0.06913000805000673
+    ],
+    "amplitude_ratio": [
+      1.2901846170425415,
+      0.10887680001505004
+    ],
+    "between_sample_ph_sd": 0.3036405146121979,
+    "within_sample_ph_sd": 0.08431927859783173
+  },
+  "boundary_artefact": {
+    "band_px": 8,
+    "edge_mae_ph": [
+      0.15578230619430541,
+      0.017013191496186263
+    ],
+    "interior_mae_ph": [
+      0.06976499855518341,
+      0.015609515928247573
+    ],
+    "ratio": 2.311649753026149,
+    "pct_samples_affected": 96.8
+  },
+  "parameters": {
+    "eps_deoxy": [
+      3.88,
+      7.6,
+      10.93,
+      4.32,
+      0.113,
+      0.176
+    ],
+    "eps_oxy": [
+      7.05,
+      7.6,
+      11.26,
+      1.59,
+      0.362,
+      0.354
+    ],
+    "eps_met": [
+      7.76,
+      7.6,
+      3.12,
+      2.9,
+      0.155,
+      0.885
+    ],
+    "c_Mb_mean": 0.87,
+    "c_Mb_sd": 0.12,
+    "scatter_a": 8.7436,
+    "scatter_b": 1.6618,
+    "denat_amplitude": 0.4,
+    "denat_midpoint": 5.7,
+    "denat_width": 0.28,
+    "mua_water": [
+      0.000248,
+      0.00032,
+      0.000763,
+      0.0023,
+      0.0179,
+      0.45
+    ],
+    "water_fraction": 0.732,
+    "sensor_sigma": 0.0054,
+    "mu_a_baseline": 0.8
+  },
+  "parameter_status": {
+    "eps_deoxy": "CITED -- digitized from primary sources, externally validated, equine myoglobin (field-standard substitution)",
+    "eps_oxy": "CITED -- digitized from primary sources, externally validated, equine myoglobin (field-standard substitution)",
+    "eps_met": "CITED -- digitized from primary sources, externally validated, equine myoglobin (field-standard substitution)",
+    "c_Mb_mean": "CITED",
+    "c_Mb_sd": "BACKCALCULATED -- justified",
+    "scatter_a": "FITTED",
+    "scatter_b": "FITTED",
+    "denat_amplitude": "SWEPT -- literature-informed range, no single citable value",
+    "denat_midpoint": "CITED (PROXY)",
+    "denat_width": "SWEPT -- unsourced, no citation found",
+    "mua_water": "CITED",
+    "water_fraction": "CITED",
+    "sensor_sigma": "MEASURED",
+    "mu_a_baseline": "TUNED -- NOT CITED, documented limitation"
+  }
+}

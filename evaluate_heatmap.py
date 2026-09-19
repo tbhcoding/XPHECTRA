@@ -178,6 +178,14 @@ def main():
     ap.add_argument("--out", default="metric_check_outputs/final_evaluation.json")
     a = ap.parse_args()
 
+    split_dir = os.path.join(a.data, a.split)
+    if not os.path.isdir(split_dir):
+        raise SystemExit(
+            "Dataset not found: {}\n\n"
+            "The datasets are not committed (~1.7 GB together) but they\n"
+            "regenerate deterministically from the frozen PARAMS. Run:\n\n"
+            "    python make_datasets.py\n".format(split_dir))
+
     ds = SparseLIGTASDataset(os.path.join(a.data, a.split), N_POINTS, IN_RES)
     loader = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=False)
     ckpts = sorted(glob.glob(a.ckpt_glob))

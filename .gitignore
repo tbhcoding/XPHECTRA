@@ -20,6 +20,12 @@ ligtas_dataset_new_plus_eps/
 ligtas_dataset_new_plus_eps/
 *.npy
 *.pt
+# EXCEPTION: the five official checkpoints are committed deliberately.
+# Per-seed results do not reproduce across machines (different hardware
+# gives different weights from the same seed -- verified on two machines),
+# so these files ARE the evidence for every per-seed number reported.
+# 2.4 MB total. Do not remove.
+!crn_5seed_final/seed_*/crn_best.pt
 
 # CRN training output (checkpoints, heatmaps, loss curves)
 crn_outputs*/
