@@ -65,30 +65,35 @@
   },
   "per_seed": [
     {
+      "seed": 0,
       "checkpoint": "crn_5seed_final\\seed_0\\crn_best.pt",
       "r2": 0.7777974307537079,
       "mae_ph": 0.12097955495119095,
       "rmse_ph": 0.1557673215866089
     },
     {
+      "seed": 1,
       "checkpoint": "crn_5seed_final\\seed_1\\crn_best.pt",
       "r2": 0.890469066798687,
       "mae_ph": 0.0801033228635788,
       "rmse_ph": 0.10936294496059418
     },
     {
+      "seed": 2,
       "checkpoint": "crn_5seed_final\\seed_2\\crn_best.pt",
       "r2": 0.8603836596012115,
       "mae_ph": 0.08275128155946732,
       "rmse_ph": 0.12347240746021271
     },
     {
+      "seed": 3,
       "checkpoint": "crn_5seed_final\\seed_3\\crn_best.pt",
       "r2": 0.8392926156520844,
       "mae_ph": 0.09624382108449936,
       "rmse_ph": 0.13247066736221313
     },
     {
+      "seed": 4,
       "checkpoint": "crn_5seed_final\\seed_4\\crn_best.pt",
       "r2": 0.8678967207670212,
       "mae_ph": 0.08792179077863693,

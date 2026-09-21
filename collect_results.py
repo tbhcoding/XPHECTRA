@@ -76,8 +76,10 @@ def main():
     # ---- per-seed detail, from the headline run ------------------------
     d = load(f"{MCO}/final_evaluation_TEST500.json")
     if d:
+        import re as _re
         out["per_seed"] = [
-            {"checkpoint": r["checkpoint"], "r2": r["pooled_r2"],
+            {"seed": int(_re.search(r"seed_(\d+)", r["checkpoint"]).group(1)),
+             "checkpoint": r["checkpoint"], "r2": r["pooled_r2"],
              "mae_ph": r["mae"], "rmse_ph": r["rmse"]}
             for r in d["per_checkpoint"]]
 
@@ -262,6 +264,16 @@ def main():
         A("regression, and partial least squares regression. The comparison was then repeated")
         A("across the **entire plausible range** of the pH–scattering coupling strength, because")
         A("that parameter has no single citable value in the literature.\n")
+        A("Every value in the table below is measured on the **held-out validation")
+        A("split of that amplitude's own dataset (n = 50)** — the same split for all three")
+        A("methods, so the comparison is like-for-like. The amplitudes other than 0.4 were")
+        A("never evaluated on the 500-sample set, so validation is the only scale on which")
+        A("all four points are comparable.\n")
+        A("**This is why the CRN column reads 0.8486 at the adopted setting while the")
+        A("headline in section 1 is 0.8472**: the headline is the 500-sample held-out")
+        A("evaluation, which exists only at 0.4. The two differ by 0.0014, which also")
+        A("bounds how much the CRN gains from choosing its stopping epoch on the")
+        A("validation split — the baselines are closed-form and make no such choice.\n")
         A("| Coupling strength | Linear | PLSR | CRN |")
         A("|---|---|---|---|")
         for r in out["amplitude_sweep"]:
@@ -330,6 +342,10 @@ def main():
         A(f"- Per-sample R²: **{m['per_sample_r2'][0]:+.4f} ± {m['per_sample_r2'][1]:.4f}**")
         A(f"- Within-sample correlation: **{m['within_sample_corr'][0]:+.4f}** — genuine signal is present")
         A(f"- Predicted ÷ true spatial SD: **{m['amplitude_ratio'][0]:.3f}×** — over-expressed")
+        A("*(The two pH-spread figures below are measured on the 50-sample validation")
+        A("split. Figure `fig_ph_distribution.png` shows the same two statistics across all")
+        A("400 frozen samples, where they read 0.3038 and 0.0865. Same quantities, different")
+        A("scope — not a discrepancy.)*\n")
         A(f"- Between-sample pH SD **{m['between_sample_ph_sd']:.4f}** vs within-sample "
           f"**{m['within_sample_ph_sd']:.4f}**\n")
         A("**Why the number is negative, stated plainly.** Per-sample R² asks whether the model")

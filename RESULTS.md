@@ -105,6 +105,18 @@ regression, and partial least squares regression. The comparison was then repeat
 across the **entire plausible range** of the pH–scattering coupling strength, because
 that parameter has no single citable value in the literature.
 
+Every value in the table below is measured on the **held-out validation
+split of that amplitude's own dataset (n = 50)** — the same split for all three
+methods, so the comparison is like-for-like. The amplitudes other than 0.4 were
+never evaluated on the 500-sample set, so validation is the only scale on which
+all four points are comparable.
+
+**This is why the CRN column reads 0.8486 at the adopted setting while the
+headline in section 1 is 0.8472**: the headline is the 500-sample held-out
+evaluation, which exists only at 0.4. The two differ by 0.0014, which also
+bounds how much the CRN gains from choosing its stopping epoch on the
+validation split — the baselines are closed-form and make no such choice.
+
 | Coupling strength | Linear | PLSR | CRN |
 |---|---|---|---|
 | 0.2 | 0.3113 | 0.3110 | **0.7270 ± 0.0820** |
@@ -175,6 +187,11 @@ regions; it overstates how different they are. Only the second is miscalibrated.
 - Per-sample R²: **-2.2988 ± 0.8530**
 - Within-sample correlation: **+0.5410** — genuine signal is present
 - Predicted ÷ true spatial SD: **1.290×** — over-expressed
+*(The two pH-spread figures below are measured on the 50-sample validation
+split. Figure `fig_ph_distribution.png` shows the same two statistics across all
+400 frozen samples, where they read 0.3038 and 0.0865. Same quantities, different
+scope — not a discrepancy.)*
+
 - Between-sample pH SD **0.3036** vs within-sample **0.0843**
 
 **Why the number is negative, stated plainly.** Per-sample R² asks whether the model

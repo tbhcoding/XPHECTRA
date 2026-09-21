@@ -477,7 +477,7 @@ def fig_sweep_comparison(table_path, out_path):
                     fontsize=8.2, color="0.25")
 
     ax.set_xlabel("denat_amplitude")
-    ax.set_ylabel("held-out R²")
+    ax.set_ylabel("R² on held-out validation split (n = 50)")
     ax.set_title("CRN vs conventional baselines across the parameter sweep",
                  fontsize=11, pad=12)
     ax.set_xticks(amp)
@@ -548,6 +548,8 @@ def fig_heatmap_example(data_dir, ckpt, out_path, prefer=None):
     err = np.where(mask, np.abs(ph - pred), np.nan)
     vmin, vmax = np.nanmin(t_masked), np.nanmax(t_masked)
 
+    allr2 = np.array([recs[s]["r2"] for s in order])
+
     fig, ax = plt.subplots(1, 3, figsize=(12.4, 4.3))
     im0 = ax[0].imshow(t_masked, cmap=CMAP_PH, vmin=vmin, vmax=vmax)
     ax[0].set_title(f"Hidden true pH ({sid})", fontsize=10.5); ax[0].axis("off")
@@ -561,7 +563,10 @@ def fig_heatmap_example(data_dir, ckpt, out_path, prefer=None):
     ax[2].set_title(f"|error|  —  MAE {r['mae']:.3f} pH", fontsize=10.5); ax[2].axis("off")
     fig.colorbar(im2, ax=ax[2], fraction=.046, pad=.03).set_label("|Δ pH|", fontsize=9)
 
-    fig.text(0.5, 0.03, f"{sid} — median-accuracy case (rank {rank} of {len(order)})",
+    fig.text(0.5, 0.03,
+             f"{sid} — median case, rank {rank} of {len(order)}. Per-sample R² "
+             f"{r['r2']:+.2f}; mean over this split {float(np.mean(allr2)):+.2f} "
+             f"(test split, one checkpoint).",
              ha="center", fontsize=8.5, color="0.4")
 
     fig.tight_layout(rect=[0, 0.06, 1, 1])
@@ -569,7 +574,6 @@ def fig_heatmap_example(data_dir, ckpt, out_path, prefer=None):
     plt.close(fig)
     print(f"  wrote {out_path}  ({sid}, per-sample R2 {r['r2']:.3f}, MAE {r['mae']:.3f})")
 
-    allr2 = np.array([recs[s]["r2"] for s in order])
     return dict(sample=sid, per_sample_r2=r["r2"], mae=r["mae"],
                 within_sample_sd=r["sd"], rank=rank, n=len(order),
                 split_median_r2=float(np.median(allr2)),
