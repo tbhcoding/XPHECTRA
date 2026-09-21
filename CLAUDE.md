@@ -248,9 +248,9 @@ no, and we measured what happens across the plausible range instead.
   `docs/TEAM_LOG.md`'s 2026-09-09 entry. **Pushed to `origin/main` for
   the team to review directly in the code — same disclosed-decision
   process as the eps override, but this one doesn't overwrite anyone
-  else's commit. Still needs actual team discussion and explicit
-  agreement before treating it as the final, adopted state — a push is
-  "here's what I propose, please check it," not "this is settled."**
+  else's commit. This was subsequently discussed, agreed and frozen —
+  see the status block at the top of this file. The wording above is kept
+  because it records the standard the decision was held to.**
 - `scatter_a`/`scatter_b` — **adopted** (was the `"DECISION"` blocker,
   the former #1 item here). Jacques 2013 generic soft-tissue values
   (18.9/1.286) → refit to approximate Bergmann et al. 2021's
@@ -358,9 +358,8 @@ no, and we measured what happens across the plausible range instead.
   actually supported), kept at 0.28 as an unsourced sweep value.
   Blocking count 2→0 — the parameter table has zero uncited/unmeasured
   entries for the first time in this project. **Pushed for team
-  review** — visible on `origin/main` now, but still needs an actual
-  team conversation and agreement before treating it as final, same
-  standard as the eps decision.
+  review** — reviewed, agreed and frozen; the full experiment has been
+  run on these values. See the status block at the top of this file.
   Full sweep table and citation verification in `docs/TEAM_LOG.md`'s
   2026-09-09 entry.
 

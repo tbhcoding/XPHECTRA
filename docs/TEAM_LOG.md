@@ -810,11 +810,14 @@ that correcting it flips the amp=0.8 row from NO to YES.
 *1. Reproduction of the 2026-09-12 5-seed result, 2nd machine
 (torch 2.13.0, Python 3.14.7, 4 threads, CPU, macOS arm64; 48 min total):*
 
+> **SUPERSEDED (noted 2026-09-21).** Both R² columns are batch-averaged, pre-2026-09-13 metric fix; so are the per-seed values below. MAE and RMSE are unaffected. Corrected pooled aggregate is **0.8472 ± 0.0384** (`metric_check_outputs/final_evaluation_TEST500.json`). The *finding* this entry establishes — aggregates reproduce across machines, per-seed values do not — is unchanged by the correction. Left as written; this log is chronological.
+
 | | Arrvsssogood | This machine | Δ |
 |---|---|---|---|
 | R² mean ± std | 0.7884 ± 0.0510 | **0.7685 ± 0.0525** | −0.020 (0.4 std) |
 | MAE mean ± std | 0.0903 ± 0.0134 | **0.0966 ± 0.0134** | +0.006 |
 | RMSE mean ± std | 0.1223 ± 0.0143 | **0.1270 ± 0.0143** | +0.005 |
+
 
 Per-seed R²: 0.6942 / 0.7812 / 0.7482 / 0.7816 / 0.8373. Means land within
 0.4 std; **MAE and RMSE std match to four decimals**. Seed 0 is again the
@@ -962,10 +965,31 @@ what was done.
   investigation:** CRN lost to both Linear and PLSR at 3 of 4 amplitudes
   (0.4/0.6/0.8), won only at 0.2. Directly contradicted the already-
   reported full-scale (300/50, 5-seed) result where CRN won clearly
-  (0.7884 vs 0.6509 linear). Not an architecture or physics bug — see
+  (0.7884 vs 0.6509 linear — both batch-averaged, superseded; pooled the
+  CRN figure is 0.8486, see the correction banner below). Not an
+  architecture or physics bug — see
   "Decided" below.
 - **Full-scale deconfounding — all 4 amplitudes, standardized (held-out
   R², Linear/PLSR/CRN, 3 CRN seeds each):**
+
+  > **CORRECTION added 2026-09-21 — the CRN column below is SUPERSEDED.**
+  > These CRN values were computed before the 2026-09-13 metric fix, when
+  > R² was averaged per mini-batch instead of pooled over the epoch. The
+  > Linear and PLSR columns are unaffected and still stand. The entry is
+  > left as written because this log is chronological; do not quote the
+  > CRN column. Corrected (pooled) values, same runs rescored:
+  >
+  > | amp | CRN then (batch-averaged) | CRN now (pooled) |
+  > |---|---|---|
+  > | 0.2 | 0.6174 | **0.7270 ± 0.0820** |
+  > | 0.4 | 0.7788 | **0.8486 ± 0.0368** |
+  > | 0.6 | 0.8396 | **0.8862 ± 0.0139** |
+  > | 0.8 | 0.8599 | **0.8999 ± 0.0169** |
+  >
+  > The corrected table is `deconfound_outputs/full_table.json` and is
+  > what `RESULTS.md` section 2 and `figures/fig_sweep_comparison.png`
+  > are built from. Note the conclusion did not change direction — the
+  > CRN's margin over both baselines widened at every amplitude.
 
   | amp | Linear (held) | PLSR (held) | CRN mean±std | CRN beats both by >0.05? |
   |---|---|---|---|---|
@@ -1106,6 +1130,8 @@ what was done.
   values >1.0.
 - **CRN 5-seed results, frozen dataset, checkpoint selected on val_loss
   only (clean mode, does not touch `phtrue.npy` for the save decision):**
+
+  > **SUPERSEDED (noted 2026-09-21).** Every R² here is batch-averaged, pre-2026-09-13 metric fix. Corrected pooled values: per-seed 0.7778 / 0.8905 / 0.8604 / 0.8393 / 0.8679, aggregate **0.8472 ± 0.0384** on the 500-sample held-out set (`metric_check_outputs/final_evaluation_TEST500.json`). MAE and RMSE here are unaffected by that bug. Left as written — this log is chronological.
 
   | Seed | Epochs (early-stopped) | Best-checkpoint epoch | val R² | val MAE | val RMSE | Worst mid-run crash |
   |---|---|---|---|---|---|---|

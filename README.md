@@ -59,11 +59,11 @@ there, not just the winner's.
 
 **Current blocking count: 0.** `python generate_dataset.py --selftest`
 prints the live blocking list — always trust that over this table if
-they disagree. **The `denat_amplitude`/`denat_width` resolution above
-is pushed to `origin/main` so the team can review it in the actual
-code** — it still needs an actual team conversation and explicit
-agreement before being treated as final, same standard as the eps
-override. See `docs/TEAM_LOG.md`'s 2026-09-09 entry.
+they disagree. The `denat_amplitude`/`denat_width` resolution above was
+pushed for team review, **discussed, agreed, and is now frozen** — the
+full experiment has been run on these values. See `docs/TEAM_LOG.md`'s
+2026-09-09 entry for how it was decided, and `RESULTS.md` for what was
+measured on it.
 
 ## Files
 
@@ -98,8 +98,9 @@ python generate_dataset.py --selftest
 ```
 
 You should see `PASS` on test 1 and a linear baseline R² well under 0.9
-on test 2. You'll also see a list of parameters still marked TODO —
-that's step 1 below.
+on test 2 (currently ≈ 0.65 over 10 seeds). **No parameter is marked TODO
+any more** — the blocking count is 0 and the table is frozen, so step 1
+below is a record of how each value was settled, not work to be done.
 
 ---
 
@@ -119,8 +120,12 @@ that's step 1 below.
 > decision remains a genuinely open question.
 
 Open `generate_dataset.py` and find the `PARAMS` dictionary near the top.
-Each entry has a `value`, a `status`, and a `source`. Your job is to turn
-every `PLACEHOLDER`, `ASSUMED` and `PARTIAL` into `CITED` or `MEASURED`.
+Each entry has a `value`, a `status`, and a `source`. **This work is
+complete**: 12 of the 14 entries are `CITED`, `MEASURED` or `FITTED`, and
+the remaining two are labelled `SWEPT` rather than dressed up as
+measurements — the amplitude sweep is what establishes the conclusion
+survives their uncertainty. The subsections below record how each was
+settled.
 
 ### 1a. Myoglobin extinction coefficients — DONE (digitized from Tang 2004 / Bowen 1949)
 
@@ -329,9 +334,10 @@ script's docstring) are configurable, not hardcoded.
 between ~0.06 and 1.17 pH). Diagnosed and confirmed at a 50-epoch run —
 see `docs/TEAM_LOG.md` for the full investigation. `1e-4` is
 **significantly more stable, not perfectly stable** — a mild late-run
-uptick and grainy per-pixel texture at full resolution are still open.
-Don't treat any single "best epoch" number as final without checking the
-loss curve.
+uptick and grainy per-pixel texture at full resolution remain, and are
+disclosed as a limitation rather than fixed. This is why every reported
+number is a mean ± SD over five seeds and never a single run; see
+`figures/fig_loss_curves.png` for what one seed actually does.
 
 Output per run (`--out`, default `crn_outputs/`):
 

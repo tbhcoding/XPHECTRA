@@ -45,7 +45,7 @@
       ],
       "crn_r2_mean": 0.8486,
       "crn_r2_std": 0.0368,
-      "n_crn_seeds": 3,
+      "n_crn_seeds": 5,
       "source": {
         "method": "Linear/PLSR: compute_amp04_baselines.py, run fresh against ligtas_synthetic_dataset/ (the frozen dataset, not a regenerated copy) -- re-run and reconfirmed identical (0.6212/0.6206) immediately before this file was written. CRN: NOT retrained here -- reused directly from crn_5seed_final/seed_0,1,2 (already trained on this same ligtas_synthetic_dataset/), per docs/TEAM_LOG.md's 2026-09-12 frozen-dataset entry.",
         "file": "compute_amp04_baselines.py output (Linear/PLSR); crn_5seed_final/seed_{0,1,2}/history.json (CRN, best-checkpoint val_r2 per seed)"
@@ -59,7 +59,9 @@
         0.6919,
         0.8388,
         0.8057
-      ]
+      ],
+      "n_crn_seeds_SUPERSEDED": 3,
+      "n_crn_seeds_note": "Corrected 2026-09-21: this field read 3 while crn_r2_per_seed held 5 entries and crn_n_seeds read 5. The seed count is 5; the stale value is retained under n_crn_seeds_SUPERSEDED. No R2 value changed."
     },
     {
       "denat_amplitude": 0.6,

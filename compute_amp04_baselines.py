@@ -9,13 +9,26 @@ sampling/fit/eval logic as deconfound_full_scale.py's run_one_amplitude()
 
 Why this script exists instead of just reusing deconfound_full_scale.py
 directly: amp=0.4 is the live PARAMS value and already has a completed,
-trusted CRN result on this exact dataset (crn_5seed_final/seed_0,1,2 --
-mean R^2=0.7788, std=0.0629), so retraining the CRN for this amplitude
+trusted CRN result on this exact dataset (crn_5seed_final), so
+retraining the CRN for this amplitude
 would be redundant compute. This script computes only the two pieces
 that were actually missing -- Linear and PLSR held-out R^2 -- against
 the SAME frozen dataset crn_5seed_final was trained on, instead of
 regenerating a fresh amp=0.4 dataset under deconfound_outputs/ like the
 other three amplitudes.
+
+NOTE ON THE CRN NUMBER AT THIS AMPLITUDE. Earlier versions of this
+docstring quoted mean R^2 = 0.7788 +/- 0.0629 for crn_5seed_final. That
+figure was BATCH-AVERAGED and is superseded: the metric was fixed at
+source in train_crn.py on 2026-09-13 (R^2 is now pooled over the epoch,
+not averaged per mini-batch). The corrected values are:
+
+    validation, n=50   0.8486 +/- 0.0368   <- what the sweep table uses
+    held-out,  n=500   0.8472 +/- 0.0384   <- the REPORTED headline
+
+Do not quote 0.7788 anywhere. See RESULTS.md, which names the evidence
+file behind each figure, and deconfound_outputs/full_table.json, which
+retains the old values under *_SUPERSEDED_batch_averaged for traceability.
 
 Does not touch PARAMS, CrudeCRN, or train_crn.py. Reports numbers only.
 

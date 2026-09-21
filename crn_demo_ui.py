@@ -34,7 +34,10 @@ from train_crn import SparseLIGTASDataset, save_heatmap_figure
 DATA_ROOT = "ligtas_synthetic_dataset/test"
 CHECKPOINT_DIR = "crn_5seed_final"
 AVAILABLE_SEEDS = [0, 1, 2, 3, 4]
-DEFAULT_SEED = 1  # best val R^2 (0.8388) of the 5 -- see docs/TEAM_LOG.md
+DEFAULT_SEED = 1  # best of the 5 on the corrected pooled metric
+                  # (R^2 0.8905 held-out, n=500). The 0.8388 quoted here
+                  # previously was the superseded batch-averaged value;
+                  # seed 1 is still the best seed either way. See RESULTS.md.
 IN_RES = 256
 OUT_RES = 256
 N_POINTS = 4
