@@ -60,6 +60,8 @@ DPI = 200
 C_LIN = "#1F6F78"    # Linear regression  (teal)
 C_PLS = "#C9761A"    # PLSR               (orange)
 C_CRN = "#8C1D2E"    # CRN                (deep red -- the project's primary)
+CMAP_PH = "viridis"  # sequential, perceptually uniform, greyscale-safe
+CMAP_ERR = "magma"   # sequential; dark = low error
 C_TRAIN = C_LIN      # training loss
 C_VAL = C_CRN        # validation loss
 
@@ -95,7 +97,7 @@ def fig_dataset_sample(data_dir, sample_id, out_path):
     ax.axis("off")
 
     ax = fig.add_subplot(gs[1, 2:4])
-    im = ax.imshow(np.where(mask, ph, np.nan), cmap="turbo")
+    im = ax.imshow(np.where(mask, ph, np.nan), cmap=CMAP_PH)
     for p in pts:
         r, c = p["pixel_coord"]
         ax.plot(c, r, "x", color="white", markersize=9, markeredgewidth=2.2)
@@ -110,19 +112,12 @@ def fig_dataset_sample(data_dir, sample_id, out_path):
     ax.set_title(f"Tissue mask\n({100*mask.mean():.0f}% of frame)", fontsize=10)
     ax.axis("off")
 
-    res = meta.get("resolution", "256×256")
-    dims = meta.get("roi_dimensions_cm", "")
-    fig.text(0.5, 0.015,
-             f"{sample_id} — {res} px, ROI {dims} cm. The model receives only the six bands; "
-             f"the dense pH map is never seen during training.",
-             ha="center", fontsize=8.5, color="0.35")
-
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
     print(f"  wrote {out_path}")
 
 
-def fig_ph_distribution(data_dir_glob, out_path, max_samples=400):
+def fig_ph_distribution(data_dir_glob, out_path, max_samples=400, scope_label=None):
     files = sorted(glob.glob(data_dir_glob))[:max_samples]
     sample_means, within_sds, all_vals = [], [], []
     for f in files:
@@ -159,12 +154,12 @@ def fig_ph_distribution(data_dir_glob, out_path, max_samples=400):
         a.spines[["top", "right"]].set_visible(False)
         a.tick_params(labelsize=8.5)
 
-    ratio = sample_means.std() / within_sds.mean()
-    fig.text(0.5, -0.06,
-             f"Between-sample spread is {ratio:.1f}× larger than within-sample spread. "
-             f"pH is drawn uniformly per sample by design, for even coverage of the "
-             f"physiological range — not to mimic a population distribution.",
-             ha="center", fontsize=8.5, color="0.35")
+    # State the scope on the figure. RESULTS.md section 4 quotes the same two
+    # statistics computed on the 50-sample VALIDATION split (0.3036 / 0.0843);
+    # this figure covers all splits. Without the label the two read as a
+    # contradiction rather than as two different scopes.
+    if scope_label:
+        ax[0].set_ylabel(f"samples\n({scope_label})", fontsize=9)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
@@ -244,7 +239,8 @@ def main():
     # -- Chapter 3 ------------------------------------------------------
     fig_dataset_sample(d, sample, os.path.join(a.out, "fig_dataset_sample.png"))
     fig_ph_distribution(os.path.join(a.data, "*", "*_phtrue.npy"),
-                        os.path.join(a.out, "fig_ph_distribution.png"))
+                        os.path.join(a.out, "fig_ph_distribution.png"),
+                        scope_label="all 400 frozen samples")
 
     # -- Chapter 4 ------------------------------------------------------
     if os.path.exists(a.sweep_table):
@@ -305,15 +301,12 @@ def fig_system_output(data_dir, sample_id, ckpt, out_path):
     ax[0].imshow(rgb); ax[0].axis("off")
     ax[0].set_title("Input: six-band multispectral capture\n(RGB composite shown)", fontsize=10.5)
 
-    im = ax[1].imshow(np.where(mask, pred, np.nan), cmap="turbo")
+    im = ax[1].imshow(np.where(mask, pred, np.nan), cmap=CMAP_PH)
     ax[1].axis("off")
     ax[1].set_title("Output: predicted pH distribution", fontsize=10.5)
     cb = fig.colorbar(im, ax=ax[1], fraction=0.046, pad=0.03)
     cb.set_label("pH", fontsize=9.5)
 
-    fig.text(0.5, 0.02, "The system requires no ground-truth pH at inference; "
-                        "the map is estimated from spectral reflectance alone.",
-             ha="center", fontsize=8.5, color="0.35")
     fig.tight_layout(rect=[0, 0.05, 1, 1])
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
@@ -356,15 +349,12 @@ def fig_prediction_gallery(data_dir, ckpt, out_path, n=4):
     fig, ax = plt.subplots(2, n, figsize=(3.1*n, 6.6))
     for j, ((sid, mae, ph, p, m), lbl) in enumerate(zip(picks, labels)):
         lo = np.nanmin(np.where(m, ph, np.nan)); hi = np.nanmax(np.where(m, ph, np.nan))
-        ax[0, j].imshow(np.where(m, ph, np.nan), cmap="turbo", vmin=lo, vmax=hi)
+        ax[0, j].imshow(np.where(m, ph, np.nan), cmap=CMAP_PH, vmin=lo, vmax=hi)
         ax[0, j].set_title(f"{lbl}\nground truth", fontsize=9.5); ax[0, j].axis("off")
-        im = ax[1, j].imshow(np.where(m, p, np.nan), cmap="turbo", vmin=lo, vmax=hi)
+        im = ax[1, j].imshow(np.where(m, p, np.nan), cmap=CMAP_PH, vmin=lo, vmax=hi)
         ax[1, j].set_title(f"predicted — MAE {mae:.3f} pH", fontsize=9.5); ax[1, j].axis("off")
         fig.colorbar(im, ax=ax[1, j], fraction=0.046, pad=0.03)
 
-    fig.text(0.5, 0.015, "Samples selected by per-sample error percentile, not by inspection. "
-                         "Each column shares a colour scale between truth and prediction.",
-             ha="center", fontsize=8.5, color="0.35")
     fig.tight_layout(rect=[0, 0.04, 1, 1])
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
@@ -409,33 +399,27 @@ def fig_loss_curves(hist_path, out_path, seed=None):
     if best_i < len(ep) - 1:
         ax.axvspan(best_ep, ep[-1], color="0.88", alpha=.55, zorder=0, lw=0)
         ax.text(best_ep + (ep[-1] - best_ep) / 2, ax.get_ylim()[1] * 0.92,
-                "logged past the checkpoint\n(not used)", ha="center", va="top",
-                fontsize=8, color="0.45", zorder=1)
+                "after checkpoint", ha="center", va="top",
+                fontsize=8, color="0.5", zorder=1)
 
     ax.axvline(best_ep, color="0.25", lw=1.4, ls=":", zorder=2)
     ax.plot([best_ep], [va[best_i]], "o", ms=11, mfc="none",
             mec="0.15", mew=2, zorder=4)
-    ax.annotate(f"early-stopping checkpoint\nepoch {best_ep}",
+    ax.annotate(f"checkpoint (epoch {best_ep})",
                 xy=(best_ep, va[best_i]), xytext=(26, 12),
-                textcoords="offset points", fontsize=9,
-                ha="left", color="0.15",
-                arrowprops=dict(arrowstyle="-", color="0.35", lw=1))
+                textcoords="offset points", fontsize=8.5,
+                ha="left", color="0.3",
+                arrowprops=dict(arrowstyle="-", color="0.55", lw=.9))
 
     ax.set_xlabel("epoch")
     ax.set_ylabel("sparse-point MSE loss")
     ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-    ax.set_title(f"CRN training and validation loss — seed {seed}", fontsize=11.5)
+    ax.set_title(f"Training and validation loss (seed {seed})", fontsize=11, pad=10)
     ax.set_yscale("log")
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="0.9", lw=.8, zorder=0)
     ax.set_axisbelow(True)
     ax.legend(frameon=False, fontsize=9.5)
-
-    fig.text(0.5, -0.04,
-             f"Seed {seed} selected as the seed whose held-out pooled R² is closest to the "
-             f"5-seed mean — not for curve appearance. The checkpoint is chosen on validation "
-             f"loss; epochs after it are shown to make the divergence visible.",
-             ha="center", fontsize=8.3, color="0.35", wrap=True)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
@@ -482,31 +466,25 @@ def fig_sweep_comparison(table_path, out_path):
             label="PLSR", zorder=3)
 
     # the adopted operating point
-    ax.axvline(0.4, color="0.3", lw=1.2, ls=":", zorder=1)
-    ax.annotate("adopted\noperating point", xy=(0.4, 0.34), xytext=(0.435, 0.30),
-                fontsize=8.5, color="0.3", ha="left")
+    ax.axvline(0.4, color="0.55", lw=1, ls=":", zorder=1)
+    ax.annotate("operating point", xy=(0.4, 0.29), xytext=(0.412, 0.275),
+                fontsize=8, color="0.45", ha="left")
 
     for x, y, e in zip(amp, crn, sd):
         ax.annotate(f"{y:.3f}", xy=(x, y + e), xytext=(0, 9),
                     textcoords="offset points", ha="center",
-                    fontsize=8.4, color=C_CRN, weight="bold")
+                    fontsize=8.2, color="0.25")
 
-    ax.set_xlabel("denat_amplitude  (swept — the parameter with no citation)")
+    ax.set_xlabel("denat_amplitude")
     ax.set_ylabel("held-out R²")
-    ax.set_title("CRN vs conventional baselines across the parameter sweep", fontsize=11.5)
+    ax.set_title("CRN vs conventional baselines across the parameter sweep",
+                 fontsize=11, pad=12)
     ax.set_xticks(amp)
     ax.set_ylim(0.25, 1.0)
     ax.spines[["top", "right"]].set_visible(False)
     ax.grid(axis="y", color="0.9", lw=.8, zorder=0)
     ax.set_axisbelow(True)
     ax.legend(frameon=False, fontsize=9.5, loc="lower right")
-
-    seeds_txt = ", ".join(f"{a}: n={n}" for a, n in zip(amp, nseed))
-    fig.text(0.5, -0.05,
-             f"The CRN margin over both baselines holds across the whole swept range, so the "
-             f"conclusion does not depend on the uncited value. Linear and PLSR overlap almost "
-             f"exactly at every amplitude. CRN seeds per point — {seeds_txt}.",
-             ha="center", fontsize=8.3, color="0.35", wrap=True)
 
     fig.tight_layout()
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
@@ -570,24 +548,20 @@ def fig_heatmap_example(data_dir, ckpt, out_path, prefer=None):
     vmin, vmax = np.nanmin(t_masked), np.nanmax(t_masked)
 
     fig, ax = plt.subplots(1, 3, figsize=(12.4, 4.3))
-    im0 = ax[0].imshow(t_masked, cmap="turbo", vmin=vmin, vmax=vmax)
+    im0 = ax[0].imshow(t_masked, cmap=CMAP_PH, vmin=vmin, vmax=vmax)
     ax[0].set_title(f"Hidden true pH ({sid})", fontsize=10.5); ax[0].axis("off")
     fig.colorbar(im0, ax=ax[0], fraction=.046, pad=.03).set_label("pH", fontsize=9)
 
-    im1 = ax[1].imshow(p_masked, cmap="turbo", vmin=vmin, vmax=vmax)
+    im1 = ax[1].imshow(p_masked, cmap=CMAP_PH, vmin=vmin, vmax=vmax)
     ax[1].set_title("CRN prediction", fontsize=10.5); ax[1].axis("off")
     fig.colorbar(im1, ax=ax[1], fraction=.046, pad=.03).set_label("pH", fontsize=9)
 
-    im2 = ax[2].imshow(err, cmap="magma")
+    im2 = ax[2].imshow(err, cmap=CMAP_ERR)
     ax[2].set_title(f"|error|  —  MAE {r['mae']:.3f} pH", fontsize=10.5); ax[2].axis("off")
     fig.colorbar(im2, ax=ax[2], fraction=.046, pad=.03).set_label("|Δ pH|", fontsize=9)
 
-    fig.text(0.5, 0.02,
-             f"{sid}: per-sample R² {r['r2']:.2f} — rank {rank} of {len(order)} in this split "
-             f"(median case). Per-sample R² measures within-sample calibration and is negative "
-             f"for most samples by design; it is not the pooled headline R². "
-             f"Left and centre share one colour scale.",
-             ha="center", fontsize=8.3, color="0.35")
+    fig.text(0.5, 0.03, f"{sid} — median-accuracy case (rank {rank} of {len(order)})",
+             ha="center", fontsize=8.5, color="0.4")
 
     fig.tight_layout(rect=[0, 0.06, 1, 1])
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")

@@ -208,7 +208,7 @@ def main():
         EV(summary=f"{MCO}/final_evaluation_TEST500.json",
            raw="crn_5seed_final/seed_{0..4}/history.json  (per-epoch training record)",
            script="evaluate_heatmap.py",
-           figure="figures/fig_system_output.png  (input → predicted map)",
+           figure="figures/fig_heatmap_example.png  (true / predicted / |error|, median-accuracy case); figures/fig_system_output.png  (input → predicted map, no ground truth shown)",
            note="Checkpoints `crn_5seed_final/seed_*/crn_best.pt` are excluded by size; "
                 "rerun `evaluate_heatmap.py` to regenerate the summary from them.")
 
@@ -252,7 +252,7 @@ def main():
         A("other, so every figure here is a mean across five runs with its standard deviation.\n")
         EV(raw="crn_5seed_final/seed_{0..4}/history.json  (loss and metrics per epoch)",
            script="train_crn.py --seed {0..4} --patience 10 --epochs 50",
-           figure="crn_5seed_final/seed_*/loss_curve.png  (training vs validation loss)",
+           figure="figures/fig_loss_curves.png  (training vs validation loss, representative seed; the raw per-seed artefacts are crn_5seed_final/seed_*/loss_curve.png)",
            note="`crn_5seed_final/run.log` holds the original console output of the run.")
 
     if out.get("amplitude_sweep"):
@@ -349,8 +349,8 @@ def main():
         EV(summary=f"{MCO}/spatial_skill_official.json  (official checkpoints); "
                    f"{MCO}/spatial_skill.json  (independent reproduction)",
            script="check_spatial_skill.py",
-           figure="figures/fig_ph_distribution.png  (shows the within- vs between-sample scales "
-                  "that make this measure punishing)")
+           figure="figures/fig_ph_distribution.png  (all 400 frozen samples — NOTE the scope: the two statistics quoted in this section are the 50-sample VALIDATION split, so the figure reads 0.3038 / 0.0865 where the text reads 0.3036 / 0.0843; same quantities, different scope) "
+                  "— the within- vs between-sample scales that make this measure punishing.")
 
     b = out.get("boundary_artefact")
     if b:
