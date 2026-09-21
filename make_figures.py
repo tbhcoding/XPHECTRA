@@ -15,6 +15,18 @@ Produces (into --out, default figures/):
       "describe your dataset" figure for Chapter 3 -- a reader cannot
       assume familiarity with a synthetic dataset, so show it.
 
+  fig_loss_curves.png
+      Training and validation loss for one representative seed, with the
+      early-stopping checkpoint marked. Chapter 4.
+
+  fig_sweep_comparison.png
+      CRN vs Linear vs PLSR across the denat_amplitude sweep, with per-seed
+      error bars on the CRN series. Built from the CORRECTED table, not the
+      pre-metric-fix sweep_outputs/ data. Chapter 4.
+
+  fig_heatmap_example.png
+      True / predicted / |error| for the median-accuracy sample. Chapter 4.
+
   fig_ph_distribution.png
       How pH is distributed between and within samples. Makes two
       methodology points visually: the uniform between-sample sampling
@@ -31,6 +43,7 @@ import argparse
 import json
 import os
 import glob
+import re
 
 import numpy as np
 import matplotlib
@@ -39,6 +52,16 @@ import matplotlib.pyplot as plt
 
 WAVELENGTHS = [481, 525, 573, 600, 730, 970]
 DPI = 200
+
+# Categorical series palette. Validated for colour-vision deficiency:
+# worst adjacent-pair separation is OKLab dE 12.2 (deuteranopia), above the
+# dE >= 8 target; all three clear 3:1 contrast on white. Line style varies
+# alongside hue so identity never rests on colour alone.
+C_LIN = "#1F6F78"    # Linear regression  (teal)
+C_PLS = "#C9761A"    # PLSR               (orange)
+C_CRN = "#8C1D2E"    # CRN                (deep red -- the project's primary)
+C_TRAIN = C_LIN      # training loss
+C_VAL = C_CRN        # validation loss
 
 
 def fig_dataset_sample(data_dir, sample_id, out_path):
@@ -149,30 +172,107 @@ def fig_ph_distribution(data_dir_glob, out_path, max_samples=400):
     print(f"  wrote {out_path}")
 
 
+def pick_sample_by_variation(data_dir, n_check=20):
+    """
+    Objective rule for the Chapter 3 sample figure: among the first `n_check`
+    samples in sorted order, take the one with the highest within-sample pH
+    SD. A flat sample would not show what the dense map is for, but the pick
+    must not be made by scrolling through images until one looks good -- so
+    the candidate window is fixed in advance and the winner is arithmetic.
+    """
+    files = sorted(glob.glob(os.path.join(data_dir, "*_phtrue.npy")))[:n_check]
+    best, best_sd = None, -1.0
+    for f in files:
+        y = np.load(f)
+        y = y[np.isfinite(y)]
+        if y.std() > best_sd:
+            best_sd = float(y.std())
+            best = os.path.basename(f).replace("_phtrue.npy", "")
+    return best, best_sd
+
+
+def pick_representative_seed(eval_path):
+    """
+    Objective rule for the Chapter 4 loss-curve figure: the seed whose
+    CORRECTED held-out pooled R^2 is closest to the 5-seed mean -- not the
+    seed whose curve looks tidiest. Reads the post-metric-fix evaluation
+    file, not history.json (whose r2 fields predate the fix).
+    """
+    d = json.load(open(eval_path))
+    pc = d["per_checkpoint"]
+    r2 = np.array([c["pooled_r2"] for c in pc])
+    seeds = [int(re.search(r"seed_(\d+)", c["checkpoint"]).group(1)) for c in pc]
+    i = int(np.argmin(np.abs(r2 - r2.mean())))
+    return seeds[i], float(r2[i]), float(r2.mean()), float(r2.std())
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="ligtas_synthetic_dataset")
-    ap.add_argument("--sample", default="sample_351")
+    ap.add_argument("--sample", default=None,
+                    help="override the rule-selected Chapter 3 sample")
     ap.add_argument("--split", default="test")
-    ap.add_argument("--ckpt", default="crn_5seed_final/seed_1/crn_best.pt")
+    ap.add_argument("--ckpt", default=None,
+                    help="override the rule-selected checkpoint")
+    ap.add_argument("--sweep-table", default="deconfound_outputs/full_table.json")
+    ap.add_argument("--eval-json", default="metric_check_outputs/final_evaluation_TEST500.json")
     ap.add_argument("--out", default="figures")
     a = ap.parse_args()
 
     os.makedirs(a.out, exist_ok=True)
     d = os.path.join(a.data, a.split)
+    manifest = {}
 
-    fig_dataset_sample(d, a.sample, os.path.join(a.out, "fig_dataset_sample.png"))
+    # -- which seed and which sample, by rule ---------------------------
+    seed, seed_r2, mean_r2, sd_r2 = (None, None, None, None)
+    if os.path.exists(a.eval_json):
+        seed, seed_r2, mean_r2, sd_r2 = pick_representative_seed(a.eval_json)
+        print(f"  representative seed = {seed} "
+              f"(R2 {seed_r2:.4f} vs 5-seed mean {mean_r2:.4f} +/- {sd_r2:.4f})")
+        manifest["representative_seed"] = dict(seed=seed, seed_r2=seed_r2,
+                                               mean_r2=mean_r2, sd_r2=sd_r2)
+    ck = a.ckpt or (f"crn_5seed_final/seed_{seed}/crn_best.pt" if seed is not None else None)
+
+    if a.sample:
+        sample, sample_sd = a.sample, None
+    else:
+        sample, sample_sd = pick_sample_by_variation(d)
+        print(f"  Chapter 3 sample = {sample} (within-sample SD {sample_sd:.4f}, "
+              f"highest of the first 20 in {a.split})")
+    manifest["chapter3_sample"] = dict(sample=sample, within_sample_sd=sample_sd)
+
+    # -- Chapter 3 ------------------------------------------------------
+    fig_dataset_sample(d, sample, os.path.join(a.out, "fig_dataset_sample.png"))
     fig_ph_distribution(os.path.join(a.data, "*", "*_phtrue.npy"),
                         os.path.join(a.out, "fig_ph_distribution.png"))
-    ck = a.ckpt
-    if os.path.exists(ck):
-        fig_system_output(d, a.sample, ck, os.path.join(a.out, "fig_system_output.png"))
+
+    # -- Chapter 4 ------------------------------------------------------
+    if os.path.exists(a.sweep_table):
+        manifest["sweep"] = fig_sweep_comparison(
+            a.sweep_table, os.path.join(a.out, "fig_sweep_comparison.png"))
+    else:
+        print(f"  skipped sweep figure -- not found: {a.sweep_table}")
+
+    if seed is not None:
+        hp = os.path.join("crn_5seed_final", f"seed_{seed}", "history.json")
+        if os.path.exists(hp):
+            manifest["loss_curves"] = fig_loss_curves(
+                hp, os.path.join(a.out, "fig_loss_curves.png"), seed=seed)
+        else:
+            print(f"  skipped loss curves -- not found: {hp}")
+
+    if ck and os.path.exists(ck):
+        fig_system_output(d, sample, ck, os.path.join(a.out, "fig_system_output.png"))
         fig_prediction_gallery(d, ck, os.path.join(a.out, "fig_prediction_gallery.png"))
+        manifest["heatmap_example"] = fig_heatmap_example(
+            d, ck, os.path.join(a.out, "fig_heatmap_example.png"))
     else:
         print(f"  skipped model figures -- checkpoint not found: {ck}")
-    print(f"\nFigures in {a.out}/ — 200 dpi, ready for the manuscript.")
 
-
+    with open(os.path.join(a.out, "figure_manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=2, default=float)
+    print(f"\nFigures in {a.out}/ — 200 dpi. Selection rules recorded in "
+          f"{a.out}/figure_manifest.json")
 
 
 def fig_system_output(data_dir, sample_id, ckpt, out_path):
@@ -269,6 +369,240 @@ def fig_prediction_gallery(data_dir, ckpt, out_path, n=4):
     fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
     plt.close(fig)
     print(f"  wrote {out_path}  (MAE range {picks[0][1]:.3f} to {picks[-1][1]:.3f} pH)")
+
+# --------------------------------------------------------------------------
+# Manuscript Figure 4.1 -- training / validation loss curves
+# --------------------------------------------------------------------------
+def fig_loss_curves(hist_path, out_path, seed=None):
+    """
+    Train vs validation loss per epoch for ONE representative seed, with the
+    early-stopping checkpoint marked and the post-checkpoint divergence left
+    visible.
+
+    Seed choice is by rule, not by which curve looks cleanest: the seed whose
+    corrected held-out pooled R^2 is closest to the 5-seed mean. Passed in by
+    main() so the rule lives in one place.
+
+    Plots the SPARSE loss only (what the model is actually trained on).
+    Deliberately does NOT plot R^2 from history.json: these histories were
+    written by the pre-2026-09-13 training loop, when R^2 was averaged per
+    mini-batch rather than pooled, so the r2 fields here are superseded. The
+    loss fields are unaffected by that bug.
+    """
+    path = hist_path
+    h = json.load(open(path))
+    ep = np.array([e["epoch"] for e in h])
+    tr = np.array([e["train_sparse"] for e in h])
+    va = np.array([e["val_sparse"] for e in h])
+    vloss = np.array([e["val_loss"] for e in h])
+    best_i = int(np.argmin(vloss))
+    best_ep = ep[best_i]
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.3))
+
+    ax.plot(ep, tr, "-", color=C_TRAIN, lw=2, marker="o", ms=4.5,
+            label="training loss", zorder=3)
+    ax.plot(ep, va, "--", color=C_VAL, lw=2, marker="s", ms=4.5,
+            label="validation loss", zorder=3)
+
+    # post-checkpoint region -- shaded after the axes are scaled to the data
+    if best_i < len(ep) - 1:
+        ax.axvspan(best_ep, ep[-1], color="0.88", alpha=.55, zorder=0, lw=0)
+        ax.text(best_ep + (ep[-1] - best_ep) / 2, ax.get_ylim()[1] * 0.92,
+                "logged past the checkpoint\n(not used)", ha="center", va="top",
+                fontsize=8, color="0.45", zorder=1)
+
+    ax.axvline(best_ep, color="0.25", lw=1.4, ls=":", zorder=2)
+    ax.plot([best_ep], [va[best_i]], "o", ms=11, mfc="none",
+            mec="0.15", mew=2, zorder=4)
+    ax.annotate(f"early-stopping checkpoint\nepoch {best_ep}",
+                xy=(best_ep, va[best_i]), xytext=(26, 12),
+                textcoords="offset points", fontsize=9,
+                ha="left", color="0.15",
+                arrowprops=dict(arrowstyle="-", color="0.35", lw=1))
+
+    ax.set_xlabel("epoch")
+    ax.set_ylabel("sparse-point MSE loss")
+    ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+    ax.set_title(f"CRN training and validation loss — seed {seed}", fontsize=11.5)
+    ax.set_yscale("log")
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="0.9", lw=.8, zorder=0)
+    ax.set_axisbelow(True)
+    ax.legend(frameon=False, fontsize=9.5)
+
+    fig.text(0.5, -0.04,
+             f"Seed {seed} selected as the seed whose held-out pooled R² is closest to the "
+             f"5-seed mean — not for curve appearance. The checkpoint is chosen on validation "
+             f"loss; epochs after it are shown to make the divergence visible.",
+             ha="center", fontsize=8.3, color="0.35", wrap=True)
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}  (seed {seed}, {len(ep)} epochs, checkpoint epoch {best_ep})")
+    return dict(seed=seed, epochs=int(len(ep)), best_epoch=int(best_ep),
+                train_at_best=float(tr[best_i]), val_at_best=float(va[best_i]),
+                val_final=float(va[-1]), history_file=path)
+
+
+# --------------------------------------------------------------------------
+# Manuscript Figure 4.3 -- amplitude sweep, CRN vs conventional baselines
+# --------------------------------------------------------------------------
+def fig_sweep_comparison(table_path, out_path):
+    """
+    CRN vs Linear vs PLSR held-out R^2 across the swept denat_amplitude.
+
+    Reads deconfound_outputs/full_table.json -- the CORRECTED, pooled-metric
+    table. It does NOT read sweep_outputs/sweep_results.json, which predates
+    the 2026-09-13 metric fix and shows a materially different (and wrong)
+    picture; see docs/TEAM_LOG.md.
+
+    Error bars on the CRN series are +/- 1 SD across seeds at that amplitude.
+    The baselines are closed-form fits with no seed variance, so they carry
+    no error bars -- that asymmetry is real, not an omission.
+    """
+    d = json.load(open(table_path))
+    rows = sorted(d["amplitudes"], key=lambda r: r["denat_amplitude"])
+    amp = np.array([r["denat_amplitude"] for r in rows])
+    lin = np.array([r["linear_held_out_r2"] for r in rows])
+    pls = np.array([r["plsr_held_out_r2"] for r in rows])
+    crn = np.array([r["crn_r2_mean"] for r in rows])
+    sd = np.array([r["crn_r2_std"] for r in rows])
+    nseed = [len(r.get("crn_r2_per_seed", [])) for r in rows]
+
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+
+    ax.errorbar(amp, crn, yerr=sd, color=C_CRN, lw=2, marker="o", ms=8,
+                capsize=4, capthick=1.4, elinewidth=1.4,
+                label="CRN (mean ± SD across seeds)", zorder=4)
+    ax.plot(amp, lin, "-", color=C_LIN, lw=2, marker="s", ms=7.5,
+            label="Linear regression", zorder=3)
+    ax.plot(amp, pls, "--", color=C_PLS, lw=2, marker="^", ms=7.5,
+            label="PLSR", zorder=3)
+
+    # the adopted operating point
+    ax.axvline(0.4, color="0.3", lw=1.2, ls=":", zorder=1)
+    ax.annotate("adopted\noperating point", xy=(0.4, 0.34), xytext=(0.435, 0.30),
+                fontsize=8.5, color="0.3", ha="left")
+
+    for x, y, e in zip(amp, crn, sd):
+        ax.annotate(f"{y:.3f}", xy=(x, y + e), xytext=(0, 9),
+                    textcoords="offset points", ha="center",
+                    fontsize=8.4, color=C_CRN, weight="bold")
+
+    ax.set_xlabel("denat_amplitude  (swept — the parameter with no citation)")
+    ax.set_ylabel("held-out R²")
+    ax.set_title("CRN vs conventional baselines across the parameter sweep", fontsize=11.5)
+    ax.set_xticks(amp)
+    ax.set_ylim(0.25, 1.0)
+    ax.spines[["top", "right"]].set_visible(False)
+    ax.grid(axis="y", color="0.9", lw=.8, zorder=0)
+    ax.set_axisbelow(True)
+    ax.legend(frameon=False, fontsize=9.5, loc="lower right")
+
+    seeds_txt = ", ".join(f"{a}: n={n}" for a, n in zip(amp, nseed))
+    fig.text(0.5, -0.05,
+             f"The CRN margin over both baselines holds across the whole swept range, so the "
+             f"conclusion does not depend on the uncited value. Linear and PLSR overlap almost "
+             f"exactly at every amplitude. CRN seeds per point — {seeds_txt}.",
+             ha="center", fontsize=8.3, color="0.35", wrap=True)
+
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}")
+    return dict(amplitudes=amp.tolist(), linear=lin.tolist(), plsr=pls.tolist(),
+                crn_mean=crn.tolist(), crn_sd=sd.tolist(), n_seeds=nseed)
+
+
+# --------------------------------------------------------------------------
+# Manuscript Figure 4.2 -- true / predicted / |error| for one sample
+# --------------------------------------------------------------------------
+def fig_heatmap_example(data_dir, ckpt, out_path, prefer=None):
+    """
+    The diagnostic three-panel view. Sample chosen by rule: the sample whose
+    per-sample R^2 is the MEDIAN of the split under this checkpoint, so the
+    figure is typical rather than flattering.
+
+    Returns the stats needed to caption it honestly -- including where the
+    chosen sample sits in the per-sample R^2 distribution. Note that
+    per-sample R^2 is a WITHIN-sample calibration measure and is mostly
+    negative here by design; it is not comparable to the pooled headline R^2.
+    """
+    import torch, torch.nn.functional as F
+    from crn_model import CrudeCRN
+
+    ids = sorted({f.split("_msi.npy")[0] for f in os.listdir(data_dir)
+                  if f.endswith("_msi.npy")})
+    model = CrudeCRN(in_res=256, out_res=256)
+    model.load_state_dict(torch.load(ckpt, map_location="cpu"))
+    model.eval()
+
+    recs = {}
+    with torch.no_grad():
+        for sid in ids:
+            cube = np.load(os.path.join(data_dir, f"{sid}_msi.npy"))
+            ph = np.load(os.path.join(data_dir, f"{sid}_phtrue.npy"))
+            m = np.isfinite(ph)
+            x = torch.from_numpy(cube.transpose(2, 0, 1)).float().unsqueeze(0)
+            p = model(x)
+            if p.shape[-1] != 256:
+                p = F.interpolate(p.unsqueeze(1), size=256, mode="bilinear",
+                                  align_corners=False).squeeze(1)
+            p = p.squeeze(0).numpy()
+            t, q = ph[m], p[m]
+            ss_res = float(((t - q) ** 2).sum())
+            ss_tot = float(((t - t.mean()) ** 2).sum())
+            recs[sid] = dict(r2=1 - ss_res / ss_tot, mae=float(np.abs(t - q).mean()),
+                             sd=float(t.std()), ph=ph, pred=p, mask=m)
+
+    order = sorted(recs, key=lambda s: recs[s]["r2"])
+    median_sid = order[len(order) // 2]
+    sid = prefer if (prefer in recs) else median_sid
+    r = recs[sid]
+    rank = order.index(sid) + 1
+
+    ph, pred, mask = r["ph"], r["pred"], r["mask"]
+    t_masked = np.where(mask, ph, np.nan)
+    p_masked = np.where(mask, pred, np.nan)
+    err = np.where(mask, np.abs(ph - pred), np.nan)
+    vmin, vmax = np.nanmin(t_masked), np.nanmax(t_masked)
+
+    fig, ax = plt.subplots(1, 3, figsize=(12.4, 4.3))
+    im0 = ax[0].imshow(t_masked, cmap="turbo", vmin=vmin, vmax=vmax)
+    ax[0].set_title(f"Hidden true pH ({sid})", fontsize=10.5); ax[0].axis("off")
+    fig.colorbar(im0, ax=ax[0], fraction=.046, pad=.03).set_label("pH", fontsize=9)
+
+    im1 = ax[1].imshow(p_masked, cmap="turbo", vmin=vmin, vmax=vmax)
+    ax[1].set_title("CRN prediction", fontsize=10.5); ax[1].axis("off")
+    fig.colorbar(im1, ax=ax[1], fraction=.046, pad=.03).set_label("pH", fontsize=9)
+
+    im2 = ax[2].imshow(err, cmap="magma")
+    ax[2].set_title(f"|error|  —  MAE {r['mae']:.3f} pH", fontsize=10.5); ax[2].axis("off")
+    fig.colorbar(im2, ax=ax[2], fraction=.046, pad=.03).set_label("|Δ pH|", fontsize=9)
+
+    fig.text(0.5, 0.02,
+             f"{sid}: per-sample R² {r['r2']:.2f} — rank {rank} of {len(order)} in this split "
+             f"(median case). Per-sample R² measures within-sample calibration and is negative "
+             f"for most samples by design; it is not the pooled headline R². "
+             f"Left and centre share one colour scale.",
+             ha="center", fontsize=8.3, color="0.35")
+
+    fig.tight_layout(rect=[0, 0.06, 1, 1])
+    fig.savefig(out_path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  wrote {out_path}  ({sid}, per-sample R2 {r['r2']:.3f}, MAE {r['mae']:.3f})")
+
+    allr2 = np.array([recs[s]["r2"] for s in order])
+    return dict(sample=sid, per_sample_r2=r["r2"], mae=r["mae"],
+                within_sample_sd=r["sd"], rank=rank, n=len(order),
+                split_median_r2=float(np.median(allr2)),
+                split_mean_r2=float(allr2.mean()),
+                negative_count=int((allr2 < 0).sum()),
+                others={s: dict(r2=recs[s]["r2"], mae=recs[s]["mae"])
+                        for s in recs if s in ("sample_351", "sample_301", "sample_370")})
+
 
 if __name__ == "__main__":
     main()

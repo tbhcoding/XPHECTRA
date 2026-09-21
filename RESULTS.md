@@ -1,6 +1,6 @@
 # LIGTAS-pH — Final Results
 
-*Consolidated 2026-09-19 by `collect_results.py`, which reads the saved
+*Consolidated 2026-09-21 by `collect_results.py`, which reads the saved
 evidence files rather than recomputing anything. Every figure is traceable to a file
 listed under **Where each number comes from**. If this document and the source code
 ever disagree, the code is correct — it is what was executed.*
@@ -133,8 +133,8 @@ this particular meat, whereas a range cannot be dismissed the same way.
 - **Summary values:** `deconfound_outputs/full_table.json  (all four amplitudes, with provenance per row)`
 - **Raw per-run data:** `deconfound_outputs/crn_amp_{0.2,0.6,0.8}_seed_{0,1,2}/history.json; sweep_outputs/ holds the earlier small-scale sweep`
 - **Produced by:** `deconfound_full_scale.py, sweep_denat_amplitude.py, compute_amp04_baselines.py`
-- **Figure:** `sweep_outputs/sweep_crn_vs_baselines.png`
-- The corrected pooled CRN values were rescored in `metric_check_outputs/metric_comparison_0.2_0.6.json` and `metric_check_outputs/metric_comparison.json`. `full_table.json` retains the superseded batch-averaged figures under `*_SUPERSEDED_batch_averaged` for traceability — do not quote those.
+- **Figure:** `figures/fig_sweep_comparison.png`
+- The corrected pooled CRN values were rescored in `metric_check_outputs/metric_comparison_0.2_0.6.json` and `metric_check_outputs/metric_comparison.json`. `full_table.json` retains the superseded batch-averaged figures under `*_SUPERSEDED_batch_averaged` for traceability — do not quote those. The figure is `figures/fig_sweep_comparison.png`, built from `full_table.json`. `sweep_outputs/sweep_crn_vs_baselines.png` is the SUPERSEDED chart from the earlier small-scale sweep: it predates the metric fix and shows the CRN losing to the baselines at three of four amplitudes. It is kept as part of the investigation trail only — do not use it as a figure.
 
 </details>
 
