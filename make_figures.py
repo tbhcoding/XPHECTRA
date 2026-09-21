@@ -60,7 +60,8 @@ DPI = 200
 C_LIN = "#1F6F78"    # Linear regression  (teal)
 C_PLS = "#C9761A"    # PLSR               (orange)
 C_CRN = "#8C1D2E"    # CRN                (deep red -- the project's primary)
-CMAP_PH = "viridis"  # sequential, perceptually uniform, greyscale-safe
+CMAP_PH = "turbo"    # author's choice -- kept for continuity with the
+                     # figures the team and panel have already seen
 CMAP_ERR = "magma"   # sequential; dark = low error
 C_TRAIN = C_LIN      # training loss
 C_VAL = C_CRN        # validation loss
