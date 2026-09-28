@@ -160,8 +160,13 @@ proxy), and `denat_amplitude`/`denat_width` dropped off 2026-09-09
 been fully clean. The 2026-09-09 change was pushed to `origin/main`,
 **reviewed, agreed, and is now frozen** — the full experiment has been
 run on these values. The two SWEPT entries stay labelled as swept rather
-than cited; the amplitude sweep is what establishes the conclusion
-survives their uncertainty. Verified live via `check_params()`.
+than cited. The **amplitude** sweep establishes that the CRN-vs-baselines
+conclusion holds across `denat_amplitude`'s range; **`denat_width` was never
+included in that comparison** and is a disclosed limitation, not a covered
+parameter. A third entry, `mu_a_baseline`, is TUNED and NOT CITED — and
+because it was tuned to improve the 970 nm match, that check is not
+independent of it. Traceable count is 10 (11 with the back-calculated
+`c_Mb_sd`), not 12. Verified live via `check_params()`.
 
 ---
 

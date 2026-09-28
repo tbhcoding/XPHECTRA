@@ -220,11 +220,24 @@ values, they're derivations and measurements of the model's output.
 **Still open: 0 blocking parameters.** `check_params()` prints no `!!`
 warning line. Pushed 2026-09-09 for team review, **reviewed and agreed**;
 the values are now frozen and the full experiment has been run on them.
-The two SWEPT entries (`denat_amplitude`, `denat_width`) remain honestly
-labelled as swept rather than cited — the amplitude sweep in `RESULTS.md`
-section 2 is what establishes the conclusion survives their uncertainty.
-That is the defensible answer to "were these really standard values?":
-no, and we measured what happens across the plausible range instead.
+Three entries are not traceable to a source, and the honest position on
+each differs — do not collapse them:
+
+- `denat_amplitude` — SWEPT, and **covered**: section 2 of `RESULTS.md`
+  varies it across its whole range with the CRN beating both baselines
+  throughout. The conclusion does not depend on its value.
+- `denat_width` — SWEPT but **NOT covered** by that comparison. It was
+  varied only against the linear baseline, using the superseded
+  single-seed method, where it moved R² by 0.07–0.10. Disclose it as a
+  limitation. Do not claim the sweep covers it.
+- `mu_a_baseline` — **TUNED, NOT CITED.** Adopted at 0.8 because it
+  improved the 970 nm match, which means the 970 nm external check is
+  **not independent of it**. Do not present that check as free-standing
+  validation of this parameter.
+
+So the count is **10 CITED/MEASURED/FITTED, 11 including the
+back-calculated `c_Mb_sd`** — not 12. Older text saying "12 of 14" is
+wrong; `check_params()` and the `PARAMS` dict are authoritative.
 
 **Resolved since the list above was first written:**
 - `denat_amplitude`/`denat_width` — **swept and adopted, 2026-09-09,

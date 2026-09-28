@@ -211,7 +211,9 @@ def main():
            raw="crn_5seed_final/seed_{0..4}/history.json  (per-epoch training record)",
            script="evaluate_heatmap.py",
            figure="figures/fig_heatmap_example.png  (true / predicted / |error|, median-accuracy case); figures/fig_system_output.png  (input → predicted map, no ground truth shown)",
-           note="Checkpoints `crn_5seed_final/seed_*/crn_best.pt` are excluded by size; "
+           note="Checkpoints `crn_5seed_final/seed_*/crn_best.pt` ARE committed (a deliberate "
+                ".gitignore exception, 2.4 MB) because per-seed results do not reproduce across "
+                "machines; "
                 "rerun `evaluate_heatmap.py` to regenerate the summary from them.")
 
     if out.get("other_evaluation_sets"):
@@ -339,7 +341,9 @@ def main():
     if m:
         A("---\n")
         A("## 4. Where it falls short — spatial magnitude\n")
-        A(f"- Per-sample R²: **{m['per_sample_r2'][0]:+.4f} ± {m['per_sample_r2'][1]:.4f}**")
+        A(f"- Per-sample R²: **{m['per_sample_r2'][0]:+.4f} ± {m['per_sample_r2'][1]:.4f}** "
+          "*(validation split, n=50)*. The same measure on the 500-sample held-out set "
+          "is **-2.1699**. Quote one and name its set.")
         A(f"- Within-sample correlation: **{m['within_sample_corr'][0]:+.4f}** — genuine signal is present")
         A(f"- Predicted ÷ true spatial SD: **{m['amplitude_ratio'][0]:.3f}×** — over-expressed")
         A("*(The two pH-spread figures below are measured on the 50-sample validation")
@@ -372,6 +376,9 @@ def main():
     if b:
         A("---\n")
         A("## 5. Where it falls short — tissue boundaries\n")
+        A("*(Measured on the 50-sample test split of the frozen dataset — NOT the")
+        A("500-sample set the headline MAE comes from. Compare the two figures below")
+        A("with each other, not against the 0.0936 headline.)*" + chr(10))
         A(f"- MAE within a {b['band_px']} px band along the tissue edge: **{b['edge_mae_ph'][0]:.4f} pH**")
         A(f"- MAE in the interior: **{b['interior_mae_ph'][0]:.4f} pH**")
         A(f"- Ratio **{b['ratio']:.2f}×**, present in **{b['pct_samples_affected']:.0f}%** of samples\n")
@@ -390,10 +397,20 @@ def main():
     if isinstance(out.get("parameters"), dict):
         A("---\n")
         A("## 6. The frozen parameters\n")
-        A("Fourteen parameters drive the simulator. **Twelve trace to a published measurement, a")
-        A("direct measurement, or a fit to published data.** The two that do not are labelled as")
-        A("swept rather than presented as measurements — and the sweep in section 2 is what")
-        A("establishes that the conclusion survives their uncertainty.\n")
+        A("Fourteen parameters drive the simulator. **Ten are `CITED`, `MEASURED` or")
+        A("`FITTED`; an eleventh (`c_Mb_sd`) is back-calculated from cited data.** The")
+        A("remaining three are not traceable to a source and are labelled as such in the")
+        A("code rather than presented as measurements:\n")
+        A("- `denat_amplitude` — **SWEPT.** Section 2 varies it across its whole plausible")
+        A("  range and the CRN beats both baselines at every setting, so the conclusion")
+        A("  does not depend on its value.")
+        A("- `denat_width` — **SWEPT, but not in the section 2 comparison.** It was varied")
+        A("  only against the linear baseline, by the superseded single-seed method, where")
+        A("  it moved R² by 0.07–0.10. **The CRN-vs-baselines conclusion has not been")
+        A("  tested across its range.** Disclosed as a limitation, not claimed as covered.")
+        A("- `mu_a_baseline` — **TUNED, NOT CITED.** Adopted at 0.8 because it improved the")
+        A("  970 nm match. That makes the 970 nm external check **not independent of it**:")
+        A("  the check cannot be offered as free-standing validation of this parameter.\n")
         A("| Parameter | Value | Status |")
         A("|---|---|---|")
         for k, v in out["parameters"].items():

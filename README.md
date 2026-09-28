@@ -121,11 +121,15 @@ below is a record of how each value was settled, not work to be done.
 
 Open `generate_dataset.py` and find the `PARAMS` dictionary near the top.
 Each entry has a `value`, a `status`, and a `source`. **This work is
-complete**: 12 of the 14 entries are `CITED`, `MEASURED` or `FITTED`, and
-the remaining two are labelled `SWEPT` rather than dressed up as
-measurements — the amplitude sweep is what establishes the conclusion
-survives their uncertainty. The subsections below record how each was
-settled.
+complete**: 10 of the 14 entries are `CITED`, `MEASURED` or `FITTED`, and
+an eleventh (`c_Mb_sd`) is back-calculated from cited data. The remaining
+three are labelled honestly in the code rather than dressed up as
+measurements: `denat_amplitude` (SWEPT — and section 2 of `RESULTS.md`
+shows the conclusion holds across its whole range), `denat_width` (SWEPT,
+but **not** covered by that comparison — a disclosed limitation), and
+`mu_a_baseline` (TUNED, NOT CITED — and since it was tuned to improve the
+970 nm match, that check is not independent of it). The subsections below
+record how each was settled.
 
 ### 1a. Myoglobin extinction coefficients — DONE (digitized from Tang 2004 / Bowen 1949)
 

@@ -1,6 +1,6 @@
 # LIGTAS-pH — Final Results
 
-*Consolidated 2026-09-21 by `collect_results.py`, which reads the saved
+*Consolidated 2026-09-28 by `collect_results.py`, which reads the saved
 evidence files rather than recomputing anything. Every figure is traceable to a file
 listed under **Where each number comes from**. If this document and the source code
 ever disagree, the code is correct — it is what was executed.*
@@ -44,7 +44,7 @@ usable pixel-wise pH maps.
 - **Raw per-run data:** `crn_5seed_final/seed_{0..4}/history.json  (per-epoch training record)`
 - **Produced by:** `evaluate_heatmap.py`
 - **Figure:** `figures/fig_heatmap_example.png  (true / predicted / |error|, median-accuracy case); figures/fig_system_output.png  (input → predicted map, no ground truth shown)`
-- Checkpoints `crn_5seed_final/seed_*/crn_best.pt` are excluded by size; rerun `evaluate_heatmap.py` to regenerate the summary from them.
+- Checkpoints `crn_5seed_final/seed_*/crn_best.pt` ARE committed (a deliberate .gitignore exception, 2.4 MB) because per-seed results do not reproduce across machines; rerun `evaluate_heatmap.py` to regenerate the summary from them.
 
 </details>
 
@@ -184,7 +184,7 @@ regions; it overstates how different they are. Only the second is miscalibrated.
 
 ## 4. Where it falls short — spatial magnitude
 
-- Per-sample R²: **-2.2988 ± 0.8530**
+- Per-sample R²: **-2.2988 ± 0.8530** *(validation split, n=50)*. The same measure on the 500-sample held-out set is **-2.1699**. Quote one and name its set.
 - Within-sample correlation: **+0.5410** — genuine signal is present
 - Predicted ÷ true spatial SD: **1.290×** — over-expressed
 *(The two pH-spread figures below are measured on the 50-sample validation
@@ -222,6 +222,10 @@ magnitude and overstates the weakness. Say which one.
 
 ## 5. Where it falls short — tissue boundaries
 
+*(Measured on the 50-sample test split of the frozen dataset — NOT the
+500-sample set the headline MAE comes from. Compare the two figures below
+with each other, not against the 0.0936 headline.)*
+
 - MAE within a 8 px band along the tissue edge: **0.1558 pH**
 - MAE in the interior: **0.0698 pH**
 - Ratio **2.31×**, present in **97%** of samples
@@ -248,10 +252,21 @@ directly; that was not pursued here.
 
 ## 6. The frozen parameters
 
-Fourteen parameters drive the simulator. **Twelve trace to a published measurement, a
-direct measurement, or a fit to published data.** The two that do not are labelled as
-swept rather than presented as measurements — and the sweep in section 2 is what
-establishes that the conclusion survives their uncertainty.
+Fourteen parameters drive the simulator. **Ten are `CITED`, `MEASURED` or
+`FITTED`; an eleventh (`c_Mb_sd`) is back-calculated from cited data.** The
+remaining three are not traceable to a source and are labelled as such in the
+code rather than presented as measurements:
+
+- `denat_amplitude` — **SWEPT.** Section 2 varies it across its whole plausible
+  range and the CRN beats both baselines at every setting, so the conclusion
+  does not depend on its value.
+- `denat_width` — **SWEPT, but not in the section 2 comparison.** It was varied
+  only against the linear baseline, by the superseded single-seed method, where
+  it moved R² by 0.07–0.10. **The CRN-vs-baselines conclusion has not been
+  tested across its range.** Disclosed as a limitation, not claimed as covered.
+- `mu_a_baseline` — **TUNED, NOT CITED.** Adopted at 0.8 because it improved the
+  970 nm match. That makes the 970 nm external check **not independent of it**:
+  the check cannot be offered as free-standing validation of this parameter.
 
 | Parameter | Value | Status |
 |---|---|---|
