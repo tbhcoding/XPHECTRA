@@ -413,7 +413,9 @@ and should not be re-reported:**
 - Higher error at tissue edges — a measured convolutional artefact,
   quantified in section 5.
 - `denat_width` having no citation — a retracted citation, disclosed
-  honestly, covered by the sweep.
+  honestly. **It is NOT covered by the section 2 sweep** (see the
+  parameter section above); that is a stated limitation, not an
+  oversight. Report it as a limitation, not as a bug.
 - The five committed `.pt` checkpoints — a deliberate `.gitignore`
   exception, because per-seed results do not reproduce across machines.
 - Per-seed numbers differing on your machine — expected, same reason.

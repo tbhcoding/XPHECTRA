@@ -315,9 +315,10 @@ def main():
         print('     source: "Measured from NHSI-meat-overtime cube (Wang et al.')
         print('              2026) on a TISSUE patch -- includes muscle')
         print('              micro-texture, so this is an upper bound on read')
-        print('              noise, not pure read noise. Species NOT established:')
-        print('              each cube is a mixed tray and the red-meat columns')
-        print('              are unidentified."')
+        print('              noise, not pure read noise. Each cube images a')
+        print('              MIXED TRAY of five species; the dataset authors')
+        print('              annotated it (2026-09-18), fixing tray column C4')
+        print('              as pork -- see analysis/nhsi_970_breakdown.py."')
     print()
 
     # --- 2. TEXTURE AMPLITUDE (fine-scale) --------------------------------
