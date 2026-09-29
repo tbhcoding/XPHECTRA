@@ -43,7 +43,10 @@ import gradio as gr
 
 from crn_model import CrudeCRN
 
-DATA_ROOT = "ligtas_synthetic_dataset/test"
+# The 500-sample held-out set -- the SAME set the reported headline is
+# measured on. Drawing from the 50-sample split instead would mean the
+# R^2 shown on screen came from a different set than the samples shown.
+DATA_ROOT = "ligtas_test_extended/test"
 CHECKPOINT_DIR = "crn_5seed_final"
 
 # Seed 3: held-out R^2 0.8393, the closest of the five to the reported
@@ -95,9 +98,11 @@ else:
 if not os.path.isdir(DATA_ROOT):
     raise SystemExit(
         f"Dataset not found: {DATA_ROOT}\n\n"
-        "The demo reads the frozen synthetic dataset, which is not committed\n"
-        "(~1.7 GB) but regenerates bit-for-bit from the frozen PARAMS:\n\n"
-        "    python generate_dataset.py\n")
+        "The demo reads the 500-sample held-out set -- the same set the "
+        "reported headline is measured on. It is not committed but "
+        "regenerates bit-for-bit from the frozen PARAMS:" + chr(10) + chr(10) +
+        "    python generate_dataset.py --n 500 --seed 777 "
+        "--all-test --out ligtas_test_extended" + chr(10))
 
 SAMPLE_IDS = sorted({f.split("_msi.npy")[0] for f in os.listdir(DATA_ROOT)
                      if f.endswith("_msi.npy")})
@@ -170,8 +175,9 @@ with gr.Blocks(title="LIGTAS-pH prototype") as demo:
         "A six-band multispectral sample goes in; a predicted pH map comes out. "
         "The model estimates pH at **every pixel** from spectral reflectance alone — "
         "no ground-truth pH is supplied at prediction time.\n\n"
-        "Samples are drawn from the held-out test set, which the model never saw "
-        "during training. Input must be one of these six-band samples: the "
+        "Samples are drawn from the 500-sample held-out set — the same set the "
+        "reported accuracy is measured on, and one the model never saw during "
+        "training. Input must be one of these six-band samples: the "
         "acquisition rig was never built, so there is no real-camera path."
     )
     gr.Markdown(DISCLOSURE)
@@ -179,7 +185,7 @@ with gr.Blocks(title="LIGTAS-pH prototype") as demo:
         with gr.Column(scale=1):
             sample_dropdown = gr.Dropdown(
                 choices=SAMPLE_IDS, value=SAMPLE_IDS[0],
-                label="Sample (held-out test set)")
+                label="Sample (500-sample held-out set)")
             preview = gr.Image(label="Input — RGB composite of the six bands",
                                value=show_preview(SAMPLE_IDS[0]))
             predict_btn = gr.Button("Predict pH map", variant="primary")
