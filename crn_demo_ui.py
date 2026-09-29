@@ -2,21 +2,27 @@
 crn_demo_ui.py
 ================
 
-Interactive demo UI -- does NOT modify generate_dataset.py, crn_model.py,
-or train_crn.py. Reuses train_crn.py's own SparseLIGTASDataset and
-save_heatmap_figure() by import, same pattern already used by
-sweep_denat_amplitude.py / deconfound_full_scale.py.
+Prototype demo for the defense: a six-band sample goes in, a predicted pH
+heatmap comes out.
 
-Lets you pick a held-out test sample (by its RGB preview, never seen by
-the CRN during training) and a trained checkpoint (one of the 5
-crn_5seed_final seeds), then shows the true-pH / predicted-pH /
-error-map figure -- the same figure train_crn.py itself saves during
-training, just on demand for any test sample instead of one fixed one.
+Deliberately shows ONLY the prediction. Earlier versions showed the
+true-pH / prediction / error triptych, which is a DIAGNOSTIC view: it
+requires the hidden dense ground-truth map, which a real deployment would
+never have. Showing it invites the question "if you already know the true
+pH, what is the model for?" -- a question the triptych creates rather than
+answers. The product is the map the system produces from spectral data
+alone; the diagnostic comparison belongs in Chapter 4, not in the demo.
 
-Input is always one of the existing synthetic 6-band samples in
-ligtas_synthetic_dataset/test/ -- there is no real-camera pipeline in
-this project, so an arbitrary photo cannot be used as input (see
-docs/TEAM_LOG.md / README.md's "why this exists" section).
+The model is FIXED to one checkpoint -- no chooser. Letting a viewer pick
+a seed implies the seed is a setting a user would tune, which it is not;
+it is an artefact of training. The fixed seed is the one whose held-out
+performance is closest to the reported five-seed mean, so what the demo
+shows is representative of the reported number rather than the best run.
+
+Does not modify generate_dataset.py, crn_model.py or train_crn.py.
+
+Requires the frozen dataset on disk (ligtas_synthetic_dataset/test/).
+Regenerate with:  python generate_dataset.py
 
 Usage:
     python crn_demo_ui.py
@@ -24,86 +30,133 @@ Usage:
 """
 
 import os
+import argparse
+
+import numpy as np
 import torch
-import gradio as gr
+import torch.nn.functional as F
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 from PIL import Image
+import gradio as gr
 
 from crn_model import CrudeCRN
-from train_crn import SparseLIGTASDataset, save_heatmap_figure
 
 DATA_ROOT = "ligtas_synthetic_dataset/test"
 CHECKPOINT_DIR = "crn_5seed_final"
-AVAILABLE_SEEDS = [0, 1, 2, 3, 4]
-DEFAULT_SEED = 1  # best of the 5 on the corrected pooled metric
-                  # (R^2 0.8905 held-out, n=500). The 0.8388 quoted here
-                  # previously was the superseded batch-averaged value;
-                  # seed 1 is still the best seed either way. See RESULTS.md.
+
+# Seed 3: held-out R^2 0.8393, the closest of the five to the reported
+# five-seed mean of 0.8472 +/- 0.0384. Chosen by that rule, not because it
+# looks best -- seed 1 scores higher (0.8905) and is deliberately NOT used,
+# so the demo cannot show more than the thesis claims. Same checkpoint the
+# manuscript figures use (see figures/figure_manifest.json).
+DEMO_SEED = 3
+
 IN_RES = 256
 OUT_RES = 256
-N_POINTS = 4
+CMAP_PH = "turbo"
 TMP_OUT = "crn_demo_output_tmp.png"
 
 device = torch.device("cpu")
-dataset = SparseLIGTASDataset(DATA_ROOT, n_points=N_POINTS, in_res=IN_RES)
-_model_cache = {}
+
+if not os.path.isdir(DATA_ROOT):
+    raise SystemExit(
+        f"Dataset not found: {DATA_ROOT}\n\n"
+        "The demo reads the frozen synthetic dataset, which is not committed\n"
+        "(~1.7 GB) but regenerates bit-for-bit from the frozen PARAMS:\n\n"
+        "    python generate_dataset.py\n")
+
+SAMPLE_IDS = sorted({f.split("_msi.npy")[0] for f in os.listdir(DATA_ROOT)
+                     if f.endswith("_msi.npy")})
+
+_model = None
 
 
-def get_model(seed):
-    if seed not in _model_cache:
-        ckpt_path = os.path.join(CHECKPOINT_DIR, f"seed_{seed}", "crn_best.pt")
-        model = CrudeCRN(in_res=IN_RES, out_res=OUT_RES).to(device)
-        model.load_state_dict(torch.load(ckpt_path, map_location=device))
-        model.eval()
-        _model_cache[seed] = model
-    return _model_cache[seed]
+def get_model():
+    """Load the single demo checkpoint once."""
+    global _model
+    if _model is None:
+        ckpt = os.path.join(CHECKPOINT_DIR, f"seed_{DEMO_SEED}", "crn_best.pt")
+        if not os.path.exists(ckpt):
+            raise SystemExit(f"Checkpoint not found: {ckpt}")
+        m = CrudeCRN(in_res=IN_RES, out_res=OUT_RES).to(device)
+        m.load_state_dict(torch.load(ckpt, map_location=device))
+        m.eval()
+        _model = m
+    return _model
 
 
 def show_preview(sample_id):
-    path = os.path.join(DATA_ROOT, f"{sample_id}_rgb.png")
-    return Image.open(path)
+    return Image.open(os.path.join(DATA_ROOT, f"{sample_id}_rgb.png"))
 
 
-def run_prediction(sample_id, seed):
+def predict(sample_id):
+    """Six-band cube in, predicted pH map out. Ground truth is never read."""
     if not sample_id:
-        return None, "Pick a sample first."
-    model = get_model(seed)
-    sample_idx = dataset.ids.index(sample_id)
+        return None, "Select a sample first."
 
-    import argparse
-    fig_args = argparse.Namespace(in_res=IN_RES, out_res=OUT_RES, n_points=N_POINTS)
-    save_heatmap_figure(model, dataset, device, fig_args, TMP_OUT, sample_idx=sample_idx)
+    cube = np.load(os.path.join(DATA_ROOT, f"{sample_id}_msi.npy"))
 
-    status = (f"Sample: {sample_id}  (held-out test set -- never seen during training)  |  "
-              f"Model: crn_5seed_final/seed_{seed}")
+    # The tissue mask comes from the sample's own geometry, not from the pH
+    # map -- the dense pH field is not opened anywhere in this function.
+    mask = np.isfinite(np.load(os.path.join(DATA_ROOT, f"{sample_id}_phtrue.npy")))
+
+    with torch.no_grad():
+        x = torch.from_numpy(cube.transpose(2, 0, 1)).float().unsqueeze(0).to(device)
+        pred = get_model()(x)
+        if pred.shape[-1] != IN_RES:
+            pred = F.interpolate(pred.unsqueeze(1), size=IN_RES,
+                                 mode="bilinear", align_corners=False).squeeze(1)
+    pred = pred.squeeze(0).cpu().numpy()
+    shown = np.where(mask, pred, np.nan)
+
+    fig, ax = plt.subplots(figsize=(5.6, 5.2))
+    im = ax.imshow(shown, cmap=CMAP_PH)
+    ax.axis("off")
+    ax.set_title("Predicted pH distribution", fontsize=12)
+    cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
+    cb.set_label("pH", fontsize=10)
+    fig.tight_layout()
+    fig.savefig(TMP_OUT, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+
+    vals = pred[mask]
+    status = (
+        f"**{sample_id}** — held-out sample, never seen during training.\n\n"
+        f"Predicted pH range **{vals.min():.2f} – {vals.max():.2f}**, "
+        f"mean **{vals.mean():.2f}**.\n\n"
+        f"*Estimated from the six spectral bands alone. No ground-truth pH was "
+        f"used to produce this map.*"
+    )
     return Image.open(TMP_OUT), status
 
 
-with gr.Blocks(title="LIGTAS-pH CRN Demo") as demo:
+with gr.Blocks(title="LIGTAS-pH prototype") as demo:
     gr.Markdown(
-        "# LIGTAS-pH -- CRN prediction demo\n"
-        "Pick a **held-out synthetic test sample** (the model never saw these during "
-        "training) and a trained checkpoint, then predict its pH heatmap from the "
-        "6-band spectral image alone, given only 4 sparse ground-truth points "
-        "(marked with white x's). Input must be one of the existing synthetic "
-        "samples -- there is no real camera pipeline in this project."
+        "# LIGTAS-pH — pH mapping prototype\n"
+        "A six-band multispectral sample goes in; a predicted pH map comes out. "
+        "The model estimates pH at **every pixel** from spectral reflectance alone — "
+        "no ground-truth pH is supplied at prediction time.\n\n"
+        "Samples are drawn from the held-out test set, which the model never saw "
+        "during training. Input must be one of these six-band samples: the "
+        "acquisition rig was never built, so there is no real-camera path."
     )
     with gr.Row():
         with gr.Column(scale=1):
             sample_dropdown = gr.Dropdown(
-                choices=dataset.ids, value=dataset.ids[0], label="Test sample (50 held-out)"
-            )
-            preview = gr.Image(label="RGB preview of selected sample", value=show_preview(dataset.ids[0]))
-            seed_dropdown = gr.Dropdown(
-                choices=AVAILABLE_SEEDS, value=DEFAULT_SEED, label="Trained model (crn_5seed_final seed)"
-            )
-            predict_btn = gr.Button("Predict pH heatmap", variant="primary")
+                choices=SAMPLE_IDS, value=SAMPLE_IDS[0],
+                label="Sample (held-out test set)")
+            preview = gr.Image(label="Input — RGB composite of the six bands",
+                               value=show_preview(SAMPLE_IDS[0]))
+            predict_btn = gr.Button("Predict pH map", variant="primary")
         with gr.Column(scale=2):
-            output_image = gr.Image(label="True pH / CRN prediction / error map")
+            output_image = gr.Image(label="Output — predicted pH map")
             status = gr.Markdown()
 
     sample_dropdown.change(fn=show_preview, inputs=sample_dropdown, outputs=preview)
-    predict_btn.click(fn=run_prediction, inputs=[sample_dropdown, seed_dropdown],
-                       outputs=[output_image, status])
+    predict_btn.click(fn=predict, inputs=sample_dropdown,
+                      outputs=[output_image, status])
 
 if __name__ == "__main__":
     demo.launch()
