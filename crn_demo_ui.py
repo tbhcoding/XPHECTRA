@@ -60,6 +60,38 @@ TMP_OUT = "crn_demo_output_tmp.png"
 
 device = torch.device("cpu")
 
+
+def _reported():
+    """
+    Read this checkpoint's own score and the reported five-seed figure from
+    RESULTS.json, so the on-screen disclosure cannot drift from the thesis.
+    Returns (seed_r2, mean_r2, sd_r2, best_r2) or Nones if unavailable.
+    """
+    try:
+        import json
+        R = json.load(open("RESULTS.json", encoding="utf-8"))
+        per = {p["seed"]: p["r2"] for p in R["per_seed"]}
+        mean, sd = R["headline"]["r2"]
+        return per.get(DEMO_SEED), mean, sd, max(per.values())
+    except Exception:
+        return None, None, None, None
+
+
+SEED_R2, MEAN_R2, SD_R2, BEST_R2 = _reported()
+
+if SEED_R2 is not None:
+    DISCLOSURE = (
+        f"**Model:** seed {DEMO_SEED} — held-out R² **{SEED_R2:.4f}**.  "
+        f"Reported figure is the five-seed mean, **{MEAN_R2:.4f} ± {SD_R2:.4f}**.  "
+        f"The best of the five scored {BEST_R2:.4f} and is deliberately not used, "
+        f"so this demo does not show more than the thesis claims."
+    )
+else:
+    DISCLOSURE = (
+        f"**Model:** seed {DEMO_SEED}, chosen as the run closest to the reported "
+        f"five-seed mean — not the best run."
+    )
+
 if not os.path.isdir(DATA_ROOT):
     raise SystemExit(
         f"Dataset not found: {DATA_ROOT}\n\n"
@@ -142,6 +174,7 @@ with gr.Blocks(title="LIGTAS-pH prototype") as demo:
         "during training. Input must be one of these six-band samples: the "
         "acquisition rig was never built, so there is no real-camera path."
     )
+    gr.Markdown(DISCLOSURE)
     with gr.Row():
         with gr.Column(scale=1):
             sample_dropdown = gr.Dropdown(
