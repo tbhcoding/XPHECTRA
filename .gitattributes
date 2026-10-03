@@ -1,0 +1,17 @@
+# Never apply line-ending conversion to binary files.
+#
+# Without this, core.autocrlf=true corrupts them on checkout. This was
+# caught on manuscript/chapters_3_to_5.pdf: a fresh clone received 746
+# extra bytes from LF->CRLF expansion and a broken xref table. Git's
+# automatic binary detection looks for NUL bytes near the start of a
+# file and had classified that PDF as text.
+
+*.pdf  binary
+*.pt   binary
+*.npy  binary
+*.mat  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.ico  binary
+*.zip  binary
