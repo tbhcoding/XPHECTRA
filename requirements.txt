@@ -1,8 +1,35 @@
-numpy>=1.24
-scipy>=1.10
-h5py>=3.8
-opencv-python>=4.8
-matplotlib>=3.7
-torch>=2.1
-scikit-learn>=1.3
-gradio>=6.0  # only needed for crn_demo_ui.py (interactive demo, not the pipeline itself)
+# Pinned to the versions every reported result was produced with.
+# These match Table 3.3 (Software requirements) in Chapter 3.
+#
+# Install:
+#     pip install -r requirements.txt
+#
+# torch is pinned to the CPU build. No GPU was used anywhere in this
+# study. If pip tries to pull a CUDA wheel, force the CPU index:
+#     pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cpu
+
+# --- core: generate_dataset.py, train_crn.py, make_figures.py ---
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.11.1
+torch==2.13.0
+
+# --- baselines: scikit-learn supplies the PLSR comparison only ---
+scikit-learn==1.9.1
+
+# --- interactive demonstration (crn_demo_ui.py) ---
+gradio==6.28.0
+pillow==12.3.0
+
+# opencv is REQUIRED if you intend to run the demonstration, even though
+# generate_dataset.py imports it inside a try/except and will appear to
+# succeed without it. Without opencv the generator silently skips writing
+# the *_rgb.png preview files, and the demo then fails at startup with a
+# FileNotFoundError when it loads the input preview. Do not treat this as
+# optional.
+opencv-python==5.0.0.93
+
+# --- genuinely optional: only for reading the NHSI reference cubes under
+#     analysis/ and extract_sensor_params.py. Those cubes are not
+#     redistributable and are not needed to reproduce any reported result.
+h5py==3.16.0
