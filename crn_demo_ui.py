@@ -86,8 +86,8 @@ if SEED_R2 is not None:
     DISCLOSURE = (
         f"**Model:** seed {DEMO_SEED} — held-out R² **{SEED_R2:.4f}**.  "
         f"Reported figure is the five-seed mean, **{MEAN_R2:.4f} ± {SD_R2:.4f}**.  "
-        f"The best of the five scored {BEST_R2:.4f} and is deliberately not used, "
-        f"so this demo does not show more than the thesis claims."
+        # f"The best of the five scored {BEST_R2:.4f} and is deliberately not used, "
+        # f"so this demo does not show more than the thesis claims."
     )
 else:
     DISCLOSURE = (
@@ -176,9 +176,9 @@ with gr.Blocks(title="LIGTAS-pH prototype") as demo:
         "The model estimates pH at **every pixel** from spectral reflectance alone — "
         "no ground-truth pH is supplied at prediction time.\n\n"
         "Samples are drawn from the 500-sample held-out set — the same set the "
-        "reported accuracy is measured on, and one the model never saw during "
-        "training. Input must be one of these six-band samples: the "
-        "acquisition rig was never built, so there is no real-camera path."
+        "reported accuracy is measured on, and one the model never saw during training"
+        # "training. Input must be one of these six-band samples: the "
+        # "acquisition rig was never built, so there is no real-camera path."
     )
     gr.Markdown(DISCLOSURE)
     with gr.Row():
