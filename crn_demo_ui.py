@@ -21,8 +21,11 @@ shows is representative of the reported number rather than the best run.
 
 Does not modify generate_dataset.py, crn_model.py or train_crn.py.
 
-Requires the frozen dataset on disk (ligtas_synthetic_dataset/test/).
-Regenerate with:  python generate_dataset.py
+Requires the 500-sample held-out set on disk (ligtas_test_extended/test/)
+-- the same set the reported headline is measured on, so what the demo
+shows is drawn from the same data the numbers come from. Not committed,
+but regenerates bit-for-bit from the frozen PARAMS:
+    python generate_dataset.py --n 500 --seed 777 --all-test --out ligtas_test_extended
 
 Usage:
     python crn_demo_ui.py
