@@ -9,7 +9,9 @@ Otsu split bright tissue from lean tissue instead of tissue from background.)
 Tray layout (HSI frame, from cube 01 render; RGB photo is rotated 90 deg).
 SPECIES ESTABLISHED 2026-09-18 from the dataset authors' own annotated
 RGB photo, which labels the five rows top-to-bottom: Salmon, Pork,
-Mutton, Beef, Chicken.
+Mutton, Beef, Chicken. That photo is checked in at
+docs/digitization/nhsi_tray_species_annotation_cube01.png (timestamp
+2025/12/23 11:52 = acquisition #1, 01.mat).
   C1 x<137   : 6 small pale pieces  -> CHICKEN (RGB bottom row)
   C2 137-292 : 2 long red pieces    -> BEEF    (RGB row 4)
   C3 292-492 : fatty mixed pieces   -> MUTTON  (RGB row 3)

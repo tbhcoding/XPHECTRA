@@ -46,7 +46,8 @@ Still genuinely open, and documented as a Chapter 5 limitation rather than
 fixed: the **970 nm external check** (simulated 0.2645 vs real NHSI pork
 0.198 freshest / 0.217 18-cube mean). The species question behind it is
 closed — tray column C4 is pork, established 2026-09-18 from the authors'
-own annotation.
+own annotation, checked in at
+`docs/digitization/nhsi_tray_species_annotation_cube01.png`.
 
 ## How we got here: the failed hardware
 

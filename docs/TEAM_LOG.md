@@ -27,8 +27,14 @@ since 2026-09-11 — and upgrades the 970 nm external check from "lean
 tissue, species unconfirmed" to a genuine pork comparison.
 
 **Evidence:** the dataset authors supplied their own annotated RGB photo
-of the tray (timestamp 2025/12/23 11:52), labelling the five rows
-top-to-bottom: **Salmon, Pork, Mutton, Beef, Chicken.**
+of the tray (timestamp 2025/12/23 11:52 — i.e. acquisition #1, `01.mat`,
+the cube every published measurement came from), labelling the five rows
+top-to-bottom: **Salmon, Pork, Mutton, Beef, Chicken.** The photo is
+checked in at `docs/digitization/nhsi_tray_species_annotation_cube01.png`
+(committed 2026-10-04) and is the provenance artifact for this claim, the
+same way the Tang/Bowen screenshots in that folder are for the eps values
+— verified against the code's column mapping on 2026-10-04: all five
+labels, piece counts and descriptions match.
 
 **Mapping onto the HSI column layout** already used in
 `analysis/nhsi_970_breakdown.py` (RGB photo is rotated 90° from the HSI
