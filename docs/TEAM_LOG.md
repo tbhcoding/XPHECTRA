@@ -169,6 +169,30 @@ Template:
 - Nobody has yet read Chapters 1-2 end to end. They were substantially
   rewritten.
 
+**Chapters checked against the code, 2026-10-06:** every claim in
+Chapters 1-5 that describes a parameter, a setting or the architecture was
+checked against the source, not against the earlier draft.
+
+- All ten numeric values in Table 3.1 match  exactly.
+- All six wavelengths match.
+- Table 3.4 matches : Adam, lr 1e-4, batch 8, epoch cap 50,
+  tv weight 0.05, four supervised points.
+- Dataset claims match : n=400 default, the 500-sample
+  held-out set, the uniform draw 5.35-6.45 and the clip to 5.2-6.8.
+- Architecture claims match , verified by tracing shapes
+  rather than reading the source: 256 -> 128 -> 64 in the encoder, 64 ->
+  128 -> 256 in the decoder, two skip connections concatenating enc2 and
+  enc1, and a 1x1 output convolution to a single channel. The chapter says
+  two downsampling and two upsampling stages with skip connections, which
+  is correct. Note that  defines one MaxPool2d and applies it
+  twice in , so counting module definitions understates the
+  number of stages.
+- 118,113 trainable parameters confirmed by instantiating the model.
+
+No mismatches were found in this pass. The three corrected earlier in the
+session (Table 4.3 rounding, Table 3.2 model size) remain the only errors
+found between the chapters and the evidence.
+
 **Context to feed next session:**
 Chapters 1-5 are complete — zero placeholders, zero CITATION NEEDED, zero
 unresolved references, all nine figures resolving. The work sits on branch
