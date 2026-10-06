@@ -64,7 +64,7 @@ The network accepts a six-band multispectral cube and returns a dense per-pixel 
 
 **Convolution blocks.** Every block applies a 3 by 3 convolution, batch normalisation, and a rectified linear activation, twice. Downsampling uses 2 by 2 max pooling and upsampling uses 2 by 2 transposed convolution.
 
-**Compact size.** The network has 118,113 trainable parameters and occupies 0.45 MB. It was deliberately kept small to establish feasibility within the study's timeframe, and is one instantiation of the pipeline rather than a fixed requirement. The training and evaluation methodology described below applies to any model producing a dense pH map from six-band input, regardless of backbone.
+**Compact size.** The network has 118,113 trainable parameters and its saved checkpoint occupies 0.50 MB. It was deliberately kept small to establish feasibility within the study's timeframe, and is one instantiation of the pipeline rather than a fixed requirement. The training and evaluation methodology described below applies to any model producing a dense pH map from six-band input, regardless of backbone.
 
 ### Sparse Supervision and the Smoothness Prior
 
@@ -144,7 +144,8 @@ These figures bear directly on the third objective. A network of this size impos
 | NumPy | 2.4.6 |
 | SciPy | 1.17.1 |
 | Matplotlib | 3.11.1 |
-| scikit-learn | for the PLSR baseline |
+| scikit-learn | 1.9.1, for the PLSR baseline |
+| OpenCV | 5.0.0.93, writes the RGB composites |
 | Gradio | 6.28.0, for the inference interface |
 
 ### Procedures
@@ -500,7 +501,23 @@ This demonstrates that the software components of LIGTAS-pH function as a cohere
 
 ## Notes
 
-[Reference list to be completed in the project's citation style.]
+Every figure reported in this chapter is produced by a script in the repository and stored in a file named below, so each can be regenerated and checked independently.
+
+| Reported in | Evidence file | Produced by |
+|---|---|---|
+| Tables 4.1 to 4.3, tolerance bands | `RESULTS.json`, `metric_check_outputs/final_evaluation_TEST500.json` | `evaluate_heatmap.py`, `collect_results.py` |
+| Training behaviour, Figure 4.1 | `crn_5seed_final/seed_*/history.json` | `train_crn.py` |
+| Table 4.4, localisation | `metric_check_outputs/spatial_localization.json` | `check_spatial_localization.py` |
+| Per-sample R-squared, amplitude ratio, correlation | `metric_check_outputs/spatial_skill_official.json` | `check_spatial_skill.py` |
+| Table 4.5, calibration | `metric_check_outputs/calibration.json`, `calibration_probe.json` | `check_calibration.py`, `check_calibration_probe.py` |
+| Table 4.6, baselines on the 500-sample set | `metric_check_outputs/baselines_test500.json` | `compute_test500_baselines.py` |
+| Table 4.7, amplitude sweep | `deconfound_outputs/full_table.json` | `deconfound_full_scale.py` |
+| Band variance shares | `metric_check_outputs/band_collinearity.json` | `check_band_collinearity.py` |
+| Range restriction | `metric_check_outputs/range_restriction.json` | `check_range_restriction.py` |
+| Class boundaries across conventions | `metric_check_outputs/class_thresholds.json` | `check_class_thresholds.py` |
+| Boundary artifact | `metric_check_outputs/edge_effect.json` | `check_edge_effect.py` |
+
+Sources cited in this chapter appear in the reference list for Chapter 3.
 
 ---
 
