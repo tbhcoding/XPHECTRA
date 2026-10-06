@@ -326,7 +326,7 @@ LIGTAS-pH addresses this gap by combining tissue-optics-informed wavelength sele
 
 # NOTES
 
-The list below covers Chapters 1 and 2. Entries marked **[NEW]** are additions to the existing Chapter 2 reference list and must be merged into it alphabetically, after which the whole list is renumbered and the author-year citations above are converted to the project's numbered style. Entries marked **[VERIFY]** require confirmation before submission.
+The list below covers Chapters 1 and 2. Entries marked **[NEW]** are additions to the existing Chapter 2 reference list and must be merged into it alphabetically, after which the whole list is renumbered and the author-year citations above are converted to the project's numbered style.
 
 American Meat Science Association. (2023). *Chemistry of fresh meat color.* https://meatscience.org/docs/default-source/publications-resources/factsheets/color_chemistry_resource1_7.28.23_final.pdf
 
@@ -334,15 +334,15 @@ Bandara, C., Prabhath, G. W. K., Dissanayake, D. W. S. C. B. and Herath, V. R. (
 
 Barbin, D. F., ElMasry, G., Sun, D.-W. and Allen, P. (2012). Predicting quality and sensory attributes of pork using near-infrared hyperspectral imaging. *Analytica Chimica Acta*, 719, 30-42. doi:10.1016/j.aca.2012.01.004
 
-**[NEW]** Bergmann, F., et al. (2021). Porcine tissue optical properties. *Full citation required from the team's source file.* **[VERIFY]**
+**[NEW]** Bergmann, F., Foschum, F., Marzel, L. and Kienle, A. (2021). Ex vivo determination of broadband absorption and effective scattering coefficients of porcine tissue. *Photonics*, 8(9), 365. doi:10.3390/photonics8090365. Open access.
 
-**[NEW]** Bowen, W. J. (1949). The absorption spectra and extinction coefficients of myoglobin. *Journal of Biological Chemistry*, 179(1), 235-245. **[VERIFY]**
+**[NEW]** Bowen, W. J. (1949). The absorption spectra and extinction coefficients of myoglobin. *Journal of Biological Chemistry*, 179, 235-245. PMID 18119239. Open access at jbc.org. A DOI of 10.1016/S0021-9258(18)56832-0 is listed for this article in the project's parameter sheet and should be confirmed against the publisher record before use.
 
 Bureau of Agriculture and Fisheries Standards. (2025). *Philippine national standard: pork carcass grading.* Department of Agriculture, Philippines. https://bafs.da.gov.ph/wp-content/uploads/2025/12/IG-Pork-carcass-grading.pdf
 
 Cervantes-Sanchez, F., Maktabi, M., Köhler, H., Sucher, R., Rayes, N., Avina-Cervantes, J. G., Cruz-Aceves, I. and Chalopin, C. (2021). Automatic tissue segmentation of hyperspectral images in liver and head neck surgeries using machine learning. *Artificial Intelligence Surgery.* doi:10.20517/ais.2021.05
 
-**[NEW]** Cross, A. J., et al. (2018). Ultimate pH and myoglobin concentration in pork loin. *Full citation required from the team's source file.* **[VERIFY]**
+**[NEW]** Cross, A. J., King, D. A., Shackelford, S. D., Wheeler, T. L., Nonneman, D. J., Keel, B. N. and Rohrer, G. A. (2018). Genome-wide association of myoglobin concentrations in pork loins. *Meat and Muscle Biology*, 2(1), 189-196. doi:10.22175/mmb2017.08.0042. Open access.
 
 Das, A. J., Wahi, A., Kothari, I. and Raskar, R. (2016). Ultra-portable, wireless smartphone spectrometer for rapid, non-destructive testing of fruit ripeness. *Scientific Reports*, 6, 32504. doi:10.1038/srep32504
 
@@ -354,7 +354,7 @@ Elangovan, P., Dhurairajan, V., Nath, M. K., Yogarajah, P. and Condell, J. (2024
 
 Feng, C.-H., Makino, Y., Oshita, S. and García Martín, J. F. (2017). Hyperspectral imaging and multispectral imaging as the novel techniques for detecting defects in raw and processed meat products. *Food Control*, 84, 165-176. doi:10.1016/j.foodcont.2017.07.013
 
-**[NEW]** Hale, G. M. and Querry, M. R. (1973). Optical constants of water in the 200 nm to 200 µm wavelength region. *Applied Optics*, 12(3), 555-563. doi:10.1364/AO.12.000555
+**[NEW]** Hale, G. M. and Querry, M. R. (1973). Optical constants of water in the 200 nm to 200 µm wavelength region. *Applied Optics*, 12(3), 555-563. doi:10.1364/AO.12.000555. The values used in this study were taken from the tabulated data file hosted at omlc.org/spectra/water/data/hale73.dat rather than from the article text.
 
 Han, J., Wang, Y., Wang, Y., Hao, S., Zhang, K., Tian, J. and Jin, Y. (2024). Effect of changes in the structure of myoglobin on the color of meat products. *Food Materials Research*, 4(1). doi:10.48130/fmr-0024-0003
 
@@ -396,7 +396,7 @@ Piao, D., Ramanathan, R., Denzer, M. L., Pfeiffer, M. and Mafi, G. (2025). Modif
 
 Qiao, J., Wang, N., Ngadi, M. O., Gunenc, A., Monroy, M., Gariépy, C. and Prasher, S. O. (2006). Prediction of drip-loss, pH, and color for pork using a hyperspectral imaging technique. *Meat Science*, 76(1), 1-8. doi:10.1016/j.meatsci.2006.06.031
 
-**[NEW]** Quintana-Quintana, L., et al. (2025). Monte Carlo tissue-light transport simulation for hyperspectral microscopy. *Full citation required from the team's source file.* **[VERIFY]**
+**[NEW]** Quintana-Quintana, L., Witteveen, M., Dashtbozorg, B., Ortega, S., Ruers, T. J. M., Sterenborg, H. J. C. M. and Callico, G. M. (2025). Exploring the role of sample thickness for hyperspectral microscopy tissue discrimination through Monte Carlo simulations. *Biomedical Optics Express*, 16(11), 4644-4661. doi:10.1364/BOE.563094. Open access.
 
 Rana, S., Gerbino, S., Crimaldi, M., Cirillo, V., Carillo, P., Sarghini, F. and Maggio, A. (2024). Comprehensive evaluation of multispectral image registration strategies in heterogenous agriculture environment. *Journal of Imaging*, 10(3), 61. doi:10.3390/jimaging10030061
 
@@ -410,17 +410,17 @@ Sristi, P. R., Das, N. R., Akhter, A., Kaniya, N. M. and Hashem, M. A. (2025). R
 
 Tang, X., Rao, L., Xie, L., Yan, M., Chen, Z., Liu, S., Chen, L., et al. (2023). Quantification and visualization of meat quality traits in pork using hyperspectral imaging. *Meat Science*, 196, 109052. doi:10.1016/j.meatsci.2022.109052
 
-**[NEW]** Tang, J., Faustman, C. and Hoagland, T. A. (2004). Krzywicki revisited: equations for spectrophotometric determination of myoglobin redox forms in aqueous meat extracts. *Journal of Food Science*, 69(9), C717-C720. doi:10.1111/j.1365-2621.2004.tb09922.x **[VERIFY]**
+**[NEW]** Tang, J., Faustman, C. and Hoagland, T. A. (2004). Krzywicki revisited: equations for spectrophotometric determination of myoglobin redox forms in aqueous meat extracts. *Journal of Food Science*, 69(9), C717-C720. doi:10.1111/j.1365-2621.2004.tb09922.x
 
 **[NEW]** Thennadil, S. N. (2008). Relationship between the Kubelka-Munk scattering and radiative transfer coefficients. *Journal of the Optical Society of America A*, 25(7), 1480-1485. doi:10.1364/JOSAA.25.001480
 
 Trinderup, C. H. (2015). *Multispectral imaging of meat quality: colour and texture.* DTU Compute PHD-2014 No. 358.
 
-**[NEW]** Wang, M., Tang, J., Li, S. and Chen, W. (2026). NHSI-meat-overtime: a hyperspectral dataset of five meat types over storage time. *Full citation required from the team's source file.* **[VERIFY]**
+**[NEW]** Wang, M., Tang, J., Li, S. and Chen, W. (2026). NHSI-meat-overtime: a near-infrared hyperspectral dataset of five meat types over storage time. *IET Conference Proceedings*, CP987, 208-212. doi:10.1049/icp.2026.2763
 
 Wang, M., Ma, J., Li, S. and Zhang, W. (2026). Rapid and non-destructive pork quality prediction using an interpretable deep learning-ensemble model. *Future Foods*, 13, 101000. doi:10.1016/j.fufo.2026.101000
 
-**[NEW]** Wojtasik-Kalinowska, I., et al. (2016). Water content of pork longissimus muscle. *Full citation required from the team's source file.* **[VERIFY]**
+**[NEW]** Wojtasik-Kalinowska, I., Guzek, D., Gorska-Horczyczak, E., Glabska, D., Brodowska, M., Sun, D.-W. and Wierzbicka, A. (2016). Volatile compounds and fatty acids profile in Longissimus dorsi muscle from pigs fed with feed containing bioactive components. *LWT - Food Science and Technology*, 67, 112-117. doi:10.1016/j.lwt.2015.11.023
 
 **[NEW]** Wold, S., Sjöström, M. and Eriksson, L. (2001). PLS-regression: a basic tool of chemometrics. *Chemometrics and Intelligent Laboratory Systems*, 58(2), 109-130. doi:10.1016/S0169-7439(01)00155-1
 
