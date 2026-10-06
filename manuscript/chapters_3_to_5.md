@@ -101,7 +101,7 @@ Each synthetic sample consists of a 256 by 256 pixel six-band reflectance cube, 
 | denat_width | 0.28 | SWEPT | No citation found |
 | mua_water | 6-band array | CITED | Hale and Querry 1973 |
 | water_fraction | 0.732 | CITED | Wojtasik-Kalinowska 2016 |
-| sensor_sigma | 0.0054 | MEASURED | Real NHSI cube |
+| sensor_sigma | 0.0054 | MEASURED | Wang, Tang, Li and Chen 2026 |
 | mu_a_baseline | 0.8 cm⁻¹ | TUNED | Uncited, disclosed |
 
 Of the fourteen parameters, ten are cited, measured, or fitted to published data, and an eleventh is back-calculated from a cited source. The back-calculation concerns `c_Mb_sd`: the source reports 0.87 ± 0.005 mg/g without labelling the second term. A standard deviation of 0.005 mg/g across 599 animals would be implausibly tight for a biological trait, so the reported figure is almost certainly a standard error. Recovering the standard deviation as 0.005 × sqrt(599) gives approximately 0.12 mg/g, a coefficient of variation near 14%, which is biologically plausible. Three are not traceable to a published measurement, and the study treats them differently according to how well each is covered by other evidence.
@@ -301,7 +301,27 @@ The following assumptions underlie the synthetic benchmark. They are stated expl
 
 ## Notes
 
-The following sources are cited in this chapter in addition to those already listed in Table 3.1 and the Theoretical Framework. Renumber to match the project's citation style when merging with the master reference list.
+The following sources are cited in this chapter. The first group supplies the generator parameters listed in Table 3.1; the second supports the models and methods described in the text. Renumber to match the project's citation style when merging with the master reference list, where entries shared with Chapter 2 will appear once.
+
+**Sources of the generator parameters in Table 3.1**
+
+Bergmann, F., Foschum, F., Marzel, L. and Kienle, A. (2021). Ex vivo determination of broadband absorption and effective scattering coefficients of porcine tissue. *Photonics*, 8(9), 365. doi:10.3390/photonics8090365
+
+Bowen, W. J. (1949). The absorption spectra and extinction coefficients of myoglobin. *Journal of Biological Chemistry*, 179, 235-245. PMID 18119239.
+
+Cross, A. J., King, D. A., Shackelford, S. D., Wheeler, T. L., Nonneman, D. J., Keel, B. N. and Rohrer, G. A. (2018). Genome-wide association of myoglobin concentrations in pork loins. *Meat and Muscle Biology*, 2(1), 189-196. doi:10.22175/mmb2017.08.0042
+
+Hale, G. M. and Querry, M. R. (1973). Optical constants of water in the 200 nm to 200 micrometre wavelength region. *Applied Optics*, 12(3), 555-563. doi:10.1364/AO.12.000555. Values taken from the tabulated data file at omlc.org/spectra/water/data/hale73.dat.
+
+Jacques, S. L. (2013). Optical properties of biological tissues: a review. *Physics in Medicine and Biology*, 58(11), R37-R61. doi:10.1088/0031-9155/58/11/R37
+
+Tang, J., Faustman, C. and Hoagland, T. A. (2004). Krzywicki revisited: equations for spectrophotometric determination of myoglobin redox forms in aqueous meat extracts. *Journal of Food Science*, 69(9), C717-C720. doi:10.1111/j.1365-2621.2004.tb09922.x
+
+Wang, M., Tang, J., Li, S. and Chen, W. (2026). NHSI-meat-overtime: a near-infrared hyperspectral dataset of five meat types over storage time. *IET Conference Proceedings*, CP987, 208-212. doi:10.1049/icp.2026.2763
+
+Wojtasik-Kalinowska, I., Guzek, D., Gorska-Horczyczak, E., Glabska, D., Brodowska, M., Sun, D.-W. and Wierzbicka, A. (2016). Volatile compounds and fatty acids profile in Longissimus dorsi muscle from pigs fed with feed containing bioactive components. *LWT - Food Science and Technology*, 67, 112-117. doi:10.1016/j.lwt.2015.11.023
+
+**Sources for the models and methods**
 
 Henderson, P., Islam, R., Bachman, P., Pineau, J., Precup, D. and Meger, D. (2018). Deep reinforcement learning that matters. *Proceedings of the AAAI Conference on Artificial Intelligence*, 32(1). Preprint freely available at arXiv:1709.06560.
 
