@@ -151,10 +151,11 @@ Ranked by how much a good answer would improve the thesis.
 4. **`mu_a_baseline` is tuned and uncited.** Adopted at 0.8 because it improved
    agreement with the external 970 nm reference. The override is disclosed. A
    citation would be better than a disclosure.
-5. **Two figures do not exist yet.** Figure 3.2 (network architecture) and
-   Figure 3.4 (pipeline diagram) are schematics, so they cannot be generated
-   from data. They render as grey placeholder boxes in the PDF until someone
-   draws them.
+5. **The eight references marked [VERIFY] in Chapter 2.** Their full details
+   exist in the team's own source files and could not be confirmed from the
+   repository: Cross 2018, Bergmann 2021, Wojtasik-Kalinowska 2016,
+   Quintana-Quintana 2025, the NHSI dataset paper, and page details for
+   Bowen 1949 and Tang 2004. This is the last open item in the manuscript.
 6. **Chapter 3 citations need a final check.** Seven sources carry DOIs. Three
    were checked against live sources (Thennadil 2008; Rudin, Osher and Fatemi
    1992; Wold 2001). The remaining four are on arXiv or in an open-access
