@@ -94,7 +94,7 @@ Each synthetic sample consists of a 256 by 256 pixel six-band reflectance cube, 
 |---|---|---|---|
 | eps_deoxy / oxy / met | 6-band arrays | CITED | Tang 2004, Bowen 1949 |
 | c_Mb_mean | 0.87 mg/g | CITED | Cross et al. 2018 |
-| c_Mb_sd | 0.12 mg/g | BACK-CALC. | Same source |
+| c_Mb_sd | 0.12 mg/g | BACK-CALC. | Cross et al. 2018 |
 | scatter_a, scatter_b | 8.7436, 1.6618 | FITTED | Jacques 2013, Bergmann 2021 |
 | denat_amplitude | 0.4 | SWEPT | No citable value; see Chapter 4 |
 | denat_midpoint | 5.70 | CITED (proxy) | Cross et al. 2018 |
