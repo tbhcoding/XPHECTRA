@@ -153,12 +153,19 @@ Ranked by how much a good answer would improve the thesis.
 4. **`mu_a_baseline` is tuned and uncited.** Adopted at 0.8 because it improved
    agreement with the external 970 nm reference. The override is disclosed. A
    citation would be better than a disclosure.
-5. **The eight references marked [VERIFY] in Chapter 2.** Their full details
-   exist in the team's own source files and could not be confirmed from the
-   repository: Cross 2018, Bergmann 2021, Wojtasik-Kalinowska 2016,
-   Quintana-Quintana 2025, the NHSI dataset paper, and page details for
-   Bowen 1949 and Tang 2004. This is the last open item in the manuscript.
-6. **Chapter 3 citations need a final check.** Seven sources carry DOIs. Three
+5. **The eight references marked [VERIFY] in Chapter 2: closed.** Completed
+   in `9338d2d` from the team's own source files. Neither chapter file contains
+   a `[VERIFY]` marker any more. Previously listed here as the last open item;
+   it is not.
+6. **The domain-consultation record is not in the repository.** Chapter 3 lists
+   input validation by domain consultation as a validation step and says it is
+   documented separately. The document exists on paper but nothing in the
+   repository points to it, and the +/-0.15 pH tolerance band that produces the
+   81.5% figure rests on it. It should be photographed or scanned and checked in
+   the way `docs/digitization/nhsi_tray_species_annotation_cube01.png` was, with
+   Chapter 3 naming that file. Until then the claim cannot be followed up by
+   anyone reading the repository alone.
+7. **Chapter 3 citations need a final check.** Seven sources carry DOIs. Three
    were checked against live sources (Thennadil 2008; Rudin, Osher and Fatemi
    1992; Wold 2001). The remaining four are on arXiv or in an open-access
    journal and are definitely free, but their page numbers have not been

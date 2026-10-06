@@ -63,7 +63,7 @@ No model was retrained. No dataset was regenerated. No parameter was changed. Al
 ## Current state and what still needs a person
 
 1. **Figures: done.** All nine figures now resolve. Chapter 3 gained two new diagrams drawn by the team, the forward optical model (Figure 3.1) and the convolutional regression network (Figure 3.3), and the pipeline diagram (Figure 3.5) was corrected so its first box reads "generation" rather than "generation/acquisition". Chapter 3 figures were renumbered 3.1 to 3.5 to make room; there are no in-text references to figure numbers, so only captions changed. No placeholders remain in either chapter file.
-2. **Eight `[VERIFY]` references.** The details exist in the team's own source files.
+2. **Eight `[VERIFY]` references: done.** The reference list was completed in `9338d2d`. Neither chapter file contains a `[VERIFY]` marker any more.
 3. **Someone should read Chapters 1 and 2.** They were substantially rewritten and nobody has checked that no intended meaning was lost.
 
 ## One decision to make
