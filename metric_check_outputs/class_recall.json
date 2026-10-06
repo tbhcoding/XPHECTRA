@@ -1,0 +1,144 @@
+{
+  "fit_on": "ligtas_synthetic_dataset/val",
+  "evaluated_on": "ligtas_test_extended/test",
+  "class_boundaries": [
+    5.4,
+    5.8
+  ],
+  "n_seeds": 5,
+  "correction": "level only, fitted from the mean of four probe readings",
+  "summary": {
+    "PSE": {
+      "true_share_pct": 6.389669632741677,
+      "recall_before_pct": [
+        29.02204451761249,
+        30.345557349406292
+      ],
+      "recall_after_pct": [
+        69.27636770568307,
+        7.054752185103812
+      ]
+    },
+    "normal": {
+      "true_share_pct": 31.017568190140032,
+      "recall_before_pct": [
+        82.06799722874987,
+        3.9981848314834973
+      ],
+      "recall_after_pct": [
+        82.33650368784723,
+        4.4149521605236375
+      ]
+    },
+    "DFD": {
+      "true_share_pct": 62.59276217711829,
+      "recall_before_pct": [
+        96.429690365975,
+        2.8537687837982215
+      ],
+      "recall_after_pct": [
+        95.82829753630644,
+        1.6668960546980982
+      ]
+    }
+  },
+  "overall_accuracy_before_pct": [
+    87.66791652695868,
+    1.8787750588385177
+  ],
+  "overall_accuracy_after_pct": [
+    89.94689058199326,
+    1.427907471117796
+  ],
+  "pse_recall_before_range_pct": [
+    0.5395481571177839,
+    62.30390889671968
+  ],
+  "per_checkpoint": [
+    {
+      "checkpoint": "crn_5seed_final/seed_0/crn_best.pt",
+      "level_slope": 1.5051989492991487,
+      "level_intercept": -2.9850539896297676,
+      "recall_before_pct": [
+        0.5395481571177839,
+        81.39615300734066,
+        94.78174123326868
+      ],
+      "recall_after_pct": [
+        57.58216098178206,
+        84.37692855447425,
+        93.35721846571373
+      ],
+      "overall_accuracy_before_pct": 84.6080924854235,
+      "overall_accuracy_after_pct": 88.2858429346761
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_1/crn_best.pt",
+      "level_slope": 1.1766517237074678,
+      "level_intercept": -1.008409467519609,
+      "recall_before_pct": [
+        62.30390889671968,
+        88.53520512418511,
+        92.25526911876865
+      ],
+      "recall_after_pct": [
+        73.53705492591736,
+        83.47541391388279,
+        95.08398454217057
+      ],
+      "overall_accuracy_before_pct": 89.18760276383053,
+      "overall_accuracy_after_pct": 90.10651061316288
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_2/crn_best.pt",
+      "level_slope": 1.1634400113311227,
+      "level_intercept": -0.9598575351686134,
+      "recall_before_pct": [
+        61.122345201975534,
+        77.78392832587238,
+        97.68370408732468
+      ],
+      "recall_after_pct": [
+        70.87417856025252,
+        74.52303229417294,
+        97.54406694943636
+      ],
+      "overall_accuracy_before_pct": 89.17512752481642,
+      "overall_accuracy_after_pct": 88.69938406767449
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_3/crn_best.pt",
+      "level_slope": 1.3822006540061462,
+      "level_intercept": -2.2617294223897617,
+      "recall_before_pct": [
+        5.412063429434414,
+        82.35410865858006,
+        98.25182740967814
+      ],
+      "recall_after_pct": [
+        68.68783929033047,
+        84.0540656534028,
+        97.01722017754038
+      ],
+      "overall_accuracy_before_pct": 87.38858744922493,
+      "overall_accuracy_after_pct": 91.186211035729
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_4/crn_best.pt",
+      "level_slope": 1.2432838970033775,
+      "level_intercept": -1.487778360415532,
+      "recall_before_pct": [
+        15.732356902815003,
+        80.27059102777119,
+        99.17590998083483
+      ],
+      "recall_after_pct": [
+        75.70060477013293,
+        85.25307802330337,
+        96.13899754667115
+      ],
+      "overall_accuracy_before_pct": 87.98017241149793,
+      "overall_accuracy_after_pct": 91.45650425872385
+    }
+  ]
+}
