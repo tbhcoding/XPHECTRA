@@ -1,0 +1,25 @@
+{
+  "data": "ligtas_test_extended/test",
+  "ceiling": 6.0,
+  "ceiling_source": "Sristi et al. 2025 Figure 1 upper anchor, DOI 10.55002/mr.5.3.117",
+  "restriction": "samples whose mean pH <= ceiling",
+  "n_seeds": 5,
+  "full_range": {
+    "n_samples": 500.0,
+    "n_pixels": 18404457.0,
+    "pooled_r2": 0.8471677899360657,
+    "mae": 0.09359997808933258,
+    "rmse": 0.12823553383350372,
+    "true_sd": 0.33044686913490295
+  },
+  "restricted": {
+    "n_samples": 284.0,
+    "n_pixels": 10470220.0,
+    "pooled_r2": 0.705081331729889,
+    "mae": 0.08541283011436462,
+    "rmse": 0.11714594960212707,
+    "true_sd": 0.21799451112747192
+  },
+  "delta_r2": -0.1420864582061767,
+  "delta_mae": -0.00818714797496796
+}

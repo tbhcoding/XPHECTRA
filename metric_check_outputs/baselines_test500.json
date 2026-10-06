@@ -1,0 +1,26 @@
+{
+  "fit_on": "ligtas_synthetic_dataset/train",
+  "evaluated_on": "ligtas_test_extended/test",
+  "n_eval_pixels": 200000,
+  "pixels_per_sample": 400,
+  "pixel_sampling_seed": 42,
+  "plsr_n_components": 4,
+  "linear": {
+    "r2": 0.6504253806353704,
+    "mae": 0.15597270052200962,
+    "rmse": 0.19510428527678966
+  },
+  "plsr": {
+    "r2": 0.6500118734691872,
+    "mae": 0.1560683252919308,
+    "rmse": 0.19521964430431057
+  },
+  "crn_reported": {
+    "r2": 0.8471678987145423,
+    "mae": 0.09359995424747466,
+    "rmse": 0.12823552936315535,
+    "seeds": 5
+  },
+  "margin_over_linear_r2": 0.19674251807917198,
+  "margin_over_plsr_r2": 0.19715602524535514
+}

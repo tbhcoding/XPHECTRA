@@ -1,0 +1,67 @@
+{
+  "fit_on": "ligtas_synthetic_dataset/val",
+  "evaluated_on": "ligtas_test_extended/test",
+  "per_checkpoint_parameters": [
+    {
+      "checkpoint": "crn_5seed_final/seed_0/crn_best.pt",
+      "level_slope": 1.4934296299203815,
+      "level_intercept": -2.913481950949033,
+      "texture_scale": 0.7845751643180847
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_1/crn_best.pt",
+      "level_slope": 1.1673136566763684,
+      "level_intercept": -0.9514818462272853,
+      "texture_scale": 0.7812630534172058
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_2/crn_best.pt",
+      "level_slope": 1.1567675171259488,
+      "level_intercept": -0.9184653596740189,
+      "texture_scale": 0.6826456785202026
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_3/crn_best.pt",
+      "level_slope": 1.373927184972393,
+      "level_intercept": -2.2108197841337436,
+      "texture_scale": 0.8594937324523926
+    },
+    {
+      "checkpoint": "crn_5seed_final/seed_4/crn_best.pt",
+      "level_slope": 1.2342280800789696,
+      "level_intercept": -1.4318810990301938,
+      "texture_scale": 0.7886407971382141
+    }
+  ],
+  "results": {
+    "uncorrected": {
+      "r2": 0.8471677780151368,
+      "mae": 0.09359999150037765,
+      "rmse": 0.1282355457544327,
+      "per_sample_r2": -2.169939970970154,
+      "pct_per_sample_positive": 29.520000000000003
+    },
+    "level only": {
+      "r2": 0.9042940616607666,
+      "mae": 0.07529058456420898,
+      "rmse": 0.10181444138288498,
+      "per_sample_r2": -0.946339774131775,
+      "pct_per_sample_positive": 39.68
+    },
+    "texture only": {
+      "r2": 0.8698598265647888,
+      "mae": 0.08743759989738464,
+      "rmse": 0.11789916604757308,
+      "per_sample_r2": -1.6164193749427795,
+      "pct_per_sample_positive": 37.959999999999994
+    },
+    "level + texture": {
+      "r2": 0.9269861340522766,
+      "mae": 0.0665190689265728,
+      "rmse": 0.08905576467514038,
+      "per_sample_r2": -0.392819219827652,
+      "pct_per_sample_positive": 52.879999999999995
+    }
+  },
+  "level_share_of_gain_pct": 71.57035860153368
+}

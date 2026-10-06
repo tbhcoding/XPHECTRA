@@ -1,0 +1,62 @@
+{
+  "data": "ligtas_test_extended/test",
+  "n_seeds": 5,
+  "schemes": [
+    {
+      "scheme": "adopted (Fig. 1 midpoints)",
+      "lower": 5.4,
+      "upper": 5.8,
+      "provenance": "midpoints between the cited scale's 5.2 / 5.6 / 6.0 anchors",
+      "accuracy_pct": 87.66792087373183,
+      "majority_baseline_pct": 62.59276217711829,
+      "lift_pts": 25.075158696613542,
+      "true_shares_pct": [
+        6.389669632741677,
+        31.017568190140032,
+        62.59276217711829
+      ]
+    },
+    {
+      "scheme": "literature A",
+      "lower": 5.5,
+      "upper": 6.1,
+      "provenance": "PSE below 5.5, DFD above 6.1; a commonly cited ultimate-pH convention",
+      "accuracy_pct": 82.04683246020245,
+      "majority_baseline_pct": 53.950806589947206,
+      "lift_pts": 28.096025870255232,
+      "true_shares_pct": [
+        13.402748040868579,
+        53.950806589947206,
+        32.646445369184214
+      ]
+    },
+    {
+      "scheme": "literature B",
+      "lower": 5.5,
+      "upper": 6.2,
+      "provenance": "PSE below 5.5, DFD above 6.2; the stricter DFD boundary in common use",
+      "accuracy_pct": 81.45321646816312,
+      "majority_baseline_pct": 63.491892208501454,
+      "lift_pts": 17.961324259661666,
+      "true_shares_pct": [
+        13.402748040868579,
+        63.491892208501454,
+        23.10535975062997
+      ]
+    },
+    {
+      "scheme": "cited anchors as limits",
+      "lower": 5.2,
+      "upper": 6.0,
+      "provenance": "the reference scale's own PSE and DFD anchor values used directly",
+      "accuracy_pct": 90.4947154920137,
+      "majority_baseline_pct": 56.69000177511349,
+      "lift_pts": 33.80471371690021,
+      "true_shares_pct": [
+        0.38782996966441335,
+        56.69000177511349,
+        42.92216825522209
+      ]
+    }
+  ]
+}
