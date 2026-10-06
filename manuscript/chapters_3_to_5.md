@@ -301,7 +301,7 @@ The following assumptions underlie the synthetic benchmark. They are stated expl
 
 ## Notes
 
-The following sources are cited in this chapter. The first group supplies the generator parameters listed in Table 3.1; the second supports the models and methods described in the text. Renumber to match the project's citation style when merging with the master reference list, where entries shared with Chapter 2 will appear once.
+The following sources are cited in this chapter. The first group supplies the generator parameters listed in Table 3.1 and the reference scale the quality classes are drawn from; the second supports the models and methods described in the text. Renumber to match the project's citation style when merging with the master reference list, where entries shared with Chapter 2 will appear once.
 
 **Sources of the generator parameters in Table 3.1**
 
@@ -320,6 +320,8 @@ Tang, J., Faustman, C. and Hoagland, T. A. (2004). Krzywicki revisited: equation
 Wang, M., Tang, J., Li, S. and Chen, W. (2026). NHSI-meat-overtime: a near-infrared hyperspectral dataset of five meat types over storage time. *IET Conference Proceedings*, CP987, 208-212. doi:10.1049/icp.2026.2763
 
 Wojtasik-Kalinowska, I., Guzek, D., Gorska-Horczyczak, E., Glabska, D., Brodowska, M., Sun, D.-W. and Wierzbicka, A. (2016). Volatile compounds and fatty acids profile in Longissimus dorsi muscle from pigs fed with feed containing bioactive components. *LWT - Food Science and Technology*, 67, 112-117. doi:10.1016/j.lwt.2015.11.023
+
+Sristi, P. R., Das, N. R., Akhter, A., Kaniya, N. M. and Hashem, M. A. (2025). Relation among meat pH, color and tenderness: a review. *Meat Research*, 5(3). doi:10.55002/mr.5.3.117
 
 **Sources for the models and methods**
 
@@ -482,7 +484,7 @@ Values in this table are measured on the validation split of each amplitude's ow
 ![](figures/fig_sweep_comparison.png)
 **Figure 4.3.** Network against baselines across the sweep, with error bars on the network series.
 
-The network outperformed both baselines at every tested amplitude, by margins each exceeding the 0.05 threshold this study adopts. The margin narrowed as amplitude increased because the underlying pH-scattering relationship became more linearly separable, and at 0.8 the linear baseline alone reached 0.83, close to the non-triviality ceiling of 0.9. This narrowing pattern, rather than the size of the margin at any single setting, was the basis for retaining 0.4 as the operating value.
+The network outperformed both baselines at every tested amplitude. The margin over the stronger baseline ranged from 0.069 at an amplitude of 0.8, where the task is most linearly separable, to 0.416 at 0.2, where it is least. The margin narrowed as amplitude increased because the underlying pH-scattering relationship became more linearly separable, and at 0.8 the linear baseline alone reached 0.83, close to the non-triviality ceiling of 0.9. This narrowing pattern, rather than the size of the margin at any single setting, was the basis for retaining 0.4 as the operating value.
 
 ## Pipeline Demonstration
 
