@@ -29,6 +29,14 @@ pillow==12.3.0
 # optional.
 opencv-python==5.0.0.93
 
+# --- manuscript tooling only: build_manuscript_pdf.py ---
+# NOT part of the pipeline and deliberately not listed in Table 3.3, which
+# describes the system. Needed only to regenerate the PDFs under manuscript/
+# from their .md sources. Nothing else in the repo pulls these in, so a clean
+# clone cannot rebuild the PDFs without them.
+reportlab==5.0.1
+pypdf==6.19.0
+
 # --- genuinely optional: only for reading the NHSI reference cubes under
 #     analysis/ and extract_sensor_params.py. Those cubes are not
 #     redistributable and are not needed to reproduce any reported result.
