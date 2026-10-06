@@ -20,6 +20,170 @@ Template:
 
 ---
 
+## 2026-10-05/06 — Chapters 1-5 written and audited against the code; four new evidence scripts; branch `manuscript-chapters-1-5`
+
+**Changed:**
+- `manuscript/chapters_1_to_2.md` (new) and `manuscript/chapters_3_to_5.md`.
+  Chapters 3-5 restructured earlier onto the reference thesis's Chapter 3
+  format; this session corrected them against the evidence files and wrote
+  Chapters 1-2 from the Google Docs version. **The LaTeX copy is still the
+  one that matters** — treat these as changes to apply, not replacements.
+- Four read-only evidence scripts added, each answering one question the
+  manuscript previously asserted or left open:
+  `check_calibration.py`, `compute_test500_baselines.py`,
+  `check_range_restriction.py`, `check_class_thresholds.py`. None trains,
+  regenerates a dataset, or writes a checkpoint. Output in
+  `metric_check_outputs/{calibration,baselines_test500,range_restriction,class_thresholds}.json`.
+- Three figures added: `figures/fig_forward_model.png`,
+  `fig_crn_architecture.png`, `fig_pipeline.png`. Chapter 3 figures
+  renumbered 3.1-3.5; there are no in-text references to figure numbers, so
+  only captions changed.
+- `crn_demo_ui.py`: "prototype" replaced with "pipeline" in three places
+  (docstring, window title, on-screen heading). The manuscript had used
+  "pipeline" since the consultant's advice; the demo was still contradicting
+  it in the most visible place.
+
+**Verified:**
+- Every number in Chapters 4-5 checked against the evidence files: **145 of
+  151 distinct values matched**; the six that did not are table and equation
+  numbers, not data.
+- **Three wrong values found and corrected** in Table 4.3, all the same
+  mistake (rounded from a 4-decimal intermediate rather than the raw value):
+  seed 1 R2 0.891→0.890, seed 2 RMSE 0.124→0.123, seed 3 RMSE 0.133→0.132.
+  Both `RESULTS.json` and `final_evaluation_TEST500.json` agree.
+- Table 3.2 said 0.45 MB on disk; the checkpoint is **0.50 MB**. The 0.45
+  figure is the parameter payload in MiB. Corrected.
+- Table 3.1's ten parameter values checked against `PARAMS`: **all match.**
+  Table 3.4's training configuration checked against `train_crn.py` and
+  `crn_5seed_final/run.log`: all match, and **patience 10 confirmed
+  empirically** — every run terminated exactly 10 epochs after its best
+  (9→19, 14→24, 21→31, 10→20, 18→28).
+- Table 3.3's software versions checked against `pip freeze`: all nine match.
+  118,113 parameters and ~31 ms inference confirmed by direct measurement.
+- **The no-leakage claim was verified in code**, not assumed.
+  `train_crn.py:178-180` computes `l_sparse` from the four supervised points
+  and `l_tv` from the prediction only; `ph_dense` appears in the loop solely
+  inside `full_field_stats(pred.detach(), ...)`, so no gradient can flow from
+  it. This is checkable in three lines if asked.
+- `check_calibration.py` was **reproduced independently** before its numbers
+  were used: a fresh run agreed with the committed JSON to six significant
+  figures, largest difference 2.3e-06 (float32 noise). Unlike per-seed
+  training, these analyses are deterministic across machines.
+- 70 justification claims in Chapters 3-5 and 43 in Chapters 1-2 were listed
+  and reviewed individually. One was wrong — see Decided.
+
+**Decided:**
+- **Chapters 4 and 5 claimed a calibration correction could reach about
+  +0.30 per-sample R2 in three places. That figure came from an oracle
+  rescaling using each sample's own true SD, unavailable at prediction
+  time.** The achievable correction reaches **-0.393**. Replaced with the
+  measured result; the oracle figure is retained but labelled unattainable.
+- **Baselines were only ever evaluated on the 50-sample validation split**
+  while the headline is on 500 samples, so the two were not comparable.
+  Linear and PLSR now measured on the 500-sample set: **0.6504 / 0.6500
+  against the CRN's 0.8472, margin +0.197, MAE 40% lower.** New Table 4.6.
+- **Calibration measured and reported.** Two miscalibrations act in opposite
+  directions: between samples predictions are compressed (recovery slope
+  1.285 ± 0.130), within a sample variation is over-expressed (recovery
+  scale 0.779 ± 0.056). The deployable half, which needs only each
+  calibration sample's mean pH, raises R2 from 0.847 to **0.904** and
+  accounts for 71.6% of the gain. **This establishes under-fitting, not
+  over-fitting** — the compression costs accuracy rather than flattering it,
+  so the headline understates rather than overstates. New Table 4.5.
+- **The sampling design is a coverage design, not a representative one, and
+  this is now stated.** Sample mean pH is drawn uniformly 5.35-6.45 and the
+  field clipped to 5.2-6.8. Measured on the 500-sample set, **43% of samples
+  exceed 6.0**, the upper anchor of the Sristi scale cited in Chapter 2. The
+  cost of narrowing is now measured rather than asserted: restricted to mean
+  pH ≤ 6.0 (284 of 500), R2 falls 0.847→**0.705** while **MAE improves
+  0.094→0.085** and RMSE 0.128→0.117. R2 is scale-relative; the model is
+  slightly more accurate on the narrower range.
+- **Class boundaries stated and shown robust.** Chapter 4 previously said
+  only "interpolated from published reference anchors"; it now states the
+  boundaries are **5.4 and 5.8**, the midpoints between the cited scale's
+  5.2/5.6/6.0 anchors. Because the literature reports no agreed criterion,
+  the result was recomputed under four conventions: **lift over the
+  majority-class baseline stays between +18.0 and +33.8 points.** Note that
+  defining PSE as below 5.2 would leave only 0.4% of pixels in that class,
+  since the generator clips there.
+- **Chapters 2 and 3 contradicted each other on the training instability.**
+  Chapter 3 said it was traced to the learning rate; Chapter 2 left batch
+  normalisation standing as a plausible cause. This log's 2026-09-13 entry
+  settles it ("lr = 1e-3 *caused* the validation instability"). Chapter 2
+  now matches Chapter 3 and this log.
+- **`denat_width` vs `denat_amplitude` asymmetry now explained rather than
+  left looking like an omission.** In Equation 3.2 the amplitude sets how
+  large the pH effect is — at zero the bracketed term is constant and there
+  is no signal to recover — while the width governs only how steeply that
+  same change is distributed across the pH axis. Amplitude is therefore the
+  parameter whose uncertainty could invalidate the conclusion, which is why
+  it carries the full comparison. The width's four tested values (0.20 /
+  0.28 / 0.40 / 0.50, transition spans 0.88-2.20 pH units) are now stated.
+  **The limitation itself is unchanged and not softened.**
+- **General Objective part (b), the hardware design specification, removed.**
+  Chapters 3-5 never delivered it: "design specification", "integrating
+  dome", "global shutter", "LED array" and "acquisition module" all appear
+  zero times there. A matching claim in the Significance section was removed
+  too.
+- **Chapter 1's bracketed citation numbers pointed into a different
+  reference list than the one in the document.** Reference 12 was an
+  olive-oil spectrofluorimeter where the pork muscle should have been;
+  reference 8, a Monte Carlo photon simulation, stood in for four separate
+  meat-quality definitions. Converted to author-year, which cannot silently
+  break. **Must be converted back to the numbered style once the master list
+  is merged.**
+- **Ten sources were cited in Chapter 2's text but absent from its reference
+  list**, among them Cross 2018, Hale & Querry 1973, Tang 2004 and Bowen
+  1949 — the sources behind the generator's own parameters. All now listed.
+- Removed from Chapter 1: a reported R2 of 0.93 (belongs to Yao et al. 2019
+  on real HSI data as a point measurement, not comparable); an author
+  attribution error (Cai → Yao); a stated pH range of "5. to 6.5" (the
+  generator produces **5.2 to 6.8**, verified in code and across both
+  datasets); claims of hardware experience in the Significance section; and
+  an internal editing legend left at the top of Chapter 2.
+- **The Metro Manila wet-market claim could not be traced to any source.**
+  Comparable published studies are located in Negros Occidental and
+  Dasmarinas, Cavite. The sentence now states the concern without the
+  unsupported specific. If the original source exists, the stronger wording
+  can be restored.
+
+**Still open:**
+- **The LaTeX conversion.** These chapters are markdown; the LaTeX copy is
+  authoritative. Author-year citations must be renumbered on merge.
+- **Six entries in the existing Chapter 2 reference list are now cited
+  nowhere** in the revised text: Lu 2021, Mäkelä 2020, Ning 2026, Shaikh
+  2021, Wu 2012, Zurowietz 2020. **Flagged, not removed** — they may still
+  be cited elsewhere in the LaTeX. Nothing has been deleted from the list.
+- **Bowen 1949's DOI.** PMID 18119239 is confirmed; the DOI listed in the
+  parameter sheet (10.1016/S0021-9258(18)56832-0) was not independently
+  confirmed and is flagged in the entry.
+- **Two sources from the parameter sheet are not yet cited anywhere:** King
+  et al. 2023 (AMSA colour guidelines, doi:10.22175/mmb.12473, band
+  rationale) and Kim, Warner & Rosenvold 2014 (Anim Prod Sci 54(4):375-395,
+  doi:10.1071/AN13329, denat_amplitude direction). Each needs a sentence in
+  the text or it becomes an orphan reference.
+- **The pH-distribution limitation is a judgement call that can be
+  reversed.** It was added because Figure 3.4 already plots the distribution,
+  so the question is discoverable anyway, and the measurement favours the
+  study. It does put a weakness in writing that was not there before.
+- Nobody has yet read Chapters 1-2 end to end. They were substantially
+  rewritten.
+
+**Context to feed next session:**
+Chapters 1-5 are complete — zero placeholders, zero CITATION NEEDED, zero
+unresolved references, all nine figures resolving. The work sits on branch
+`manuscript-chapters-1-5`, six commits, **not merged**; `main` is untouched
+at `ffc8c09` pending team review. `manuscript/WHAT_CHANGED.md` is the plain
+-language record of what moved and why; `CHAPTER1_ADDITIONS.md` lists every
+Chapter 1 change as kept/changed/added with old and new text side by side;
+`DEFENSE_CHEATSHEET.md` holds every reported value with its evidence path
+and the answer to the likely question. **The failure pattern to watch for is
+a correct number wrapped in a justification nobody verified** — that is how
+the pH-range error survived, and it is why the 113 justification claims were
+listed and checked individually this session.
+
+---
+
 ## 2026-09-18 — NHSI tray species ESTABLISHED by the dataset authors: column C4 is PORK. The 970 nm reference is now a pork reference (via Claude session, Arrvsssogood's machine)
 
 **This closes the longest-standing open question in the project** — open
