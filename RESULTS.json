@@ -7,7 +7,15 @@
     "amplitude_sweep": "deconfound_outputs/full_table.json",
     "spatial_localisation": "metric_check_outputs/spatial_localization.json",
     "spatial_magnitude": "metric_check_outputs/spatial_skill_official.json",
-    "boundary_artefact": "metric_check_outputs/edge_effect.json"
+    "boundary_artefact": "metric_check_outputs/edge_effect.json",
+    "band_structure": "metric_check_outputs/band_collinearity.json",
+    "baselines_on_headline_set": "metric_check_outputs/baselines_test500.json",
+    "calibration": "metric_check_outputs/calibration.json",
+    "calibration_deployability": "metric_check_outputs/calibration_probe.json",
+    "class_recall": "metric_check_outputs/class_recall.json",
+    "class_accuracy_other_split": "metric_check_outputs/final_evaluation_fig1edges.json",
+    "range_restriction": "metric_check_outputs/range_restriction.json",
+    "class_thresholds": "metric_check_outputs/class_thresholds.json"
   },
   "headline": {
     "evaluated_on": "ligtas_test_extended/test (500 samples, unseen)",
@@ -176,6 +184,191 @@
     "ratio": 2.311649753026149,
     "pct_samples_affected": 96.8
   },
+  "band_structure": {
+    "n_pixels": 120000,
+    "first_component_pct": 81.02684020996094,
+    "top4_cumulative_pct": 97.31488037109375
+  },
+  "baselines_on_headline_set": {
+    "evaluated_on": "ligtas_test_extended/test",
+    "n_eval_pixels": 200000,
+    "pixels_per_sample": 400,
+    "linear_r2": 0.6504253806353704,
+    "linear_mae": 0.15597270052200962,
+    "plsr_r2": 0.6500118734691872,
+    "plsr_mae": 0.1560683252919308,
+    "plsr_n_components": 4,
+    "margin_over_linear_r2": 0.19674251807917198,
+    "margin_over_plsr_r2": 0.19715602524535514
+  },
+  "calibration": {
+    "fit_on": "ligtas_synthetic_dataset/val",
+    "uncorrected": [
+      0.8471677780151368,
+      0.09359999150037765
+    ],
+    "level_only": [
+      0.9042940616607666,
+      0.07529058456420898
+    ],
+    "texture_only": [
+      0.8698598265647888,
+      0.08743759989738464
+    ],
+    "level_and_texture": [
+      0.9269861340522766,
+      0.0665190689265728
+    ],
+    "level_share_of_gain_pct": 71.57035860153368,
+    "level_from_dense_mean_r2": 0.9042940258979797,
+    "level_from_4_probes_r2": 0.9043785214424134,
+    "level_from_4_probes_mae": 0.07560884356498718,
+    "r2_lost_using_probes": -8.449554443368257e-05
+  },
+  "class_recall": {
+    "class_boundaries": [
+      5.4,
+      5.8
+    ],
+    "correction": "level only, fitted from the mean of four probe readings",
+    "classes": {
+      "PSE": {
+        "true_share_pct": 6.389669632741677,
+        "recall_before_pct": [
+          29.02204451761249,
+          30.345557349406292
+        ],
+        "recall_after_pct": [
+          69.27636770568307,
+          7.054752185103812
+        ]
+      },
+      "normal": {
+        "true_share_pct": 31.017568190140032,
+        "recall_before_pct": [
+          82.06799722874987,
+          3.9981848314834973
+        ],
+        "recall_after_pct": [
+          82.33650368784723,
+          4.4149521605236375
+        ]
+      },
+      "DFD": {
+        "true_share_pct": 62.59276217711829,
+        "recall_before_pct": [
+          96.429690365975,
+          2.8537687837982215
+        ],
+        "recall_after_pct": [
+          95.82829753630644,
+          1.6668960546980982
+        ]
+      }
+    },
+    "overall_accuracy_before_pct": [
+      87.66791652695868,
+      1.8787750588385177
+    ],
+    "overall_accuracy_after_pct": [
+      89.94689058199326,
+      1.427907471117796
+    ],
+    "pse_recall_before_range_pct": [
+      0.5395481571177839,
+      62.30390889671968
+    ],
+    "per_seed_pse": [
+      [
+        0.5395481571177839,
+        57.58216098178206
+      ],
+      [
+        62.30390889671968,
+        73.53705492591736
+      ],
+      [
+        61.122345201975534,
+        70.87417856025252
+      ],
+      [
+        5.412063429434414,
+        68.68783929033047
+      ],
+      [
+        15.732356902815003,
+        75.70060477013293
+      ]
+    ]
+  },
+  "class_accuracy_other_split": {
+    "data": "ligtas_synthetic_dataset/val",
+    "n_samples": 50,
+    "class_edges": [
+      5.4,
+      5.8
+    ],
+    "class_accuracy_pct": [
+      88.40826010937661,
+      1.044543044159577
+    ]
+  },
+  "range_restriction": {
+    "ceiling": 6.0,
+    "ceiling_source": "Sristi et al. 2025 Figure 1 upper anchor, DOI 10.55002/mr.5.3.117",
+    "full": {
+      "n_samples": 500.0,
+      "pooled_r2": 0.8471677899360657,
+      "mae": 0.09359997808933258,
+      "true_sd": 0.33044686913490295
+    },
+    "restricted": {
+      "n_samples": 284.0,
+      "pooled_r2": 0.705081331729889,
+      "mae": 0.08541283011436462,
+      "true_sd": 0.21799451112747192
+    },
+    "delta_r2": -0.1420864582061767,
+    "delta_mae": -0.00818714797496796
+  },
+  "class_thresholds": [
+    {
+      "scheme": "adopted (Fig. 1 midpoints)",
+      "lower": 5.4,
+      "upper": 5.8,
+      "provenance": "midpoints between the cited scale's 5.2 / 5.6 / 6.0 anchors",
+      "accuracy_pct": 87.66792087373183,
+      "majority_baseline_pct": 62.59276217711829,
+      "lift_pts": 25.075158696613542
+    },
+    {
+      "scheme": "literature A",
+      "lower": 5.5,
+      "upper": 6.1,
+      "provenance": "PSE below 5.5, DFD above 6.1; a commonly cited ultimate-pH convention",
+      "accuracy_pct": 82.04683246020245,
+      "majority_baseline_pct": 53.950806589947206,
+      "lift_pts": 28.096025870255232
+    },
+    {
+      "scheme": "literature B",
+      "lower": 5.5,
+      "upper": 6.2,
+      "provenance": "PSE below 5.5, DFD above 6.2; the stricter DFD boundary in common use",
+      "accuracy_pct": 81.45321646816312,
+      "majority_baseline_pct": 63.491892208501454,
+      "lift_pts": 17.961324259661666
+    },
+    {
+      "scheme": "cited anchors as limits",
+      "lower": 5.2,
+      "upper": 6.0,
+      "provenance": "the reference scale's own PSE and DFD anchor values used directly",
+      "accuracy_pct": 90.4947154920137,
+      "majority_baseline_pct": 56.69000177511349,
+      "lift_pts": 33.80471371690021
+    }
+  ],
   "parameters": {
     "eps_deoxy": [
       3.88,

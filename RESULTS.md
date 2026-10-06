@@ -138,6 +138,49 @@ tested and the network wins throughout. That answers *“but is your parameter c
 better than any single citation could, because a cited value might still be wrong for
 this particular meat, whereas a range cannot be dismissed the same way.
 
+**The comparison at the headline scale.** The table above is the sweep, which
+runs on validation because that is the only split every amplitude has. At the
+adopted setting the baselines were also fitted and scored on the same
+500-sample held-out set as the headline, over 200,000 tissue
+pixels sampled at 400 per sample:
+
+| Method | R² | MAE (pH) |
+|---|---|---|
+| Pixel-wise linear regression | 0.6504 | 0.1560 |
+| PLSR (4 components) | 0.6500 | 0.1561 |
+| **CRN** | **0.8472** | **0.0936** |
+
+A margin of **0.197 R² over linear** and
+**0.197 over PLSR**, on the set the headline is quoted
+from. Note that the baselines read higher here than anywhere in the sweep table
+(0.6504 against 0.6212 on the 400-sample set): the 500-sample set
+spans a wider pH range, which raises R² for every method measured on it.
+**Quote a baseline number together with the set it was measured on.**
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/baselines_test500.json`
+- **Produced by:** `compute_test500_baselines.py`
+- The baselines are scored on a 400-pixel-per-sample draw while the network is scored on all tissue pixels of the same images. The pixel sets differ in size but are drawn from the same samples.
+
+</details>
+
+**Why the two baselines agree to within 0.001.** A singular value decomposition
+of the six-band design matrix over 120,000 pixels puts
+**81.0% of its variance in a single component** and
+**97.31% in the first four**. The six measurements vary
+largely together, so a four-component PLSR already spans nearly the whole space
+a six-band linear fit can use. Neither can do better, because what separates pH
+from myoglobin is not contained in any single band but in how the bands trade
+off against one another.
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/band_collinearity.json`
+- **Produced by:** `check_band_collinearity.py`
+
+</details>
+
 **Contribution:** this is the evidence for Objective 2.
 
 <details><summary><b>Evidence in this repository</b></summary>
@@ -250,7 +293,187 @@ directly; that was not pursued here.
 
 ---
 
-## 6. The frozen parameters
+---
+
+## 6. What a post-hoc calibration recovers
+
+The network under-fits: it pulls its predictions toward the middle of the pH
+range rather than committing to the extremes. That **costs** accuracy, so the
+headline understates what the predictions actually contain. Two corrections were
+fitted on the **ligtas_synthetic_dataset/val** split and applied unchanged to the held-out
+set: a linear rescaling of each sample's overall level, and a rescaling of the
+variation within a sample about its own mean.
+
+| Correction | R² | MAE (pH) |
+|---|---|---|
+| None (the headline) | 0.8472 | 0.0936 |
+| Level only | **0.9043** | **0.0753** |
+| Texture only | 0.8699 | 0.0874 |
+| Level and texture | 0.9270 | 0.0665 |
+
+The level correction alone accounts for **71.6% of
+the total gain**, and it is the only one of the two a physical deployment could
+fit, because it needs nothing but an estimate of each calibration sample's mean
+pH. The texture correction needs the dense map, which no deployment has.
+
+**The level correction was checked for exactly that.** It was fitted twice:
+once from each calibration sample's true dense mean, and once from the mean of
+its four probe readings, which is all a deployment would have.
+
+- From the dense mean: R² **0.9043**
+- From four probe readings: R² **0.9044**, MAE 0.0756 pH
+
+A difference of 0.0001. **The correction does not
+depend on information a deployment lacks**, which is what makes it reportable
+rather than a curiosity. It is still a post-hoc correction fitted on held-out
+data, so the uncorrected 0.8472 remains the headline.
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/calibration.json`
+- **Produced by:** `check_calibration.py, check_calibration_probe.py`
+- The probe-fitted figures come from a second file, `metric_check_outputs/calibration_probe.json`, which repeats the level correction using only the four probe readings.
+
+</details>
+
+---
+
+## 7. Recall per quality class
+
+Pixels sorted into three quality classes at pH 5.4 and
+5.8. **These boundaries are interpolated from a cited
+scale's anchor values, not published as thresholds**, so everything in this
+section is supporting evidence rather than a headline claim.
+
+Overall accuracy is carried by whichever class is most common, so recall per
+class is the figure that matters. Correction applied: level only, fitted from the mean of four probe readings.
+
+| Class | Share of pixels | Recall before | Recall after |
+|---|---|---|---|
+| PSE (low pH) | 6.4% | 29.0% ± 30.3 | 69.3% ± 7.1 |
+| normal | 31.0% | 82.1% ± 4.0 | 82.3% ± 4.4 |
+| DFD (high pH) | 62.6% | 96.4% ± 2.9 | 95.8% ± 1.7 |
+| **Overall accuracy** | | **87.7%** | **89.9%** |
+
+**Read the PSE row, not the overall figure.** Uncorrected, PSE recall ranged from
+0.5% to 62.3%
+across the five seeds — the single most unstable number in this study. This
+follows directly from the compression in section 6: predictions pulled toward the
+centre of the range cross the low boundary before they cross any other, so PSE is
+the class that compression destroys first.
+
+**The correction recovers it, and recovers it most where it was worst.**
+Per-seed PSE recall, before to after:
+
+| Seed | Before | After | Gain |
+|---|---|---|---|
+| 0 | 0.5% | 57.6% | +57.0 pts |
+| 1 | 62.3% | 73.5% | +11.2 pts |
+| 2 | 61.1% | 70.9% | +9.8 pts |
+| 3 | 5.4% | 68.7% | +63.3 pts |
+| 4 | 15.7% | 75.7% | +60.0 pts |
+
+The three seeds that started worst gained 57 to 63
+points; the two already above 60% gained 10 to 11.
+After correction the spread across seeds narrows to
+69.3% ± 7.1.
+**That is the evidence that the PSE deficit is a calibration effect rather
+than an inability to detect the condition** — the information was in the
+predictions, on the wrong scale.
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/class_recall.json`
+- **Produced by:** `check_class_recall.py`
+
+</details>
+
+---
+
+## 8. Does the class result depend on where the boundaries are drawn?
+
+The pork quality literature reports no single agreed criterion, and the
+boundaries used above are interpolated. The obvious objection is that the result
+was manufactured by choosing them. So the classification was recomputed under
+four conventions, including the cited anchor values
+used directly as limits.
+
+| Boundaries | Scheme | Accuracy | Majority-class baseline | Lift |
+|---|---|---|---|---|
+| 5.4 / 5.8 | adopted (Fig. 1 midpoints) | 87.7% | 62.6% | **+25.1 pts** |
+| 5.5 / 6.1 | literature A | 82.0% | 54.0% | **+28.1 pts** |
+| 5.5 / 6.2 | literature B | 81.5% | 63.5% | **+18.0 pts** |
+| 5.2 / 6.0 | cited anchors as limits | 90.5% | 56.7% | **+33.8 pts** |
+
+**The lift over simply guessing the most common class stays positive under every
+convention**, from +18.0 to +33.8 points. The conclusion does not depend on
+the boundary choice, which is the only defensible way to report a number that
+rests on an interpolated threshold.
+
+Provenance of each scheme:
+
+- **5.4 / 5.8** (adopted (Fig. 1 midpoints)): midpoints between the cited scale's 5.2 / 5.6 / 6.0 anchors
+- **5.5 / 6.1** (literature A): PSE below 5.5, DFD above 6.1; a commonly cited ultimate-pH convention
+- **5.5 / 6.2** (literature B): PSE below 5.5, DFD above 6.2; the stricter DFD boundary in common use
+- **5.2 / 6.0** (cited anchors as limits): the reference scale's own PSE and DFD anchor values used directly
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/class_thresholds.json`
+- **Produced by:** `check_class_thresholds.py`
+
+</details>
+
+**A second check, on the other split.**
+The adopted boundaries applied to the 50-sample
+`ligtas_synthetic_dataset/val` split give 88.4% ± 1.0 class accuracy, against
+87.7% on the 500-sample set. The result is not
+specific to either the boundary convention or the split.
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/final_evaluation_fig1edges.json`
+- **Produced by:** `evaluate_heatmap.py`
+
+</details>
+
+---
+
+## 9. How much of the headline is the range it was measured on?
+
+R² is scale-relative: it rises when the data spans a wider range, whether or
+not the model got better. The 500-sample set spans more pH than the cited
+reference scale covers, so the headline was recomputed on only those samples
+whose mean pH falls at or below **6.0** — 284 of 500 samples.
+
+| | Samples | True pH SD | R² | MAE (pH) |
+|---|---|---|---|---|
+| Full range | 500 | 0.3304 | 0.8472 | 0.0936 |
+| Restricted | 284 | 0.2180 | 0.7051 | 0.0854 |
+
+**R² falls by 0.1421 while MAE *improves* by
+0.0082 pH.** Both move for the same reason: restricting the
+range cuts the true pH spread from
+0.330 to 0.218, which leaves R²
+less variance to explain while leaving the model slightly *more* accurate in
+absolute terms.
+
+**This is the honest reading of the headline.** 0.8472 is partly a property of
+how wide the simulated pH range is, and a narrower, more realistic range would
+report a lower R² for a model that is no worse. It is why MAE in pH units is
+quoted alongside R² everywhere in this document: MAE is range-independent and
+cannot be inflated this way.
+
+Ceiling source: Sristi et al. 2025 Figure 1 upper anchor, DOI 10.55002/mr.5.3.117.
+
+<details><summary><b>Evidence in this repository</b></summary>
+
+- **Summary values:** `metric_check_outputs/range_restriction.json`
+- **Produced by:** `check_range_restriction.py`
+
+</details>
+
+## 10. The frozen parameters
 
 Fourteen parameters drive the simulator. **Ten are `CITED`, `MEASURED` or
 `FITTED`; an eleventh (`c_Mb_sd`) is back-calculated from cited data.** The
@@ -311,6 +534,14 @@ same simulator state.
 | spatial_localisation | `metric_check_outputs/spatial_localization.json` |
 | spatial_magnitude | `metric_check_outputs/spatial_skill_official.json` |
 | boundary_artefact | `metric_check_outputs/edge_effect.json` |
+| band_structure | `metric_check_outputs/band_collinearity.json` |
+| baselines_on_headline_set | `metric_check_outputs/baselines_test500.json` |
+| calibration | `metric_check_outputs/calibration.json` |
+| calibration_deployability | `metric_check_outputs/calibration_probe.json` |
+| class_recall | `metric_check_outputs/class_recall.json` |
+| class_accuracy_other_split | `metric_check_outputs/final_evaluation_fig1edges.json` |
+| range_restriction | `metric_check_outputs/range_restriction.json` |
+| class_thresholds | `metric_check_outputs/class_thresholds.json` |
 
 ## Reproducing all of it
 
@@ -319,6 +550,13 @@ python generate_dataset.py --selftest      # sign test + non-triviality baseline
 python evaluate_heatmap.py                 # section 1
 python check_spatial_localization.py       # section 3
 python check_edge_effect.py                # section 5
+python check_calibration.py                # section 6
+python check_calibration_probe.py          # section 6, deployability
+python check_class_recall.py               # section 7
+python check_class_thresholds.py           # section 8
+python check_range_restriction.py          # section 9
+python compute_test500_baselines.py        # section 2, headline-scale baselines
+python check_band_collinearity.py          # section 2, band structure
 python make_figures.py                     # manuscript figures
 python collect_results.py                  # regenerate this document
 ```

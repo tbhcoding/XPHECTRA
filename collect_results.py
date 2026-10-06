@@ -25,6 +25,17 @@ from datetime import date
 
 MCO = "metric_check_outputs"
 
+NUMWORD = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+
+# Every result group RESULTS.md is expected to contain. A section whose
+# evidence file is missing is silently skipped when the document is built,
+# so the absence is reported here instead of going unnoticed.
+REQUIRED = (
+    "headline", "amplitude_sweep", "spatial_localisation", "spatial_magnitude",
+    "boundary_artefact", "calibration", "class_recall", "class_thresholds",
+    "range_restriction", "baselines_on_headline_set", "band_structure",
+)
+
 
 def load(path):
     try:
@@ -136,6 +147,107 @@ def main():
             "pct_samples_affected": a["pct_samples_edge_worse"]["mean"],
         }
         out["sources"]["boundary_artefact"] = f"{MCO}/edge_effect.json"
+
+
+    # ---- band structure: why linear and PLSR land in the same place -----
+    d = load(f"{MCO}/band_collinearity.json")
+    if d:
+        out["band_structure"] = {
+            "n_pixels": d["n_pixels"],
+            "first_component_pct": d["variance_share_pct"][0],
+            "top4_cumulative_pct": d["top4_cumulative_pct"],
+        }
+        out["sources"]["band_structure"] = f"{MCO}/band_collinearity.json"
+
+    # ---- baselines on the same 500-sample set as the headline -----------
+    d = load(f"{MCO}/baselines_test500.json")
+    if d:
+        out["baselines_on_headline_set"] = {
+            "evaluated_on": d["evaluated_on"],
+            "n_eval_pixels": d["n_eval_pixels"],
+            "pixels_per_sample": d["pixels_per_sample"],
+            "linear_r2": d["linear"]["r2"], "linear_mae": d["linear"]["mae"],
+            "plsr_r2": d["plsr"]["r2"], "plsr_mae": d["plsr"]["mae"],
+            "plsr_n_components": d["plsr_n_components"],
+            "margin_over_linear_r2": d["margin_over_linear_r2"],
+            "margin_over_plsr_r2": d["margin_over_plsr_r2"],
+        }
+        out["sources"]["baselines_on_headline_set"] = f"{MCO}/baselines_test500.json"
+
+    # ---- post-hoc calibration, and whether it is deployable -------------
+    d = load(f"{MCO}/calibration.json")
+    if d:
+        r = d["results"]
+        out["calibration"] = {
+            "fit_on": d["fit_on"],
+            "uncorrected": (r["uncorrected"]["r2"], r["uncorrected"]["mae"]),
+            "level_only": (r["level only"]["r2"], r["level only"]["mae"]),
+            "texture_only": (r["texture only"]["r2"], r["texture only"]["mae"]),
+            "level_and_texture": (r["level + texture"]["r2"], r["level + texture"]["mae"]),
+            "level_share_of_gain_pct": d["level_share_of_gain_pct"],
+        }
+        out["sources"]["calibration"] = f"{MCO}/calibration.json"
+
+    d = load(f"{MCO}/calibration_probe.json")
+    if d:
+        r = d["results"]
+        out.setdefault("calibration", {})
+        out["calibration"]["level_from_dense_mean_r2"] = r["level from dense mean"]["r2"]
+        out["calibration"]["level_from_4_probes_r2"] = r["level from 4 probes"]["r2"]
+        out["calibration"]["level_from_4_probes_mae"] = r["level from 4 probes"]["mae"]
+        out["calibration"]["r2_lost_using_probes"] = d["r2_lost_using_probes"]
+        out["sources"]["calibration_deployability"] = f"{MCO}/calibration_probe.json"
+
+    # ---- recall per quality class, before and after the correction ------
+    d = load(f"{MCO}/class_recall.json")
+    if d:
+        sm = d["summary"]
+        out["class_recall"] = {
+            "class_boundaries": d["class_boundaries"],
+            "correction": d["correction"],
+            "classes": {k: {"true_share_pct": sm[k]["true_share_pct"],
+                            "recall_before_pct": sm[k]["recall_before_pct"],
+                            "recall_after_pct": sm[k]["recall_after_pct"]}
+                        for k in ("PSE", "normal", "DFD")},
+            "overall_accuracy_before_pct": d["overall_accuracy_before_pct"],
+            "overall_accuracy_after_pct": d["overall_accuracy_after_pct"],
+            "pse_recall_before_range_pct": d["pse_recall_before_range_pct"],
+            "per_seed_pse": [(p["recall_before_pct"][0], p["recall_after_pct"][0])
+                             for p in d["per_checkpoint"]],
+        }
+        out["sources"]["class_recall"] = f"{MCO}/class_recall.json"
+
+    # ---- the same class result on the other split, as a cross-check -----
+    d = load(f"{MCO}/final_evaluation_fig1edges.json")
+    if d:
+        out["class_accuracy_other_split"] = {
+            "data": d["data"], "n_samples": d["n_samples"],
+            "class_edges": d["class_edges"],
+            "class_accuracy_pct": ms(d, "class_accuracy_pct"),
+        }
+        out["sources"]["class_accuracy_other_split"] = f"{MCO}/final_evaluation_fig1edges.json"
+
+    # ---- how much of the headline is the range it was measured on -------
+    d = load(f"{MCO}/range_restriction.json")
+    if d:
+        out["range_restriction"] = {
+            "ceiling": d["ceiling"], "ceiling_source": d["ceiling_source"],
+            "full": {k: d["full_range"][k] for k in
+                     ("n_samples", "pooled_r2", "mae", "true_sd")},
+            "restricted": {k: d["restricted"][k] for k in
+                           ("n_samples", "pooled_r2", "mae", "true_sd")},
+            "delta_r2": d["delta_r2"], "delta_mae": d["delta_mae"],
+        }
+        out["sources"]["range_restriction"] = f"{MCO}/range_restriction.json"
+
+    # ---- does the class result depend on where the lines are drawn? -----
+    d = load(f"{MCO}/class_thresholds.json")
+    if d:
+        out["class_thresholds"] = [
+            {k: x[k] for k in ("scheme", "lower", "upper", "provenance",
+                               "accuracy_pct", "majority_baseline_pct", "lift_pts")}
+            for x in d["schemes"]]
+        out["sources"]["class_thresholds"] = f"{MCO}/class_thresholds.json"
 
     # ---- the frozen parameters ------------------------------------------
     try:
@@ -294,6 +406,46 @@ def main():
         A("tested and the network wins throughout. That answers *“but is your parameter correct?”*")
         A("better than any single citation could, because a cited value might still be wrong for")
         A("this particular meat, whereas a range cannot be dismissed the same way.\n")
+    bl = out.get("baselines_on_headline_set")
+    if bl:
+        A("**The comparison at the headline scale.** The table above is the sweep, which")
+        A("runs on validation because that is the only split every amplitude has. At the")
+        A("adopted setting the baselines were also fitted and scored on the same")
+        A(f"500-sample held-out set as the headline, over {bl['n_eval_pixels']:,} tissue")
+        A(f"pixels sampled at {bl['pixels_per_sample']} per sample:\n")
+        A("| Method | R\u00b2 | MAE (pH) |")
+        A("|---|---|---|")
+        A(f"| Pixel-wise linear regression | {bl['linear_r2']:.4f} | {bl['linear_mae']:.4f} |")
+        A(f"| PLSR ({bl['plsr_n_components']} components) | {bl['plsr_r2']:.4f} | {bl['plsr_mae']:.4f} |")
+        if out.get("headline"):
+            hh = out["headline"]
+            A(f"| **CRN** | **{hh['r2'][0]:.4f}** | **{hh['mae_ph'][0]:.4f}** |")
+        A("")
+        A(f"A margin of **{bl['margin_over_linear_r2']:.3f} R\u00b2 over linear** and")
+        A(f"**{bl['margin_over_plsr_r2']:.3f} over PLSR**, on the set the headline is quoted")
+        A("from. Note that the baselines read higher here than anywhere in the sweep table")
+        A(f"({bl['linear_r2']:.4f} against 0.6212 on the 400-sample set): the 500-sample set")
+        A("spans a wider pH range, which raises R\u00b2 for every method measured on it.")
+        A("**Quote a baseline number together with the set it was measured on.**\n")
+        EV(summary=out["sources"].get("baselines_on_headline_set"),
+           script="compute_test500_baselines.py",
+           note="The baselines are scored on a 400-pixel-per-sample draw while the "
+                "network is scored on all tissue pixels of the same images. The pixel "
+                "sets differ in size but are drawn from the same samples.")
+
+    bs = out.get("band_structure")
+    if bs:
+        A("**Why the two baselines agree to within 0.001.** A singular value decomposition")
+        A(f"of the six-band design matrix over {bs['n_pixels']:,} pixels puts")
+        A(f"**{bs['first_component_pct']:.1f}% of its variance in a single component** and")
+        A(f"**{bs['top4_cumulative_pct']:.2f}% in the first four**. The six measurements vary")
+        A("largely together, so a four-component PLSR already spans nearly the whole space")
+        A("a six-band linear fit can use. Neither can do better, because what separates pH")
+        A("from myoglobin is not contained in any single band but in how the bands trade")
+        A("off against one another.\n")
+        EV(summary=out["sources"].get("band_structure"),
+           script="check_band_collinearity.py")
+
         A("**Contribution:** this is the evidence for Objective 2.\n")
         EV(summary="deconfound_outputs/full_table.json  (all four amplitudes, with provenance per row)",
            raw="deconfound_outputs/crn_amp_{0.2,0.6,0.8}_seed_{0,1,2}/history.json; "
@@ -396,7 +548,166 @@ def main():
 
     if isinstance(out.get("parameters"), dict):
         A("---\n")
-        A("## 6. The frozen parameters\n")
+    cal = out.get("calibration")
+    if cal:
+        A("---\n")
+        A("## 6. What a post-hoc calibration recovers\n")
+        A("The network under-fits: it pulls its predictions toward the middle of the pH")
+        A("range rather than committing to the extremes. That **costs** accuracy, so the")
+        A("headline understates what the predictions actually contain. Two corrections were")
+        A(f"fitted on the **{cal['fit_on']}** split and applied unchanged to the held-out")
+        A("set: a linear rescaling of each sample's overall level, and a rescaling of the")
+        A("variation within a sample about its own mean.\n")
+        A("| Correction | R\u00b2 | MAE (pH) |")
+        A("|---|---|---|")
+        A(f"| None (the headline) | {cal['uncorrected'][0]:.4f} | {cal['uncorrected'][1]:.4f} |")
+        A(f"| Level only | **{cal['level_only'][0]:.4f}** | **{cal['level_only'][1]:.4f}** |")
+        A(f"| Texture only | {cal['texture_only'][0]:.4f} | {cal['texture_only'][1]:.4f} |")
+        A(f"| Level and texture | {cal['level_and_texture'][0]:.4f} | {cal['level_and_texture'][1]:.4f} |")
+        A("")
+        A(f"The level correction alone accounts for **{cal['level_share_of_gain_pct']:.1f}% of")
+        A("the total gain**, and it is the only one of the two a physical deployment could")
+        A("fit, because it needs nothing but an estimate of each calibration sample's mean")
+        A("pH. The texture correction needs the dense map, which no deployment has.\n")
+        if "level_from_4_probes_r2" in cal:
+            A("**The level correction was checked for exactly that.** It was fitted twice:")
+            A("once from each calibration sample's true dense mean, and once from the mean of")
+            A("its four probe readings, which is all a deployment would have.\n")
+            A(f"- From the dense mean: R\u00b2 **{cal['level_from_dense_mean_r2']:.4f}**")
+            A(f"- From four probe readings: R\u00b2 **{cal['level_from_4_probes_r2']:.4f}**, "
+              f"MAE {cal['level_from_4_probes_mae']:.4f} pH")
+            A("")
+            A(f"A difference of {abs(cal['r2_lost_using_probes']):.4f}. **The correction does not")
+            A("depend on information a deployment lacks**, which is what makes it reportable")
+            A("rather than a curiosity. It is still a post-hoc correction fitted on held-out")
+            A("data, so the uncorrected 0.8472 remains the headline.\n")
+        EV(summary=out["sources"].get("calibration"),
+           script="check_calibration.py, check_calibration_probe.py",
+           note="The probe-fitted figures come from a second file, "
+                f"`{out['sources'].get('calibration_deployability')}`, which "
+                "repeats the level correction using only the four probe readings.")
+
+    cr = out.get("class_recall")
+    if cr:
+        cls = cr["classes"]
+        A("---\n")
+        A("## 7. Recall per quality class\n")
+        A(f"Pixels sorted into three quality classes at pH {cr['class_boundaries'][0]} and")
+        A(f"{cr['class_boundaries'][1]}. **These boundaries are interpolated from a cited")
+        A("scale's anchor values, not published as thresholds**, so everything in this")
+        A("section is supporting evidence rather than a headline claim.\n")
+        A("Overall accuracy is carried by whichever class is most common, so recall per")
+        A(f"class is the figure that matters. Correction applied: {cr['correction']}.\n")
+        A("| Class | Share of pixels | Recall before | Recall after |")
+        A("|---|---|---|---|")
+        for k, lbl in [("PSE", "PSE (low pH)"), ("normal", "normal"), ("DFD", "DFD (high pH)")]:
+            c = cls[k]
+            A(f"| {lbl} | {c['true_share_pct']:.1f}% | "
+              f"{c['recall_before_pct'][0]:.1f}% \u00b1 {c['recall_before_pct'][1]:.1f} | "
+              f"{c['recall_after_pct'][0]:.1f}% \u00b1 {c['recall_after_pct'][1]:.1f} |")
+        A(f"| **Overall accuracy** | | **{cr['overall_accuracy_before_pct'][0]:.1f}%** | "
+          f"**{cr['overall_accuracy_after_pct'][0]:.1f}%** |")
+        A("")
+        A("**Read the PSE row, not the overall figure.** Uncorrected, PSE recall ranged from")
+        A(f"{cr['pse_recall_before_range_pct'][0]:.1f}% to {cr['pse_recall_before_range_pct'][1]:.1f}%")
+        A("across the five seeds — the single most unstable number in this study. This")
+        A("follows directly from the compression in section 6: predictions pulled toward the")
+        A("centre of the range cross the low boundary before they cross any other, so PSE is")
+        A("the class that compression destroys first.\n")
+        ps = cr.get("per_seed_pse") or []
+        if ps:
+            worst = sorted(ps)[:3]
+            best = sorted(ps)[3:]
+            A("**The correction recovers it, and recovers it most where it was worst.**")
+            A("Per-seed PSE recall, before to after:\n")
+            A("| Seed | Before | After | Gain |")
+            A("|---|---|---|---|")
+            for i, (b, a2) in enumerate(ps):
+                A(f"| {i} | {b:.1f}% | {a2:.1f}% | +{a2 - b:.1f} pts |")
+            A("")
+            A(f"The three seeds that started worst gained "
+              f"{min(a2 - b for b, a2 in worst):.0f} to {max(a2 - b for b, a2 in worst):.0f}")
+            A(f"points; the two already above 60% gained "
+              f"{min(a2 - b for b, a2 in best):.0f} to {max(a2 - b for b, a2 in best):.0f}.")
+            A("After correction the spread across seeds narrows to")
+            A(f"{cls['PSE']['recall_after_pct'][0]:.1f}% \u00b1 {cls['PSE']['recall_after_pct'][1]:.1f}.")
+            A("**That is the evidence that the PSE deficit is a calibration effect rather")
+            A("than an inability to detect the condition** — the information was in the")
+            A("predictions, on the wrong scale.\n")
+        EV(summary=out["sources"].get("class_recall"),
+           script="check_class_recall.py")
+
+    ct = out.get("class_thresholds")
+    if ct:
+        A("---\n")
+        A("## 8. Does the class result depend on where the boundaries are drawn?\n")
+        A("The pork quality literature reports no single agreed criterion, and the")
+        A("boundaries used above are interpolated. The obvious objection is that the result")
+        A("was manufactured by choosing them. So the classification was recomputed under")
+        A(f"{NUMWORD.get(len(ct), len(ct))} conventions, including the cited anchor values")
+        A("used directly as limits.\n")
+        A("| Boundaries | Scheme | Accuracy | Majority-class baseline | Lift |")
+        A("|---|---|---|---|---|")
+        for x in ct:
+            A(f"| {x['lower']} / {x['upper']} | {x['scheme']} | {x['accuracy_pct']:.1f}% | "
+              f"{x['majority_baseline_pct']:.1f}% | **+{x['lift_pts']:.1f} pts** |")
+        A("")
+        A(f"**The lift over simply guessing the most common class stays positive under every")
+        A(f"convention**, from +{min(x['lift_pts'] for x in ct):.1f} to "
+          f"+{max(x['lift_pts'] for x in ct):.1f} points. The conclusion does not depend on")
+        A("the boundary choice, which is the only defensible way to report a number that")
+        A("rests on an interpolated threshold.\n")
+        A("Provenance of each scheme:\n")
+        for x in ct:
+            A(f"- **{x['lower']} / {x['upper']}** ({x['scheme']}): {x['provenance']}")
+        A("")
+        EV(summary=out["sources"].get("class_thresholds"),
+           script="check_class_thresholds.py")
+
+        co = out.get("class_accuracy_other_split")
+        if co:
+            A("**A second check, on the other split.**")
+            A(f"The adopted boundaries applied to the {co['n_samples']}-sample")
+            A(f"`{co['data']}` split give {co['class_accuracy_pct'][0]:.1f}% \u00b1 "
+              f"{co['class_accuracy_pct'][1]:.1f} class accuracy, against")
+            A(f"{ct[0]['accuracy_pct']:.1f}% on the 500-sample set. The result is not")
+            A("specific to either the boundary convention or the split.\n")
+            EV(summary=out["sources"].get("class_accuracy_other_split"),
+               script="evaluate_heatmap.py")
+
+
+    rr = out.get("range_restriction")
+    if rr:
+        A("---\n")
+        A("## 9. How much of the headline is the range it was measured on?\n")
+        A("R\u00b2 is scale-relative: it rises when the data spans a wider range, whether or")
+        A("not the model got better. The 500-sample set spans more pH than the cited")
+        A("reference scale covers, so the headline was recomputed on only those samples")
+        A(f"whose mean pH falls at or below **{rr['ceiling']}** — "
+          f"{rr['restricted']['n_samples']:.0f} of {rr['full']['n_samples']:.0f} samples.\n")
+        A("| | Samples | True pH SD | R\u00b2 | MAE (pH) |")
+        A("|---|---|---|---|---|")
+        A(f"| Full range | {rr['full']['n_samples']:.0f} | {rr['full']['true_sd']:.4f} | "
+          f"{rr['full']['pooled_r2']:.4f} | {rr['full']['mae']:.4f} |")
+        A(f"| Restricted | {rr['restricted']['n_samples']:.0f} | {rr['restricted']['true_sd']:.4f} | "
+          f"{rr['restricted']['pooled_r2']:.4f} | {rr['restricted']['mae']:.4f} |")
+        A("")
+        A(f"**R\u00b2 falls by {abs(rr['delta_r2']):.4f} while MAE *improves* by")
+        A(f"{abs(rr['delta_mae']):.4f} pH.** Both move for the same reason: restricting the")
+        A("range cuts the true pH spread from")
+        A(f"{rr['full']['true_sd']:.3f} to {rr['restricted']['true_sd']:.3f}, which leaves R\u00b2")
+        A("less variance to explain while leaving the model slightly *more* accurate in")
+        A("absolute terms.\n")
+        A("**This is the honest reading of the headline.** 0.8472 is partly a property of")
+        A("how wide the simulated pH range is, and a narrower, more realistic range would")
+        A("report a lower R\u00b2 for a model that is no worse. It is why MAE in pH units is")
+        A("quoted alongside R\u00b2 everywhere in this document: MAE is range-independent and")
+        A("cannot be inflated this way.\n")
+        A(f"Ceiling source: {rr['ceiling_source']}.\n")
+        EV(summary=out["sources"].get("range_restriction"),
+           script="check_range_restriction.py")
+
+        A("## 10. The frozen parameters\n")
         A("Fourteen parameters drive the simulator. **Ten are `CITED`, `MEASURED` or")
         A("`FITTED`; an eleventh (`c_Mb_sd`) is back-calculated from cited data.** The")
         A("remaining three are not traceable to a source and are labelled as such in the")
@@ -442,6 +753,13 @@ def main():
     A("python evaluate_heatmap.py                 # section 1")
     A("python check_spatial_localization.py       # section 3")
     A("python check_edge_effect.py                # section 5")
+    A("python check_calibration.py                # section 6")
+    A("python check_calibration_probe.py          # section 6, deployability")
+    A("python check_class_recall.py               # section 7")
+    A("python check_class_thresholds.py           # section 8")
+    A("python check_range_restriction.py          # section 9")
+    A("python compute_test500_baselines.py        # section 2, headline-scale baselines")
+    A("python check_band_collinearity.py          # section 2, band structure")
     A("python make_figures.py                     # manuscript figures")
     A("python collect_results.py                  # regenerate this document")
     A("```\n")
@@ -465,12 +783,11 @@ def main():
         f.write("\n".join(L) + "\n")
 
     print("Wrote RESULTS.json and RESULTS.md")
-    missing = [k for k in ("headline", "amplitude_sweep", "spatial_localisation",
-                           "spatial_magnitude", "boundary_artefact") if k not in out]
+    missing = [k for k in REQUIRED if k not in out]
     if missing:
         print("  MISSING (evidence file not found):", ", ".join(missing))
     else:
-        print("  all six result groups present")
+        print("  all %d result groups present" % len(REQUIRED))
 
 
 if __name__ == "__main__":
