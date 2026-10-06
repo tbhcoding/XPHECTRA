@@ -108,7 +108,9 @@ Of the fourteen parameters, ten are cited, measured, or fitted to published data
 
 The parameter `denat_amplitude` is swept. Chapter 4 reports performance across the full plausible range of this parameter, so the conclusion does not depend on which value within that range is correct.
 
-The parameter `denat_width` is also swept in the generator, but was not included in the baseline comparison reported in Chapter 4. Its effect was examined only against the linear baseline, using a single-seed measurement method later found unreliable. It is reported as a limitation rather than as a parameter the sweep covers.
+The parameter `denat_width` is also swept in the generator, at 0.20, 0.28, 0.40 and 0.50, giving transitions that span 0.88 to 2.20 pH units from end to end. The operating value is 0.28. It was not carried through the baseline comparison reported in Chapter 4, and its effect was examined only against the linear baseline using a single-seed measurement method later found unreliable.
+
+The two parameters were treated differently because they do not carry the same risk. In Equation 3.2 the denaturation amplitude sets how large the pH effect on scattering is: at an amplitude of zero the bracketed term is constant, pH no longer influences reflectance, and the prediction task has no signal to recover. The width governs only how steeply that same change is distributed across the pH axis, so at any width the full range of the effect is still traversed somewhere in the domain. Amplitude is therefore the parameter whose uncertainty could invalidate the conclusion, and it is the one carried through the full comparison. The width remains reported as a limitation rather than as a parameter that comparison covers.
 
 The parameter `mu_a_baseline` is tuned and uncited. It was adopted at 0.8 because that value improved agreement with the external 970 nm reference, which means that comparison is not independent of it and cannot serve as free-standing validation of this parameter.
 

@@ -2,7 +2,7 @@
 crn_demo_ui.py
 ================
 
-Prototype demo for the defense: a six-band sample goes in, a predicted pH
+Pipeline demonstration for the defense: a six-band sample goes in, a predicted pH
 heatmap comes out.
 
 Deliberately shows ONLY the prediction. Earlier versions showed the
@@ -172,9 +172,9 @@ def predict(sample_id):
     return Image.open(TMP_OUT), status
 
 
-with gr.Blocks(title="LIGTAS-pH prototype") as demo:
+with gr.Blocks(title="LIGTAS-pH pipeline") as demo:
     gr.Markdown(
-        "# LIGTAS-pH — pH mapping prototype\n"
+        "# LIGTAS-pH — pH mapping pipeline\n"
         "A six-band multispectral sample goes in; a predicted pH map comes out. "
         "The model estimates pH at **every pixel** from spectral reflectance alone — "
         "no ground-truth pH is supplied at prediction time.\n\n"
