@@ -89,9 +89,11 @@ Across the `denat_amplitude` sweep, from `figures/figure_manifest.json`:
 
 The network leads at every setting, and the margin is largest where the physical
 effect is weakest. Linear and PLSR agree to within 0.001 because the six bands
-are strongly collinear: the top 4 singular components carry **97.31%** of the
-design matrix variance, condition number 8.0 (`check_band_collinearity.py`,
-output in `metric_check_outputs/band_collinearity.json`).
+vary largely together: a single component carries **81.0%** of the design
+matrix variance and the first four carry **97.31%** (`check_band_collinearity.py`,
+output in `metric_check_outputs/band_collinearity.json`). Do not cite the
+condition number of 8.0 as evidence of collinearity; a value that low argues
+against it.
 
 ### Model size
 
@@ -280,7 +282,10 @@ and the chapter is wrong.** Errors already caught this way: a stale 90.2% that
 should have been 89.3%; a validation-to-training loss ratio reported as 1.15
 that was actually a range of 1.15 to 1.89 with a mean of 1.61; and an SVD figure
 of 97.46% that was written into a draft before any script had computed it. The
-real value is 97.31%.
+real value is 97.31%. A second pattern, found by independent audit on
+2026-10-06: a correct number wrapped in a claim about what it means that was
+never checked against the code. Four cases, all now corrected. Check the claim,
+not just the digits.
 
 ---
 

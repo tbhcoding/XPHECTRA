@@ -129,10 +129,9 @@ Each sample's mean pH was drawn uniformly across 5.35 to 6.45 rather than from t
 |---|---|
 | Trainable parameters | 118,113 |
 | Checkpoint size on disk | 0.50 MB |
-| Inference time | approximately 31 ms per 256 by 256 sample |
 | Hardware used for inference | CPU only |
 
-These figures bear directly on the third objective. A network of this size imposes no unusual demand on the computing hardware a future device would require.
+These figures bear directly on the third objective. A network of this size imposes no unusual demand on the computing hardware a future device would require. Inference time is not reported, because it depends on the processor used and no timing measurement is committed as evidence.
 
 #### Software
 
@@ -152,7 +151,7 @@ These figures bear directly on the third objective. A network of this size impos
 
 #### Data Generation
 
-For each sample, a spatial pH field and a myoglobin redox state are generated independently. Each sample's mean pH is drawn uniformly from 5.35 to 6.45, and the resulting field is clipped to 5.2 to 6.8. Equations 3.2 and 3.3 convert these into optical coefficients, Equation 3.1 converts the coefficients into six-band reflectance, and a sensor noise model calibrated against a real hyperspectral cube produces the final image. Four pixels within the tissue mask are then drawn at random and recorded with their true pH to serve as the sparse supervision.
+For each sample, a spatial pH field and a myoglobin redox state are generated independently. Each sample's mean pH is drawn uniformly from 5.35 to 6.45, and the resulting field is clipped to 5.2 to 6.8. Equations 3.2 and 3.3 convert these into optical coefficients, Equation 3.1 converts the coefficients into six-band reflectance, and a sensor noise model produces the final image. The noise standard deviation was measured from a real hyperspectral cube as a fraction of signal and is applied as an absolute value, which across the six bands is between two and four times the measured relative level. The benchmark is therefore noisier than the instrument it was measured from, which makes the reported accuracy conservative. The image is divided into quadrants and one pixel within the tissue mask is then drawn at random from each, giving four supervised points whose true pH is recorded. Drawing one per quadrant rather than four at random across the whole image guarantees that the supervised points are spread over the sample, which makes the reconstruction task easier than uniform random sampling would.
 
 #### Dataset Composition
 
@@ -253,7 +252,7 @@ The first acts between samples. Regressing each sample's true mean pH on its pre
 
 > y_bar_S = alpha + beta · y_hat_bar_S  (3.11)
 
-where beta greater than one indicates that predicted sample means are compressed toward the centre of the range. Fitting Equation 3.11 requires only the mean pH of each calibration sample, which sparse probe readings can supply.
+where beta greater than one indicates that predicted sample means are compressed toward the centre of the range. Fitting Equation 3.11 requires only an estimate of each calibration sample's mean pH, which sparse probe readings can supply. The correction reported in Chapter 4 is fitted from the mean of the four probe readings rather than from the true dense mean, so no quantity unavailable to a deployment enters the fit.
 
 The second acts within a sample. The ratio of true to predicted within-sample standard deviation,
 
@@ -295,7 +294,7 @@ The following assumptions underlie the synthetic benchmark. They are stated expl
 
 3. pH-driven protein denaturation is the dominant pH-dependent influence on light scattering across the range modelled. Other pH-dependent effects on tissue optics are not represented.
 
-4. Four probe readings per sample reflect a realistic constraint on what a physical deployment could obtain. The readings are drawn at random within the tissue mask.
+4. Four probe readings per sample reflect a realistic constraint on what a physical deployment could obtain. One reading is drawn at random from within each quadrant of the tissue mask, so the four are spread across the sample rather than placed uniformly at random.
 
 5. The simulated tissue is muscle throughout. Fat, connective tissue, and bone are not modelled.
 
@@ -356,7 +355,7 @@ The second established that the inverse problem was non-trivial. A pixel-wise li
 
 All five training runs converged. Sparse-point training loss decreased from approximately 0.097 at initialisation to between 0.009 and 0.020 at the selected checkpoint.
 
-Validation loss decreased in parallel during early epochs before diverging. Early stopping on validation loss consistently selected a checkpoint before that divergence, at epochs 9, 14, 21, 10, and 18 across the five seeds. The divergence that followed was pronounced. In the most marked case, validation loss rose from 0.0210 at the selected epoch to 0.1161 by the time training terminated, a factor of 5.5.
+Validation loss decreased in parallel during early epochs before diverging. Early stopping on validation loss consistently selected a checkpoint before that divergence, at epochs 9, 14, 21, 10, and 18 across the five seeds. The divergence that followed was pronounced. In the most marked case, validation loss rose from 0.0210 at the selected epoch to a peak of 0.4610 in the following epoch, twenty-two times the value at the checkpoint, and had settled to 0.1161 by the time training terminated. Figure 4.1 shows that peak; the selected checkpoint precedes it.
 
 At the selected checkpoints the ratio of validation to training loss ranged from 1.15 to 1.89, with a mean of 1.61. Ratios in this range indicate the network had not overfit the training partition at the point of selection.
 
@@ -404,7 +403,7 @@ The coefficient of determination is scale-relative, so its value depends on the 
 
 A pooled coefficient of determination does not indicate whether the predicted heatmap is usable at the pixel level. Measured by Equation 3.10, 81.5% of pixels fell within ±0.15 pH of ground truth and 89.3% within ±0.20 pH.
 
-As supporting evidence, predicted pixels were assigned to PSE, normal, or DFD quality classes. The boundaries used were 5.4 and 5.8 pH. The reference scale cited in Chapter 2 gives anchor values for the three conditions, at 5.2, 5.6 and 6.0, rather than the limits between them (Sristi et al., 2025), so the boundaries applied here are the midpoints between consecutive anchors. Pixels landed in the correct class 87.7% of the time, against 62.6% for a classifier that always guessed the most common class, a lift of 25.1 points. This figure is reported as supporting evidence only, since the class boundaries are interpolated rather than directly published. The pork quality literature reports no agreed criterion, so the result was recomputed under three further conventions: PSE below 5.5 with DFD above 6.1, the same with DFD above 6.2, and the anchors of the cited scale, 5.2 and 6.0, applied directly as limits. Accuracy ranged from 81.5% to 90.5% and the lift over the majority-class baseline from 18.0 to 33.8 points. The advantage over guessing the largest class therefore does not depend on where the boundaries are placed.
+As supporting evidence, predicted pixels were assigned to PSE, normal, or DFD quality classes. The boundaries used were 5.4 and 5.8 pH. The reference scale cited in Chapter 2 gives anchor values for the three conditions, at 5.2, 5.6 and 6.0, rather than the limits between them (Sristi et al., 2025), so the boundaries applied here are the midpoints between consecutive anchors. Pixels landed in the correct class 87.7% of the time, against 62.6% for a classifier that always guessed the most common class, a lift of 25.1 points. Accuracy at the level of the whole image is carried by the most common class. Recall per class, averaged over the five seeds, was 29.0% for PSE, 82.1% for normal and 96.4% for DFD, and PSE recall varied from 0.5% to 62.3% between seeds. The model therefore identifies elevated pH far more reliably than depressed pH. This follows from the compression reported in the previous section: predictions are pulled toward the centre of the range, which moves the lowest pH pixels across the PSE boundary before it moves any other class. The figure is reported as supporting evidence only, since the class boundaries are interpolated rather than directly published. The pork quality literature reports no agreed criterion, so the result was recomputed under three further conventions: PSE below 5.5 with DFD above 6.1, the same with DFD above 6.2, and the anchors of the cited scale, 5.2 and 6.0, applied directly as limits. Accuracy ranged from 81.5% to 90.5% and the lift over the majority-class baseline from 18.0 to 33.8 points. The advantage over guessing the largest class therefore does not depend on where the boundaries are placed.
 
 Neither Equation 3.8 nor Equation 3.9 indicates whether the model locates elevated pH correctly, since both measure the magnitude of predicted variation rather than its position. Localisation was therefore measured directly, restricted to the 282 of 500 test samples that genuinely spanned more than one quality class.
 
@@ -442,7 +441,7 @@ Compression toward the centre of the training range is the expected behaviour of
 | Texture only | 0.870 | 0.087 | 0.118 | -1.616 | 38.0% |
 | Level and texture | 0.927 | 0.067 | 0.089 | -0.393 | 52.9% |
 
-The level correction accounts for 71.6% of the total gain in R², and it is the component a physical deployment could fit, since Equation 3.11 needs only the mean pH of each calibration sample. On that correction alone, R² rises from 0.847 to 0.904 and mean absolute error falls from 0.094 to 0.075 pH units.
+The level correction accounts for 71.6% of the total gain in R², and it is the component a physical deployment could fit. It was fitted twice: once from each calibration sample's true dense mean, and once from the mean of its four probe readings, which is all a deployment would have. The two agree to within 0.0001 in R² (0.9043 against 0.9044), so the correction does not depend on information a deployment lacks. On the level correction alone, R² rises from 0.847 to 0.904 and mean absolute error falls from 0.094 to 0.076 pH units.
 
 The texture correction requires the within-sample standard deviation of true pH, which sparse probe readings cannot provide. Its contribution is reported as a diagnostic bound rather than as a deployable result, and the two are not combined into a single headline figure.
 
@@ -454,7 +453,7 @@ To confirm that the task required more than a simple relationship between raw re
 
 On the 500-sample held-out set, the same set the headline in Table 4.1 is measured on, the network outperformed both baselines by a margin of 0.197 in R² over linear regression and 0.197 over partial least squares.
 
-**Table 4.6.** Network against the classical baselines on the 500-sample held-out set. Baselines were fitted on the training split and scored on 200,000 tissue pixels drawn from the test set at 400 pixels per sample, the sampling convention used for every baseline figure in this study.
+**Table 4.6.** Network against the classical baselines on the 500-sample held-out set. Baselines were fitted on the training split and scored on 200,000 tissue pixels drawn from the test set at 400 pixels per sample, the sampling convention used for every baseline figure in this study. The network is scored on all 18.4 million tissue pixels of the same samples. The pixel sets differ in size but are drawn from the same images, and the baseline sample is unbiased with respect to them.
 
 | Method | R² | MAE (pH) | RMSE (pH) |
 |---|---|---|---|
@@ -464,7 +463,7 @@ On the 500-sample held-out set, the same set the headline in Table 4.1 is measur
 
 The network reduced mean absolute error from 0.1560 to 0.0936 pH units against the stronger of the two baselines, a reduction of 40%, and root mean square error from 0.1951 to 0.1282, a reduction of 34%.
 
-Partial least squares regression converged to almost exactly the same solution as ordinary linear regression. A singular value decomposition of the six-band design matrix explains why: the top four components carry 97.31% of its variance, and the matrix has a condition number of 8.0. The six bands are strongly collinear, so a four-component model already spans nearly the whole space a six-band linear fit can use.
+Partial least squares regression converged to almost exactly the same solution as ordinary linear regression. A singular value decomposition of the six-band design matrix explains why. A single component carries 81.0% of its variance and the first four carry 97.31%, so the six measurements vary largely together and a four-component model already spans nearly the whole space a six-band linear fit can use.
 
 Because `denat_amplitude` has no established literature value, the comparison was repeated across the full disclosed range of plausible values at matched sample scale.
 
@@ -493,7 +492,7 @@ The third objective was addressed by running the complete software pipeline end 
 
 The interface loads one fixed checkpoint and performs inference on samples drawn from the 500-sample held-out set, the same set on which Table 4.1 is reported. The checkpoint used is seed 3, whose held-out R² of 0.839 is the closest of the five to the reported mean of 0.847. Selecting on that basis rather than taking the best-performing seed, which reached 0.891, means the interface does not demonstrate accuracy higher than the study reports.
 
-Inference completes in approximately 31 ms on CPU. No ground-truth pH is read at any point; the dense map is used only to determine which pixels are tissue.
+Inference runs on CPU without a graphics unit. No ground-truth pH is read at any point; the dense map is used only to determine which pixels are tissue.
 
 Every result reported in this chapter was produced by running the pipeline in full. The frozen dataset was generated by the generator described in Chapter 3, the network was trained on it under the sparse-supervision protocol of Equation 3.4, and the resulting checkpoints were used for inference on held-out samples. No step required manual intervention or data unavailable from the pipeline itself.
 
@@ -526,7 +525,7 @@ A frozen dataset of 400 samples was generated and partitioned into training, val
 
 **4. The model locates spatial variation reliably but does not yet calibrate its magnitude.** On the 282 samples spanning more than one quality class, per-pixel class accuracy was 79.0% ± 2.9% and the predicted hottest 20% of pixels overlapped the true hottest 20% in 51.3% ± 4.3% of cases, against a 20% chance level. Mean per-sample R² was nonetheless negative at -2.17, because within-sample pH variation is roughly 3.6 times smaller than between-sample variation, and the model over-expresses variation within a sample by about 28% while compressing differences between samples to about 0.78 of their true range. Predicted maps correlated with ground truth at r = 0.541 ± 0.069, confirming that genuine spatial structure was recovered. A post-hoc correction fitted on the validation split and applied to the held-out 500 samples, using only each calibration sample's mean pH, raised R² from 0.847 to 0.904 and reduced mean absolute error from 0.094 to 0.075 pH units. Correcting the within-sample component as well reaches R² 0.927 and per-sample R² -0.393, but it requires dense ground truth and is not deployable.
 
-**5. The complete software pipeline runs end to end.** Data generation, training, inference, and heatmap output operate as one sequence with no manual intervention, producing a pH map in approximately 31 ms on CPU from a network of 118,113 parameters.
+**5. The complete software pipeline runs end to end.** Data generation, training, inference, and heatmap output operate as one sequence with no manual intervention, producing a pH map on CPU, without a graphics unit, from a network of 118,113 parameters.
 
 ## Conclusions
 

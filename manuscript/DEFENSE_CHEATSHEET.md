@@ -54,7 +54,7 @@ On the same 500-sample set the headline is measured on:
 
 **Margin +0.197 R². MAE 40% lower. RMSE 34% lower.** Evidence: `metric_check_outputs/baselines_test500.json`.
 
-**Why PLSR and linear are nearly identical.** The six bands are strongly collinear. An SVD of the design matrix shows the top four components carry **97.31%** of its variance, condition number 8.0. A four-component model already spans almost the whole space a six-band linear fit can use. Evidence: `check_band_collinearity.py`.
+**Why PLSR and linear are nearly identical.** The six measurements vary largely together. An SVD of the design matrix shows a single component carries **81.0%** of its variance and the first four carry **97.31%**. A four-component model already spans almost the whole space a six-band linear fit can use. Evidence: `check_band_collinearity.py`.
 
 **Robustness.** Table 4.7 repeats the comparison across the swept `denat_amplitude` values 0.2, 0.4, 0.6, 0.8. The CRN leads at every setting, by +0.416, +0.227, +0.125 and +0.069. That table is measured on the validation split, which is stated in the chapter, because the other amplitudes were never evaluated on the 500-sample set.
 
@@ -100,6 +100,8 @@ On the full 500-sample set, class accuracy is **87.7%** against **62.6%** for a 
 
 The lift stays between +18 and +34 points whichever convention is used, so the conclusion does not depend on where the lines are drawn. Note also that defining PSE as below 5.2 would leave only 0.4% of pixels in that class, because the generator clips at 5.2. Evidence: `metric_check_outputs/class_thresholds.json`.
 
+**If asked how well it detects PSE.** Report it before they ask. Recall by class, five-seed mean: **PSE 29.0%, normal 82.1%, DFD 96.4%**, with PSE ranging 0.5% to 62.3% across seeds. The demo seed is at the low end. The cause is the compression in section 7: predictions are pulled toward the centre, and the lowest pH pixels cross the PSE boundary first. The 87.7% overall figure is carried by DFD, which is 62.6% of pixels.
+
 **Predicted maps correlate with ground truth at r = 0.541 ± 0.069.** Genuine spatial structure is recovered. The problem is magnitude calibration, not absence of signal.
 
 ---
@@ -120,7 +122,7 @@ A post-hoc correction, fitted on validation and applied to the held-out 500:
 | Texture only | 0.870 | 0.087 | 0.118 | -1.616 | 38.0% |
 | Level and texture | 0.927 | 0.067 | 0.089 | -0.393 | 52.9% |
 
-**The level half is deployable** because fitting it needs only each calibration sample's mean pH, which sparse probe readings can supply. It accounts for **71.6%** of the gain. The texture half needs a dense ground-truth map and is **not** deployable; it is reported as a bound, not a result.
+**The level half is deployable**, and this was tested rather than asserted. Fitting it from the mean of the four probe readings instead of the true dense mean gives R² 0.9044 against 0.9043, a difference of 0.0001. It accounts for **71.6%** of the gain. The texture half needs a dense ground-truth map and is **not** deployable; it is reported as a bound, not a result.
 
 **If asked whether the model is overfitting:** it is not. It is **under-fitting**, and the evidence is the compression toward the middle of the range, which is regression to the mean. That follows from the design stated in Chapter 3: a deliberately small network, four supervised points, a strong smoothness prior.
 
@@ -179,7 +181,7 @@ The generator draws each sample's mean pH uniformly across **5.35 to 6.45** and 
 - Initial sparse-point training loss **0.097**, falling to between **0.009 and 0.020** at the selected checkpoint.
 - Early stopping selected epochs **9, 14, 21, 10, 18** across the five seeds, with patience 10. Every run terminated exactly ten epochs after its best, which is confirmable in `crn_5seed_final/run.log`.
 - Validation-to-training loss ratio at the selected checkpoints: **1.15 to 1.89, mean 1.61**. Ratios in this range indicate the training partition was not overfitted at the point of selection.
-- Worst divergence after the selected epoch: validation loss rose from **0.0210 to 0.1161**, a factor of **5.5**.
+- Worst divergence after the selected epoch: validation loss rose from **0.0210 to a peak of 0.4610**, **22 times** the checkpoint, settling to 0.1161 by the final epoch. Figure 4.1 plots that peak.
 
 **Checkpoint selection used validation loss only.** Neither term of the loss reads the dense pH map, so the map the model is scored against played no part in which checkpoint was saved. Verifiable at `train_crn.py:178-180`.
 
@@ -191,7 +193,6 @@ The generator draws each sample's mean pH uniformly across **5.35 to 6.45** and 
 |---|---|
 | Trainable parameters | 118,113 |
 | Checkpoint size on disk | 0.50 MB |
-| Inference time | approximately 31 ms per 256 × 256 sample |
 | Hardware | CPU only, no GPU anywhere in the study |
 
 All four verified by direct measurement. The network was deliberately kept small to establish feasibility, and it is one instantiation of the pipeline rather than a fixed requirement.

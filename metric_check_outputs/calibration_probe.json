@@ -1,0 +1,60 @@
+{
+  "fit_on": "ligtas_synthetic_dataset\\val",
+  "evaluated_on": "ligtas_test_extended\\test",
+  "n_seeds": 5,
+  "per_checkpoint_parameters": [
+    {
+      "checkpoint": "crn_5seed_final\\seed_0\\crn_best.pt",
+      "dense_slope": 1.4934294787938445,
+      "dense_intercept": -2.9134812416591145,
+      "probe_slope": 1.5051987801129194,
+      "probe_intercept": -2.9850531749127645
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_1\\crn_best.pt",
+      "dense_slope": 1.1673133353760357,
+      "dense_intercept": -0.9514801426387993,
+      "probe_slope": 1.1766514237631718,
+      "probe_intercept": -1.0084078912573562
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_2\\crn_best.pt",
+      "dense_slope": 1.1567670911177066,
+      "dense_intercept": -0.9184630157691045,
+      "probe_slope": 1.163439607019012,
+      "probe_intercept": -0.9598553206437352
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_3\\crn_best.pt",
+      "dense_slope": 1.3739270790314257,
+      "dense_intercept": -2.2108192746920006,
+      "probe_slope": 1.3822005532533292,
+      "probe_intercept": -2.2617289443816024
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_4\\crn_best.pt",
+      "dense_slope": 1.2342281163392443,
+      "dense_intercept": -1.4318813504899126,
+      "probe_slope": 1.2432839725239455,
+      "probe_intercept": -1.4877788461656747
+    }
+  ],
+  "results": {
+    "uncorrected": {
+      "r2": 0.8471677899360657,
+      "mae": 0.09359997808933258,
+      "rmse": 0.12823553383350372
+    },
+    "level from dense mean": {
+      "r2": 0.9042940258979797,
+      "mae": 0.0752906084060669,
+      "rmse": 0.10181445926427841
+    },
+    "level from 4 probes": {
+      "r2": 0.9043785214424134,
+      "mae": 0.07560884356498718,
+      "rmse": 0.10177242606878281
+    }
+  },
+  "r2_lost_using_probes": -8.449554443368257e-05
+}
