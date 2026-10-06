@@ -41,8 +41,11 @@ where c_Mb is the myoglobin concentration, the bracketed term combines published
 
 The separation of Equations 3.2 and 3.3 is what makes the benchmark non-trivial. pH enters the forward model through scattering only. Myoglobin redox state is generated independently of pH and enters through absorption only. A model attempting to recover pH must therefore separate two physical effects using spectral shape across all six bands, rather than invert a single relationship or read overall brightness.
 
+![](figures/fig_forward_model.png)
+**Figure 3.1.** The forward optical model. pH acts only on scattering and myoglobin redox state only on absorption; the two pathways meet for the first time at the Kubelka-Munk step.
+
 ![](figures/fig_dataset_sample.png)
-**Figure 3.1.** Composition of one synthetic sample: the six spectral bands, an RGB composite, the hidden dense pH map with the four sparse supervision points marked, and the tissue mask.
+**Figure 3.2.** Composition of one synthetic sample: the six spectral bands, an RGB composite, the hidden dense pH map with the four sparse supervision points marked, and the tissue mask.
 
 ### Convolutional Regression Network Architecture
 
@@ -50,8 +53,8 @@ Spatial pH prediction is performed by a compact convolutional regression network
 
 The network accepts a six-band multispectral cube and returns a dense per-pixel pH prediction at the same spatial resolution. An encoder-decoder structure is required because the output is a map rather than a single value. A classification backbone returns one prediction per image, which does not satisfy the study's objective.
 
-![MISSING]()
-**Figure 3.2.** The convolutional regression network: a compact U-Net with skip connections.
+![](figures/fig_crn_architecture.png)
+**Figure 3.3.** The convolutional regression network: a compact U-Net with skip connections.
 
 ### Main Features of the Convolutional Regression Network
 
@@ -85,7 +88,7 @@ Neither term in Equation 3.4 reads the dense pH map. The first uses only the fou
 
 Each synthetic sample consists of a 256 by 256 pixel six-band reflectance cube, a dense pH map retained solely for evaluation, a tissue mask, and four sparse pH measurements drawn from the hidden field. The six wavelengths are 481, 525, 573, 600, 730, and 970 nm.
 
-**Table 3.1.** Generator parameters and their evidentiary status.
+**Table 3.1.** Generator parameters and their evidentiary status. Eleven rows cover fourteen parameters: the extinction-coefficient row covers three and the scattering row covers two.
 
 | Parameter | Value | Status | Source |
 |---|---|---|---|
@@ -111,10 +114,10 @@ The parameter `mu_a_baseline` is tuned and uncited. It was adopted at 0.8 becaus
 
 A literature-suggested value for `denat_amplitude` of 2.19 was tested and rejected. At that value the linear baseline reached an R² of approximately 0.94, breaking the non-triviality requirement the study imposes on itself, and agreement at 970 nm worsened. The adopted value of 0.4 is instead supported by the sweep reported in Chapter 4.
 
-Sample pH was drawn uniformly across 5.35 to 6.45 rather than narrowed to match published PSE and DFD reference figures. Narrowing was tested and found to reduce the variance available for the model to explain without improving the underlying model.
+Each sample's mean pH was drawn uniformly across 5.35 to 6.45 rather than from the distribution observed in commercial pork, and the resulting field was clipped to 5.2 to 6.8. This is a coverage design rather than a claim of representativeness. Uniform sampling exercises the model across the whole span from PSE to DFD, which is how a measurement method is normally characterised across its operating range, whereas drawing from the population distribution would concentrate the data near the mean and leave both extremes barely represented. The consequence is that the benchmark's class proportions do not match those of commercial pork. Measured on the 500-sample test set, 43% of samples have a mean pH above 6.0, the upper anchor of the reference scale cited in Chapter 2. Chapter 4 reports what the headline metrics become when evaluation is restricted to the range that scale covers.
 
 ![](figures/fig_ph_distribution.png)
-**Figure 3.3.** Distribution of pH between and within samples across the frozen dataset.
+**Figure 3.4.** Distribution of pH between and within samples across the frozen dataset.
 
 #### Computational Characteristics
 
@@ -123,7 +126,7 @@ Sample pH was drawn uniformly across 5.35 to 6.45 rather than narrowed to match 
 | Property | Value |
 |---|---|
 | Trainable parameters | 118,113 |
-| Model size on disk | 0.45 MB |
+| Checkpoint size on disk | 0.50 MB |
 | Inference time | approximately 31 ms per 256 by 256 sample |
 | Hardware used for inference | CPU only |
 
@@ -147,7 +150,7 @@ These figures bear directly on the third objective. A network of this size impos
 
 #### Data Generation
 
-For each sample, a spatial pH field and a myoglobin redox state are generated independently. Equations 3.2 and 3.3 convert these into optical coefficients, Equation 3.1 converts the coefficients into six-band reflectance, and a sensor noise model calibrated against a real hyperspectral cube produces the final image. Four pixels within the tissue mask are then drawn at random and recorded with their true pH to serve as the sparse supervision.
+For each sample, a spatial pH field and a myoglobin redox state are generated independently. Each sample's mean pH is drawn uniformly from 5.35 to 6.45, and the resulting field is clipped to 5.2 to 6.8. Equations 3.2 and 3.3 convert these into optical coefficients, Equation 3.1 converts the coefficients into six-band reflectance, and a sensor noise model calibrated against a real hyperspectral cube produces the final image. Four pixels within the tissue mask are then drawn at random and recorded with their true pH to serve as the sparse supervision.
 
 #### Dataset Composition
 
@@ -179,8 +182,8 @@ An early instability in validation performance was traced to the learning rate r
 
 At inference the network receives only the six-band cube. It does not receive the four sparse points, which exist for training supervision only, and it does not receive any ground-truth pH. The output is a pH value for every pixel, masked to the tissue region for display.
 
-![MISSING]()
-**Figure 3.4.** The complete pipeline from data generation through training to inference and heatmap output.
+![](figures/fig_pipeline.png)
+**Figure 3.5.** The complete pipeline from data generation through training to inference and heatmap output.
 
 #### Validation Procedures
 
@@ -239,6 +242,24 @@ Linear regression fits a least-squares hyperplane from the six band values to pH
 Partial least squares regression with four components projects the six bands onto a smaller set of latent variables chosen to maximise covariance with the target, then regresses on those. (Wold, Sjostrom and Eriksson, 2001)
 
 Both are reported alongside the network at every parameter setting tested. A configuration in which the linear baseline explains the large majority of pH variance is treated as insufficiently challenging and excluded from consideration.
+
+#### Calibration Assessment
+
+Two forms of magnitude miscalibration are measured separately, because they act in opposite directions and only one of them could be fitted in a physical deployment.
+
+The first acts between samples. Regressing each sample's true mean pH on its predicted mean gives
+
+> y_bar_S = alpha + beta · y_hat_bar_S  (3.11)
+
+where beta greater than one indicates that predicted sample means are compressed toward the centre of the range. Fitting Equation 3.11 requires only the mean pH of each calibration sample, which sparse probe readings can supply.
+
+The second acts within a sample. The ratio of true to predicted within-sample standard deviation,
+
+> gamma = SD( y_S ) / SD( y_hat_S )  (3.12)
+
+is applied to each prediction's deviation from its own mean. Fitting Equation 3.12 requires the within-sample standard deviation of true pH, which a deployment holding only sparse probe readings does not have.
+
+Both corrections are fitted on the validation split and applied to the 500-sample test set, which influenced neither training, nor checkpoint selection, nor the correction parameters. The network is not retrained and the saved checkpoints are read only.
 
 ## Theoretical Framework
 
@@ -307,7 +328,7 @@ Two checks were applied to the generated dataset before any network was trained.
 
 The first confirmed the physical direction of the forward model. Simulated reflectance decreased monotonically with increasing pH across all six bands, consistent with the reduction in light scattering that accompanies decreasing protein denaturation. This sign test passed.
 
-The second established that the inverse problem was non-trivial. A pixel-wise linear regression fitted to raw band values attained an in-sample R² of 0.6509 ± 0.0180 across ten independent draws, comfortably below the 0.9 ceiling adopted for this study. This is the generator's own self-test, fitted and scored on the same throwaway draw, which is why it differs from the held-out linear value of 0.6212 reported in Table 4.5. The mapping from reflectance to pH could not be recovered by linear means alone.
+The second established that the inverse problem was non-trivial. A pixel-wise linear regression fitted to raw band values attained an in-sample R² of 0.6509 ± 0.0180 across ten independent draws, comfortably below the 0.9 ceiling adopted for this study. This is the generator's own self-test, fitted and scored on the same throwaway draw. Held out, the same linear model reaches 0.6504 on the 500-sample test set, reported in Table 4.6, and 0.6212 on the smaller validation split used for the amplitude sweep in Table 4.7. The three figures answer different questions and are not interchangeable. The mapping from reflectance to pH could not be recovered by linear means alone.
 
 ## Training Behaviour
 
@@ -355,11 +376,13 @@ Validation is the only set that influenced training and is therefore the one tha
 
 Seed 0 was a consistent low outlier across all three metrics, a pattern replicated in independent runs including on a second machine. It is reported rather than excluded, and the aggregate statistics reflect its influence.
 
+The coefficient of determination is scale-relative, so its value depends on the spread of pH present in the set it is measured on. Restricting the 500-sample set to the 284 samples whose mean pH falls at or below 6.0, the upper anchor of the reference scale cited in Chapter 2, reduces the standard deviation of true pH from 0.330 to 0.218 and the pooled R² from 0.847 to 0.705. Over the same restriction mean absolute error improves from 0.094 to 0.085 pH units and root mean square error from 0.128 to 0.117. The model is therefore slightly more accurate in absolute terms on the narrower range, and the lower R² reflects the smaller variance available to explain rather than worse prediction. This is why absolute error in pH units is reported alongside R² throughout this chapter.
+
 ## Spatial Behaviour of the Predicted Maps
 
 A pooled coefficient of determination does not indicate whether the predicted heatmap is usable at the pixel level. Measured by Equation 3.10, 81.5% of pixels fell within ±0.15 pH of ground truth and 89.3% within ±0.20 pH.
 
-As supporting evidence, predicted pixels were assigned to PSE, normal, or DFD quality classes using boundaries interpolated from published reference anchors (Sristi et al., 2025). Pixels landed in the correct class 87.7% of the time, against 62.6% for a classifier that always guessed the most common class, a lift of 25.1 points. This figure is reported as supporting evidence only, since the class boundaries are interpolated rather than directly published.
+As supporting evidence, predicted pixels were assigned to PSE, normal, or DFD quality classes. The boundaries used were 5.4 and 5.8 pH. The reference scale cited in Chapter 2 gives anchor values for the three conditions, at 5.2, 5.6 and 6.0, rather than the limits between them (Sristi et al., 2025), so the boundaries applied here are the midpoints between consecutive anchors. Pixels landed in the correct class 87.7% of the time, against 62.6% for a classifier that always guessed the most common class, a lift of 25.1 points. This figure is reported as supporting evidence only, since the class boundaries are interpolated rather than directly published. The pork quality literature reports no agreed criterion, so the result was recomputed under three further conventions: PSE below 5.5 with DFD above 6.1, the same with DFD above 6.2, and the anchors of the cited scale, 5.2 and 6.0, applied directly as limits. Accuracy ranged from 81.5% to 90.5% and the lift over the majority-class baseline from 18.0 to 33.8 points. The advantage over guessing the largest class therefore does not depend on where the boundaries are placed.
 
 Neither Equation 3.8 nor Equation 3.9 indicates whether the model locates elevated pH correctly, since both measure the magnitude of predicted variation rather than its position. Localisation was therefore measured directly, restricted to the 282 of 500 test samples that genuinely spanned more than one quality class.
 
@@ -380,19 +403,50 @@ Mean per-sample R², computed by Equation 3.9, was -2.17 on the 500-sample test 
 
 This coexists with the pooled and localisation results because between-sample pH variation, with a standard deviation of 0.304, was approximately 3.6 times larger than within-sample variation at 0.084. Equation 3.8 is accordingly dominated by the model's reliable estimation of each sample's overall level, while Equation 3.9 measures accuracy against the much smaller within-sample scale, on which even correctly located errors appear severe.
 
-Diagnostics confirm this is a magnitude-calibration problem rather than an absence of spatial signal. Predicted maps correlated with ground truth at r = 0.541 ± 0.069, indicating genuine spatial structure was recovered, while the ratio of predicted to true spatial standard deviation was 1.290 ± 0.109, an over-amplification of approximately 29%. Optimal rescaling of the existing predictions would raise mean per-sample R² to approximately +0.297 ± 0.071. That figure is an upper bound on what a calibration correction could achieve, not a result already obtained.
+Diagnostics confirm this is a magnitude-calibration problem rather than an absence of spatial signal. Predicted maps correlated with ground truth at r = 0.541 ± 0.069, indicating genuine spatial structure was recovered, while the ratio of predicted to true spatial standard deviation was 1.290 ± 0.109, an over-amplification of approximately 29%. The two components of this miscalibration, and what correcting each recovers, are reported in the next section.
+
+## Calibration of the Predicted Maps
+
+The magnitude error resolves into two separate miscalibrations acting in opposite directions. Measured by Equation 3.11, predicted sample means are compressed toward the centre of the range, with a recovery slope of 1.285 ± 0.130, equivalent to the predictions spanning about 0.78 of the true between-sample range. Measured by Equation 3.12, variation within a sample is over-expressed, with a recovery scale of 0.779 ± 0.056, equivalent to about 1.28 times the true within-sample standard deviation. Reporting only the second would describe the error incompletely.
+
+Compression toward the centre of the training range is the expected behaviour of an under-fitted model, and it follows from the design stated in Chapter 3: a deliberately small network supervised on four points per sample under a strong smoothness prior. The direction matters for interpretation. Compression costs accuracy rather than flattering it, so the uncorrected figures in Table 4.1 understate what the predictions contain rather than overstating it.
+
+**Table 4.5.** Effect of post-hoc calibration, fitted on the validation split and applied to the 500-sample test set. Values are five-seed means.
+
+| Correction | R² | MAE (pH) | RMSE (pH) | Per-sample R² | Samples with positive per-sample R² |
+|---|---|---|---|---|---|
+| None | 0.847 | 0.094 | 0.128 | -2.170 | 29.5% |
+| Level only | 0.904 | 0.075 | 0.102 | -0.946 | 39.7% |
+| Texture only | 0.870 | 0.087 | 0.118 | -1.616 | 38.0% |
+| Level and texture | 0.927 | 0.067 | 0.089 | -0.393 | 52.9% |
+
+The level correction accounts for 71.6% of the total gain in R², and it is the component a physical deployment could fit, since Equation 3.11 needs only the mean pH of each calibration sample. On that correction alone, R² rises from 0.847 to 0.904 and mean absolute error falls from 0.094 to 0.075 pH units.
+
+The texture correction requires the within-sample standard deviation of true pH, which sparse probe readings cannot provide. Its contribution is reported as a diagnostic bound rather than as a deployable result, and the two are not combined into a single headline figure.
+
+Per-sample R² improves from -2.170 to -0.393 under the full correction, and the share of samples with a positive value rises from 29.5% to 52.9%. It does not become positive on average. A per-sample oracle rescaling, which uses each sample's own true standard deviation, would reach approximately +0.297, but that quantity is unavailable at prediction time and the figure is therefore not attainable in deployment. The correction reported here is fitted on a separate split and reaches -0.393.
 
 ## Comparison with Baseline Methods
 
 To confirm that the task required more than a simple relationship between raw reflectance and pH, the network was compared against the two baselines described in Chapter 3, both fitted and evaluated on the same held-out pixels.
 
-The network outperformed both linear regression, at an R² of 0.6212, and partial least squares regression, at 0.6206, by a margin of 0.227.
+On the 500-sample held-out set, the same set the headline in Table 4.1 is measured on, the network outperformed both baselines by a margin of 0.197 in R² over linear regression and 0.197 over partial least squares.
+
+**Table 4.6.** Network against the classical baselines on the 500-sample held-out set. Baselines were fitted on the training split and scored on 200,000 tissue pixels drawn from the test set at 400 pixels per sample, the sampling convention used for every baseline figure in this study.
+
+| Method | R² | MAE (pH) | RMSE (pH) |
+|---|---|---|---|
+| Linear regression | 0.6504 | 0.1560 | 0.1951 |
+| Partial least squares, four components | 0.6500 | 0.1561 | 0.1952 |
+| Convolutional regression network | 0.8472 | 0.0936 | 0.1282 |
+
+The network reduced mean absolute error from 0.1560 to 0.0936 pH units against the stronger of the two baselines, a reduction of 40%, and root mean square error from 0.1951 to 0.1282, a reduction of 34%.
 
 Partial least squares regression converged to almost exactly the same solution as ordinary linear regression. A singular value decomposition of the six-band design matrix explains why: the top four components carry 97.31% of its variance, and the matrix has a condition number of 8.0. The six bands are strongly collinear, so a four-component model already spans nearly the whole space a six-band linear fit can use.
 
 Because `denat_amplitude` has no established literature value, the comparison was repeated across the full disclosed range of plausible values at matched sample scale.
 
-**Table 4.5.** Network advantage over classical baselines across the denat_amplitude sweep.
+**Table 4.7.** Network advantage over classical baselines across the denat_amplitude sweep.
 
 | denat_amplitude | Linear | PLSR | CRN (mean ± SD) | Margin |
 |---|---|---|---|---|
@@ -446,9 +500,9 @@ A frozen dataset of 400 samples was generated and partitioned into training, val
 
 **2. The network predicted pixel-wise pH accurately on data it had never seen.** On 500 unseen samples across five independently trained seeds, it achieved an R² of 0.847 ± 0.038, a mean absolute error of 0.094 ± 0.015 pH units, and a root mean square error of 0.128 ± 0.016. At the pixel level, 81.5% of predictions fell within ±0.15 pH of ground truth and 89.3% within ±0.20 pH. Results agreed across all three evaluation sets, with the validation split showing no inflation relative to the two sets that never influenced training.
 
-**3. The network outperformed both classical baselines, and that advantage did not depend on the study's least-certain parameter.** At the operating value it exceeded linear regression at 0.6212 and partial least squares regression at 0.6206 by 0.227. Repeating the comparison across the full disclosed range of denat_amplitude showed the network ahead at every setting, by margins from 0.069 to 0.416. The two baselines converged to nearly the same solution because the six bands are strongly collinear, with the top four components of the design matrix carrying 97.31% of its variance.
+**3. The network outperformed both classical baselines, and that advantage did not depend on the study's least-certain parameter.** On the 500-sample held-out set, the set the headline is measured on, it reached an R² of 0.8472 against 0.6504 for linear regression and 0.6500 for partial least squares, a margin of 0.197, and reduced mean absolute error from 0.1560 to 0.0936 pH units. Repeating the comparison across the full disclosed range of denat_amplitude showed the network ahead at every setting, by margins from 0.069 to 0.416. The two baselines converged to nearly the same solution because the six bands are strongly collinear, with the top four components of the design matrix carrying 97.31% of its variance.
 
-**4. The model locates spatial variation reliably but does not yet calibrate its magnitude.** On the 282 samples spanning more than one quality class, per-pixel class accuracy was 79.0% ± 2.9% and the predicted hottest 20% of pixels overlapped the true hottest 20% in 51.3% ± 4.3% of cases, against a 20% chance level. Mean per-sample R² was nonetheless negative at -2.17, because within-sample pH variation is roughly 3.6 times smaller than between-sample variation, and the model over-amplifies spatial variation by approximately 29%. Predicted maps correlated with ground truth at r = 0.541 ± 0.069, confirming that genuine spatial structure was recovered. Optimal rescaling would raise per-sample R² to approximately +0.297, which bounds what a calibration correction could achieve.
+**4. The model locates spatial variation reliably but does not yet calibrate its magnitude.** On the 282 samples spanning more than one quality class, per-pixel class accuracy was 79.0% ± 2.9% and the predicted hottest 20% of pixels overlapped the true hottest 20% in 51.3% ± 4.3% of cases, against a 20% chance level. Mean per-sample R² was nonetheless negative at -2.17, because within-sample pH variation is roughly 3.6 times smaller than between-sample variation, and the model over-expresses variation within a sample by about 28% while compressing differences between samples to about 0.78 of their true range. Predicted maps correlated with ground truth at r = 0.541 ± 0.069, confirming that genuine spatial structure was recovered. A post-hoc correction fitted on the validation split and applied to the held-out 500 samples, using only each calibration sample's mean pH, raised R² from 0.847 to 0.904 and reduced mean absolute error from 0.094 to 0.075 pH units. Correcting the within-sample component as well reaches R² 0.927 and per-sample R² -0.393, but it requires dense ground truth and is not deployable.
 
 **5. The complete software pipeline runs end to end.** Data generation, training, inference, and heatmap output operate as one sequence with no manual intervention, producing a pH map in approximately 31 ms on CPU from a network of 118,113 parameters.
 
@@ -458,7 +512,7 @@ A frozen dataset of 400 samples was generated and partitioned into training, val
 
 **2.** A convolutional regression network trained on four sparse points per sample can recover a dense pixel-wise pH field from six-band reflectance to within approximately 0.09 pH on this benchmark, with a substantial and robustly confirmed advantage over classical regression methods. Because that advantage holds across the entire plausible range of the study's least-certain parameter rather than at one chosen value, the conclusion does not rest on a parameter the literature cannot settle.
 
-**3.** The model's spatial capability is better described as reliable localisation with imperfect magnitude calibration than as a single level of spatial accuracy. It identifies where pH is elevated within a sample, and it overstates how much. The diagnosis is specific enough to bound what a correction could achieve, which makes this a defined limitation rather than an open failure.
+**3.** The model's spatial capability is better described as reliable localisation with imperfect magnitude calibration than as a single level of spatial accuracy. It identifies where pH is elevated within a sample, overstates how much variation there is inside a sample, and understates how far samples differ from one another. Both components were measured, and the one a deployment could fit was corrected and reported, which makes this a characterised limitation rather than an open failure.
 
 **4.** The software pipeline functions as a coherent system and is structured so that the transition to physical data would require substituting the data source rather than redesigning the pipeline. This establishes a working foundation for future hardware integration. It does not establish validated predictive accuracy on real pork, which the study neither claims nor attempted.
 
@@ -466,7 +520,7 @@ A frozen dataset of 400 samples was generated and partitioned into training, val
 
 **1. Physical validation on real pork, once suitable imaging hardware becomes available.** This is the necessary step to move beyond a feasibility demonstration. Because the network's weights were learned on simulated reflectance, the realistic path is fine-tuning from the current weights on real samples with laboratory-measured pH, followed by re-validation, rather than training from scratch.
 
-**2. A calibration correction for spatial magnitude.** Finding 4 identifies a consistent over-amplification rather than an absence of signal, and bounds the achievable improvement at approximately +0.30 per-sample R². This is the most tractable improvement available without new data.
+**2. Fitting the level calibration on physical samples.** The deployable half of the calibration correction raised R² from 0.847 to 0.904 on the synthetic benchmark using only the mean pH of each calibration sample. Confirming that the same correction holds on real tissue requires a modest set of physical samples with probe readings rather than new imaging hardware, which makes it the most tractable improvement available. The within-sample component cannot be fitted without a dense reference map and is not proposed.
 
 **3. Sourcing or further constraining denat_width and mu_a_baseline.** Both remain outside the evidence base. The first was not covered by the baseline comparison, and the second was tuned against the same external reference it would otherwise help validate. A published measurement for either would remove a disclosed weakness.
 
@@ -481,6 +535,8 @@ A frozen dataset of 400 samples was generated and partitioned into training, val
 **Elevated error at tissue boundaries.** Prediction error within an 8-pixel band along the tissue edge was 0.156 pH against 0.070 pH in the interior, a ratio of 2.31, present in 97% of samples. A convolutional network has less surrounding tissue to draw on at the mask edge. For applications concerned with the body of a cut rather than its perimeter, the interior figure is the more representative one.
 
 **Two parameters outside the sweep's coverage.** The parameter denat_width is swept in the generator but was not included in the baseline comparison reported in Chapter 4, and mu_a_baseline is tuned and uncited. Neither is hidden, but neither carries the same evidentiary support as the parameters in Table 3.1 marked CITED or MEASURED.
+
+**The benchmark's pH distribution is not representative of commercial pork.** Sample mean pH was drawn uniformly across 5.35 to 6.45 so that the model would be exercised across the full span from PSE to DFD. The result is that 43% of samples exceed 6.0, the upper anchor of the reference scale cited in Chapter 2. The benchmark therefore characterises the method across its operating range rather than estimating performance on a representative population, and the headline coefficient of determination should be read with that in mind. Chapter 4 reports the metrics restricted to the cited range.
 
 **Assumptions stated but not tested.** The five assumptions listed in Chapter 3 are declared rather than verified within this study. The use of equine myoglobin extinction coefficients and the exclusion of fat and connective tissue from the simulated samples both constrain how far these results should be read as describing real pork.
 
