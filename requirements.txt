@@ -31,9 +31,10 @@ opencv-python==5.0.0.93
 
 # --- manuscript tooling only: build_manuscript_pdf.py ---
 # NOT part of the pipeline and deliberately not listed in Table 3.3, which
-# describes the system. Needed only to regenerate the PDFs under manuscript/
-# from their .md sources. Nothing else in the repo pulls these in, so a clean
-# clone cannot rebuild the PDFs without them.
+# describes the system rather than the writing tooling. Needed only to
+# regenerate the PDFs under manuscript/ from their .md sources. Both are
+# already present in xphectra_venv; they were simply never written down, so a
+# clean clone could not rebuild the PDFs.
 reportlab==5.0.1
 pypdf==6.19.0
 
