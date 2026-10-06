@@ -173,19 +173,19 @@ Template:
 Chapters 1-5 that describes a parameter, a setting or the architecture was
 checked against the source, not against the earlier draft.
 
-- All ten numeric values in Table 3.1 match  exactly.
+- All ten numeric values in Table 3.1 match `PARAMS` exactly.
 - All six wavelengths match.
-- Table 3.4 matches : Adam, lr 1e-4, batch 8, epoch cap 50,
+- Table 3.4 matches `train_crn.py`: Adam, lr 1e-4, batch 8, epoch cap 50,
   tv weight 0.05, four supervised points.
-- Dataset claims match : n=400 default, the 500-sample
+- Dataset claims match `generate_dataset.py`: n=400 default, the 500-sample
   held-out set, the uniform draw 5.35-6.45 and the clip to 5.2-6.8.
-- Architecture claims match , verified by tracing shapes
+- Architecture claims match `crn_model.py`, verified by tracing shapes
   rather than reading the source: 256 -> 128 -> 64 in the encoder, 64 ->
   128 -> 256 in the decoder, two skip connections concatenating enc2 and
   enc1, and a 1x1 output convolution to a single channel. The chapter says
   two downsampling and two upsampling stages with skip connections, which
-  is correct. Note that  defines one MaxPool2d and applies it
-  twice in , so counting module definitions understates the
+  is correct. Note that `crn_model.py` defines one MaxPool2d and applies it
+  twice in `forward()`, so counting module definitions understates the
   number of stages.
 - 118,113 trainable parameters confirmed by instantiating the model.
 
