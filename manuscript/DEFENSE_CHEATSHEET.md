@@ -69,7 +69,7 @@ On the same 500-sample set the headline is measured on:
 
 **Both are correct. Same formula, different reference.**
 
-**Why.** Between-sample pH variation has SD 0.304. Within-sample variation has SD 0.084. Between-sample spread is about **3.6 times larger**. The pooled measure is dominated by the model getting each sample's overall level right. The per-sample measure scores against the much smaller within-sample scale, where even correctly located errors look severe.
+**Why.** Between-sample pH variation has SD 0.317. Within-sample variation has SD 0.088. Between-sample spread is about **3.6 times larger**. The pooled measure is dominated by the model getting each sample's overall level right. The per-sample measure scores against the much smaller within-sample scale, where even correctly located errors look severe.
 
 **Say it like this:** *The model is reliable about which sample is more acidic, and only partially reliable about the fine pattern inside one sample.*
 
@@ -102,7 +102,7 @@ The lift stays between +18 and +34 points whichever convention is used, so the c
 
 **If asked how well it detects PSE.** Report it before they ask. Recall by class, five-seed mean: **PSE 29.0%, normal 82.1%, DFD 96.4%**, with PSE ranging 0.5% to 62.3% across seeds. The demo seed is at the low end. The cause is the compression in section 7: predictions are pulled toward the centre, and the lowest pH pixels cross the PSE boundary first. The 87.7% overall figure is carried by DFD, which is 62.6% of pixels. **But the calibration fixes it.** Applying the level correction, the one fitted from probe readings alone, raises PSE recall to **69.3%** and overall accuracy to **89.9%**, costing 0.6 points of DFD recall. The demonstration checkpoint goes from 5.4% to **68.7%**. Say the uncorrected and corrected figures in the same breath: the low number is a calibration effect, not a failure to detect PSE. Evidence: metric_check_outputs/class_recall.json
 
-**Predicted maps correlate with ground truth at r = 0.541 ± 0.069.** Genuine spatial structure is recovered. The problem is magnitude calibration, not absence of signal.
+**Predicted maps correlate with ground truth at r = 0.536 ± 0.056.** Genuine spatial structure is recovered. The problem is magnitude calibration, not absence of signal.
 
 ---
 
@@ -111,7 +111,7 @@ The lift stays between +18 and +34 points whichever convention is used, so the c
 Two miscalibrations act in **opposite directions**:
 
 - **Between samples:** predictions are **compressed**, spanning about 0.78 of the true range. Recovery slope 1.285 ± 0.130.
-- **Within a sample:** variation is **over-expressed**, about 1.28 times the true spatial SD. Recovery scale 0.779 ± 0.056.
+- **Within a sample:** variation is **over-expressed**, about 1.28 times the true spatial SD. Recovery scale 0.779 ± 0.056, fitted on the validation split.
 
 A post-hoc correction, fitted on validation and applied to the held-out 500:
 
