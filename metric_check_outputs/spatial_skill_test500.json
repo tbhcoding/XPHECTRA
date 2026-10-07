@@ -1,0 +1,122 @@
+{
+  "data": "ligtas_test_extended/test",
+  "between_sample_ph_std": 0.31693026423454285,
+  "within_sample_ph_std": 0.08760122209787369,
+  "level_only_oracle": {
+    "pooled_r2": 0.9074587821960449,
+    "mae": 0.07678035646677017,
+    "rmse": 0.10052388161420822
+  },
+  "per_checkpoint": [
+    {
+      "checkpoint": "crn_5seed_final\\seed_0\\crn_best.pt",
+      "pooled_r2": 0.7777972221374512,
+      "mae": 0.12097952514886856,
+      "rmse": 0.15576735138893127,
+      "per_sample_r2_mean": -3.5823062937259675,
+      "per_sample_r2_median": -1.6707192659378052,
+      "per_sample_r2_negative_count": 422,
+      "n_samples": 500,
+      "true_spatial_std": 0.08760122209787369,
+      "pred_spatial_std": 0.11023881286382675,
+      "amplitude_ratio": 1.2584164142608643,
+      "within_sample_corr": 0.43565460523872707,
+      "level_error": 0.09016990661621094,
+      "per_sample_r2_ceiling_if_rescaled": 0.18979493506571113
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_1\\crn_best.pt",
+      "pooled_r2": 0.8904690146446228,
+      "mae": 0.08010338246822357,
+      "rmse": 0.10936293005943298,
+      "per_sample_r2_mean": -1.2828081650733947,
+      "per_sample_r2_median": -0.34944599866867065,
+      "per_sample_r2_negative_count": 312,
+      "n_samples": 500,
+      "true_spatial_std": 0.08760122209787369,
+      "pred_spatial_std": 0.11007308959960938,
+      "amplitude_ratio": 1.2565245628356934,
+      "within_sample_corr": 0.6025217823739109,
+      "level_error": 0.05134400352835655,
+      "per_sample_r2_ceiling_if_rescaled": 0.3630324982350344
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_2\\crn_best.pt",
+      "pooled_r2": 0.8603835105895996,
+      "mae": 0.08275128901004791,
+      "rmse": 0.1234724372625351,
+      "per_sample_r2_mean": -1.9172753194570542,
+      "per_sample_r2_median": -0.6656250953674316,
+      "per_sample_r2_negative_count": 339,
+      "n_samples": 500,
+      "true_spatial_std": 0.08760122209787369,
+      "pred_spatial_std": 0.12383627146482468,
+      "amplitude_ratio": 1.413636326789856,
+      "within_sample_corr": 0.5297815935971897,
+      "level_error": 0.04206360876560211,
+      "per_sample_r2_ceiling_if_rescaled": 0.2806685369143779
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_3\\crn_best.pt",
+      "pooled_r2": 0.8392924666404724,
+      "mae": 0.09624382853507996,
+      "rmse": 0.13247068226337433,
+      "per_sample_r2_mean": -2.3183305509090424,
+      "per_sample_r2_median": -0.7111241817474365,
+      "per_sample_r2_negative_count": 344,
+      "n_samples": 500,
+      "true_spatial_std": 0.08760122209787369,
+      "pred_spatial_std": 0.09724730253219604,
+      "amplitude_ratio": 1.110113501548767,
+      "within_sample_corr": 0.5401464018533614,
+      "level_error": 0.07854358106851578,
+      "per_sample_r2_ceiling_if_rescaled": 0.29175813543513296
+    },
+    {
+      "checkpoint": "crn_5seed_final\\seed_4\\crn_best.pt",
+      "pooled_r2": 0.8678967356681824,
+      "mae": 0.0879218652844429,
+      "rmse": 0.12010426819324493,
+      "per_sample_r2_mean": -1.748977013707161,
+      "per_sample_r2_median": -0.5796460509300232,
+      "per_sample_r2_negative_count": 345,
+      "n_samples": 500,
+      "true_spatial_std": 0.08760122209787369,
+      "pred_spatial_std": 0.1072428748011589,
+      "amplitude_ratio": 1.2242166996002197,
+      "within_sample_corr": 0.5698448152730619,
+      "level_error": 0.0636240765452385,
+      "per_sample_r2_ceiling_if_rescaled": 0.32472311349359
+    }
+  ],
+  "aggregate": {
+    "pooled_r2": {
+      "mean": 0.8471677899360657,
+      "std": 0.04287667465688812
+    },
+    "mae": {
+      "mean": 0.09359997808933258,
+      "std": 0.016497898771423936
+    },
+    "rmse": {
+      "mean": 0.12823553383350372,
+      "std": 0.017470812825955463
+    },
+    "per_sample_r2_mean": {
+      "mean": -2.169939468574524,
+      "std": 0.8724749956895043
+    },
+    "amplitude_ratio": {
+      "mean": 1.25258150100708,
+      "std": 0.10850108719004643
+    },
+    "within_sample_corr": {
+      "mean": 0.5355898396672502,
+      "std": 0.06263951901534008
+    },
+    "per_sample_r2_ceiling_if_rescaled": {
+      "mean": 0.2899954438287693,
+      "std": 0.06455746004017894
+    }
+  }
+}

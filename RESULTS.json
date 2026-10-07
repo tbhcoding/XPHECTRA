@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-06",
+  "generated": "2026-10-07",
   "sources": {
     "headline": "metric_check_outputs/final_evaluation_TEST500.json",
     "validation_n50": "metric_check_outputs/final_evaluation.json",
@@ -157,8 +157,8 @@
   },
   "spatial_magnitude": {
     "per_sample_r2": [
-      -2.2987995537519454,
-      0.8529871863765729
+      -2.298799556732178,
+      0.852987197575908
     ],
     "within_sample_corr": [
       0.5409632685930466,

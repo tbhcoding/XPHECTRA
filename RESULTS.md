@@ -1,6 +1,6 @@
 # LIGTAS-pH — Final Results
 
-*Consolidated 2026-10-06 by `collect_results.py`, which reads the saved
+*Consolidated 2026-10-07 by `collect_results.py`, which reads the saved
 evidence files rather than recomputing anything. Every figure is traceable to a file
 listed under **Where each number comes from**. If this document and the source code
 ever disagree, the code is correct — it is what was executed.*

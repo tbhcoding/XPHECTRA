@@ -80,11 +80,16 @@ def collect(model, loader):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--data", default="ligtas_synthetic_dataset")
+    ap.add_argument("--split", default="val",
+                     help="split under --data to evaluate. Was hardcoded to "
+                          "'val'; the output recorded no split, so the two "
+                          "spatial statistics were quotable as if they came "
+                          "from whichever set the reader had in mind.")
     ap.add_argument("--ckpt-glob", default="crn_check/seed_*/crn_best.pt")
     ap.add_argument("--out", default="metric_check_outputs/spatial_skill.json")
     a = ap.parse_args()
 
-    ds = SparseLIGTASDataset(os.path.join(a.data, "val"), N_POINTS, IN_RES)
+    ds = SparseLIGTASDataset(os.path.join(a.data, a.split), N_POINTS, IN_RES)
     loader = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=False)
 
     # --- variance decomposition: why pooled and per-sample can disagree -----
@@ -107,7 +112,7 @@ def main():
                   mae=float(np.abs(y_cat - f_cat).mean()),
                   rmse=float(np.sqrt(((y_cat - f_cat) ** 2).mean())))
 
-    print(f"Val set: {len(ds)} samples")
+    print(f"{a.data}/{a.split}: {len(ds)} samples")
     print(f"  between-sample pH std (sample means) : {between_std:.4f}")
     print(f"  within-sample  pH std (mean/sample)  : {within_std:.4f}")
     print(f"  ratio                                 : {between_std / within_std:.2f}x")
@@ -169,7 +174,8 @@ def main():
 
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     with open(a.out, "w") as fh:
-        json.dump(dict(between_sample_ph_std=between_std, within_sample_ph_std=within_std,
+        json.dump(dict(data=f"{a.data}/{a.split}",
+                       between_sample_ph_std=between_std, within_sample_ph_std=within_std,
                        level_only_oracle=oracle, per_checkpoint=rows, aggregate=agg), fh, indent=2)
     print(f"\nWrote {a.out}")
 
