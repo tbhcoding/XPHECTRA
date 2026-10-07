@@ -451,7 +451,7 @@ The level correction accounts for 71.6% of the total gain in R², and it is the 
 
 The texture correction requires the within-sample standard deviation of true pH, which sparse probe readings cannot provide. Its contribution is reported as a diagnostic bound rather than as a deployable result, and the two are not combined into a single headline figure.
 
-Per-sample R² improves from -2.170 to -0.393 under the full correction, and the share of samples with a positive value rises from 29.5% to 52.9%. It does not become positive on average. A per-sample oracle rescaling, which uses each sample's own true standard deviation, would reach approximately +0.297, but that quantity is unavailable at prediction time and the figure is therefore not attainable in deployment. The correction reported here is fitted on a separate split and reaches -0.393.
+Per-sample R² improves from -2.170 to -0.393 under the full correction, and the share of samples with a positive value rises from 29.5% to 52.9%. It does not become positive on average. A per-sample oracle rescaling, which uses each sample's own true standard deviation, would reach approximately +0.290, but that quantity is unavailable at prediction time and the figure is therefore not attainable in deployment. The correction reported here is fitted on a separate split and reaches -0.393.
 
 ## Comparison with Baseline Methods
 
@@ -513,7 +513,8 @@ Every figure reported in this chapter is produced by a script in the repository 
 | Tables 4.1 to 4.3, tolerance bands | `RESULTS.json`, `metric_check_outputs/final_evaluation_TEST500.json` | `evaluate_heatmap.py`, `collect_results.py` |
 | Training behaviour, Figure 4.1 | `crn_5seed_final/seed_*/history.json` | `train_crn.py` |
 | Table 4.4, localisation | `metric_check_outputs/spatial_localization.json` | `check_spatial_localization.py` |
-| Per-sample R-squared, amplitude ratio, correlation | `metric_check_outputs/spatial_skill_official.json` | `check_spatial_skill.py` |
+| Per-sample R-squared, amplitude ratio, correlation | `metric_check_outputs/final_evaluation_TEST500.json` | `evaluate_heatmap.py` |
+| Within- and between-sample pH scales, oracle rescaling ceiling | `metric_check_outputs/spatial_skill_test500.json` | `check_spatial_skill.py` |
 | Table 4.5, calibration | `metric_check_outputs/calibration.json`, `calibration_probe.json` | `check_calibration.py`, `check_calibration_probe.py` |
 | Table 4.6, baselines on the 500-sample set | `metric_check_outputs/baselines_test500.json` | `compute_test500_baselines.py` |
 | Table 4.7, amplitude sweep | `deconfound_outputs/full_table.json` | `deconfound_full_scale.py` |
