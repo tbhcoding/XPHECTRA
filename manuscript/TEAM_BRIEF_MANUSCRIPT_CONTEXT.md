@@ -181,8 +181,8 @@ These are disclosed on purpose. Removing a disclosure is not a fix.
 1. **Mean per-sample R-squared is -2.17 on the 500-sample set, and negative for
    the large majority of individual samples.** This is real and it is in the
    chapters. It coexists with the pooled 0.847 because between-sample pH
-   variation (SD 0.304) is about 3.6 times larger than within-sample variation
-   (SD 0.084). The pooled measure is dominated by the model getting each
+   variation (SD 0.317) is about 3.6 times larger than within-sample variation
+   (SD 0.088). The pooled measure is dominated by the model getting each
    sample's overall level right; the per-sample measure scores against the much
    smaller within-sample scale, where even correctly located errors look severe.
    Plain reading: **the model is reliable about which samples are more acidic,
