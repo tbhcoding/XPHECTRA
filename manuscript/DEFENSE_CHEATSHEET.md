@@ -136,6 +136,8 @@ A post-hoc correction, fitted on validation and applied to the held-out 500:
 
 The generator draws each sample's mean pH uniformly across **5.35 to 6.45** and clips the field to **5.2 to 6.8**.
 
+**The range itself is defensible, and this is worth knowing.** A published benchmark of pork loin ultimate pH reports a range of roughly 5.34 to 6.48, mean near 5.78, SD near 0.23. **Our sampled range of 5.35 to 6.45 corresponds closely to that observed range.** The range matches; the *shape* deliberately does not, for the reason below. Not yet in the manuscript — the primary source needs checking before it goes into Chapter 3.
+
 **This is coverage sampling, not representative sampling.** Uniform draws exercise the model across the whole PSE-to-DFD span, which is how a measurement method is characterised across its operating range. Drawing from the real population distribution would concentrate data near the mean and leave both extremes barely represented.
 
 **The consequence, disclosed:** 43% of samples have a mean pH above 6.0, the upper anchor of the reference scale cited in Chapter 2. The benchmark's class proportions do not match commercial pork.
@@ -176,7 +178,31 @@ The generator draws each sample's mean pH uniformly across **5.35 to 6.45** and 
 
 ---
 
-## 10. Training behaviour
+## 10. "Is 0.094 pH accurate enough?"
+
+**Start by conceding the gap, because it is real.** No published standard specifies a required pH accuracy for meat inspection. We looked. Do not invent one.
+
+**Then give the three anchors that do exist.**
+
+**(a) The quality boundaries disagree by more than our error — the strongest point.** Published PSE cutoffs range from ultimate pH < 5.7 to < 5.9, and DFD cutoffs from > 6.1 to > 6.3. The field disagrees about where the lines sit by roughly 0.2 pH. **Our error of 0.094 is less than half that disagreement**, so the instrument is more precise than the decision it informs. We already demonstrate this internally: section 6's four threshold conventions all preserve the conclusion.
+
+**(b) A probe beats us at one point, and we say so.** Commercial meat pH meters specify ±0.01 to ±0.05 pH. We are less accurate than a probe at a single location, and more useful across a surface: 65,536 estimates without contact. **This is why Chapter 1 positions the system as screening, not replacement** — it tells an inspector where to put the probe.
+
+**(c) Relative to the variation it must resolve.** Pork loin ultimate pH varies across the population with a standard deviation near 0.23. Our error is about **40% of one standard deviation** of the spread we would need to distinguish.
+
+**The spoken answer:**
+
+> There is no published accuracy standard for pH in meat inspection, and we do not claim to meet one. What we can say is what our error means against three documented references. The published PSE and DFD boundaries disagree between sources by about 0.2 pH, and our error is less than half that. A calibrated probe achieves 0.01 to 0.05 pH, so we are less accurate at one point but produce a full map without contact, which is why we position this as screening. And population ultimate pH varies with a standard deviation near 0.23, so our error is roughly 40% of the variation we would need to resolve. Establishing a formal acceptability threshold is listed in Chapter 5 as future work.
+
+**Do not claim:** parity with a laboratory probe; that any standard has been met; that 0.094 is "good enough" as a settled fact. The claim is that it is *characterised* against three references, and that the threshold question is open.
+
+**Citation strength, so you know what you are standing on:** the boundary ranges and the population spread come from meat-science and extension literature and are solid enough to state verbally. The probe figures come from manufacturer specifications — factual, but a datasheet, so cite it as commercial practice rather than as a study. **None of these three is in the manuscript yet.** If the team wants them in Chapter 5, the primary sources need checking first, to the same standard as Table 3.1.
+
+**The better answer, if you can get it.** One sentence from the consulting food technologist — *"±0.1 pH is adequate for screening purposes"* — outranks all three anchors, because it is a judgement from someone qualified rather than an inference we assembled. Ask before the defense.
+
+---
+
+## 11. Training behaviour
 
 - Initial sparse-point training loss **0.097**, falling to between **0.009 and 0.020** at the selected checkpoint.
 - Early stopping selected epochs **9, 14, 21, 10, 18** across the five seeds, with patience 10. Every run terminated exactly ten epochs after its best, which is confirmable in `crn_5seed_final/run.log`.
@@ -187,7 +213,7 @@ The generator draws each sample's mean pH uniformly across **5.35 to 6.45** and 
 
 ---
 
-## 11. Model and compute
+## 12. Model and compute
 
 | Property | Value |
 |---|---|
@@ -199,7 +225,7 @@ All four verified by direct measurement. The network was deliberately kept small
 
 ---
 
-## 12. Generator parameters
+## 13. Generator parameters
 
 Fourteen parameters across eleven rows of Table 3.1. Ten are cited, measured or fitted. An eleventh, `c_Mb_sd`, is back-calculated. **Three have no citable source and are treated differently:**
 
@@ -211,19 +237,19 @@ Fourteen parameters across eleven rows of Table 3.1. Ten are cited, measured or 
 
 ---
 
-## 13. Limitations, in the order they are likely to come up
+## 14. Limitations, in the order they are likely to come up
 
 1. **No real-pork validation.** The principal limitation. Every number describes a synthetic benchmark. The only external comparison point is the 970 nm water absorption feature.
 2. **Mean per-sample R² is negative** at -2.17. Explained in section 5 above.
 3. **The pH distribution is not representative** of commercial pork. Section 8.
-4. **Equine extinction coefficients** used for pork. Section 12.
+4. **Equine extinction coefficients** used for pork. Section 13.
 5. **Per-seed results do not reproduce across machines.** Aggregate behaviour does.
 6. **The five theoretical assumptions are declared, not tested.**
 7. **Boundary artifact:** error within an 8-pixel band at the tissue edge is 0.156 pH against 0.070 in the interior, a ratio of 2.31, present in 97% of samples.
 
 ---
 
-## 14. Things not to say
+## 15. Things not to say
 
 - **"Our prototype."** It is a pipeline. "Prototype" implies hardware integration, which does not exist.
 - **"Spatial reconstruction is unreliable."** Location is reliable; magnitude is over-expressed. These are different.
@@ -234,7 +260,7 @@ Fourteen parameters across eleven rows of Table 3.1. Ten are cited, measured or 
 
 ---
 
-## 15. How to check any number
+## 16. How to check any number
 
 | To verify | Read or run |
 |---|---|
