@@ -62,6 +62,12 @@ DEMO_SEED = 3
 IN_RES = 256
 OUT_RES = 256
 CMAP_PH = "turbo"
+# Colour scale is FIXED across samples, not fitted to each one. Per-sample
+# auto-scaling made every map look identical -- a pH 5.5 sample and a pH 6.0
+# sample both rendered as a full rainbow -- so switching samples showed no
+# visible difference. 5.2-6.8 is the generator's own clip range, so the scale
+# covers everything the simulator can produce and is not chosen per figure.
+PH_VMIN, PH_VMAX = 5.2, 6.8
 TMP_OUT = "crn_demo_output_tmp.png"
 
 device = torch.device("cpu")
@@ -152,53 +158,65 @@ def predict(sample_id):
     shown = np.where(mask, pred, np.nan)
 
     fig, ax = plt.subplots(figsize=(5.6, 5.2))
-    im = ax.imshow(shown, cmap=CMAP_PH)
+    im = ax.imshow(shown, cmap=CMAP_PH, vmin=PH_VMIN, vmax=PH_VMAX)
     ax.axis("off")
-    ax.set_title("Predicted pH distribution", fontsize=12)
+    ax.set_title("Predicted pH distribution", fontsize=13, pad=10)
     cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
     cb.set_label("pH", fontsize=10)
+    cb.ax.tick_params(labelsize=9)
     fig.tight_layout()
     fig.savefig(TMP_OUT, dpi=150, bbox_inches="tight")
     plt.close(fig)
 
     vals = pred[mask]
     status = (
-        f"**{sample_id}** — held-out sample, never seen during training.\n\n"
-        f"Predicted pH range **{vals.min():.2f} – {vals.max():.2f}**, "
-        f"mean **{vals.mean():.2f}**.\n\n"
-        f"*Estimated from the six spectral bands alone. No ground-truth pH was "
-        f"used to produce this map.*"
+        f"| | |\n|---|---|\n"
+        f"| Sample | **{sample_id}** |\n"
+        f"| Predicted mean pH | **{vals.mean():.2f}** |\n"
+        f"| Predicted range | **{vals.min():.2f} – {vals.max():.2f}** |\n"
+        f"| Pixels mapped | **{int(mask.sum()):,}** |\n\n"
+        f"Held-out sample, never seen during training. Estimated from the six "
+        f"spectral bands alone; no ground-truth pH was used to produce this map."
     )
     return Image.open(TMP_OUT), status
 
+
+THEME = gr.themes.Soft(
+    primary_hue="slate", secondary_hue="slate", neutral_hue="slate",
+).set(
+    body_background_fill="*neutral_50",
+    block_shadow="none",
+    block_border_width="1px",
+)
 
 with gr.Blocks(title="LIGTAS-pH pipeline") as demo:
     gr.Markdown(
         "# LIGTAS-pH — pH mapping pipeline\n"
         "A six-band multispectral sample goes in; a predicted pH map comes out. "
-        "The model estimates pH at **every pixel** from spectral reflectance alone — "
-        "no ground-truth pH is supplied at prediction time.\n\n"
-        "Samples are drawn from the 500-sample held-out set — the same set the "
-        "reported accuracy is measured on, and one the model never saw during training"
-        # "training. Input must be one of these six-band samples: the "
-        # "acquisition rig was never built, so there is no real-camera path."
+        "The model estimates pH at **every pixel** from spectral reflectance "
+        "alone — no ground-truth pH is supplied at prediction time.\n\n"
+        f"{DISCLOSURE}"
     )
-    gr.Markdown(DISCLOSURE)
-    with gr.Row():
-        with gr.Column(scale=1):
+    with gr.Row(equal_height=False):
+        with gr.Column(scale=4):
             sample_dropdown = gr.Dropdown(
                 choices=SAMPLE_IDS, value=SAMPLE_IDS[0],
-                label="Sample (500-sample held-out set)")
+                label="Sample", info="500-sample held-out set, never seen in training")
             preview = gr.Image(label="Input — RGB composite of the six bands",
-                               value=show_preview(SAMPLE_IDS[0]))
-            predict_btn = gr.Button("Predict pH map", variant="primary")
-        with gr.Column(scale=2):
-            output_image = gr.Image(label="Output — predicted pH map")
+                               value=show_preview(SAMPLE_IDS[0]),
+                               height=320)
+            predict_btn = gr.Button("Predict pH map", variant="primary", size="lg")
+        with gr.Column(scale=6):
+            output_image = gr.Image(label="Output — predicted pH map",
+                                    height=420)
             status = gr.Markdown()
+    gr.Markdown(
+        "<sub>Colour scale is fixed at pH 5.2–6.8 across all samples, the "
+        "generator's clip range, so maps are comparable between samples.</sub>")
 
     sample_dropdown.change(fn=show_preview, inputs=sample_dropdown, outputs=preview)
     predict_btn.click(fn=predict, inputs=sample_dropdown,
                       outputs=[output_image, status])
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(theme=THEME)
