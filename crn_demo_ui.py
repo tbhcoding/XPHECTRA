@@ -62,12 +62,6 @@ DEMO_SEED = 3
 IN_RES = 256
 OUT_RES = 256
 CMAP_PH = "turbo"
-# Colour scale is FIXED across samples, not fitted to each one. Per-sample
-# auto-scaling made every map look identical -- a pH 5.5 sample and a pH 6.0
-# sample both rendered as a full rainbow -- so switching samples showed no
-# visible difference. 5.2-6.8 is the generator's own clip range, so the scale
-# covers everything the simulator can produce and is not chosen per figure.
-PH_VMIN, PH_VMAX = 5.2, 6.8
 TMP_OUT = "crn_demo_output_tmp.png"
 
 device = torch.device("cpu")
@@ -158,7 +152,7 @@ def predict(sample_id):
     shown = np.where(mask, pred, np.nan)
 
     fig, ax = plt.subplots(figsize=(5.6, 5.2))
-    im = ax.imshow(shown, cmap=CMAP_PH, vmin=PH_VMIN, vmax=PH_VMAX)
+    im = ax.imshow(shown, cmap=CMAP_PH)
     ax.axis("off")
     ax.set_title("Predicted pH distribution", fontsize=13, pad=10)
     cb = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.03)
@@ -211,8 +205,8 @@ with gr.Blocks(title="LIGTAS-pH pipeline") as demo:
                                     height=420)
             status = gr.Markdown()
     gr.Markdown(
-        "<sub>Colour scale is fixed at pH 5.2–6.8 across all samples, the "
-        "generator's clip range, so maps are comparable between samples.</sub>")
+        "<sub>The colour scale is fitted to each sample's own range, so read the "
+        "colourbar values rather than comparing colours between samples.</sub>")
 
     sample_dropdown.change(fn=show_preview, inputs=sample_dropdown, outputs=preview)
     predict_btn.click(fn=predict, inputs=sample_dropdown,
