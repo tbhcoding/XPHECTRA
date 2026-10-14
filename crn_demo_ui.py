@@ -87,7 +87,7 @@ SEED_R2, MEAN_R2, SD_R2, BEST_R2 = _reported()
 
 if SEED_R2 is not None:
     DISCLOSURE = (
-        f"**Model:** seed {DEMO_SEED} — held-out R² **{SEED_R2:.4f}**.  "
+        f"**Model:** seed {DEMO_SEED}, held-out R² **{SEED_R2:.4f}**.  "
         f"Reported figure is the five-seed mean, **{MEAN_R2:.4f} ± {SD_R2:.4f}**.  "
         # f"The best of the five scored {BEST_R2:.4f} and is deliberately not used, "
         # f"so this demo does not show more than the thesis claims."
@@ -95,7 +95,7 @@ if SEED_R2 is not None:
 else:
     DISCLOSURE = (
         f"**Model:** seed {DEMO_SEED}, chosen as the run closest to the reported "
-        f"five-seed mean — not the best run."
+        f"five-seed mean, not the best run."
     )
 
 if not os.path.isdir(DATA_ROOT):
@@ -167,10 +167,10 @@ def predict(sample_id):
         f"| | |\n|---|---|\n"
         f"| Sample | **{sample_id}** |\n"
         f"| Predicted mean pH | **{vals.mean():.2f}** |\n"
-        f"| Predicted range | **{vals.min():.2f} – {vals.max():.2f}** |\n"
+        f"| Predicted range | **{vals.min():.2f} to {vals.max():.2f}** |\n"
         f"| Pixels mapped | **{int(mask.sum()):,}** |\n\n"
         f"Held-out sample, never seen during training. Estimated from the six "
-        f"spectral bands alone; no ground-truth pH was used to produce this map."
+        f"spectral bands alone. No ground-truth pH was used to produce this map."
     )
     return Image.open(TMP_OUT), status
 
@@ -185,10 +185,10 @@ THEME = gr.themes.Soft(
 
 with gr.Blocks(title="LIGTAS-pH pipeline") as demo:
     gr.Markdown(
-        "# LIGTAS-pH — pH mapping pipeline\n"
-        "A six-band multispectral sample goes in; a predicted pH map comes out. "
-        "The model estimates pH at **every pixel** from spectral reflectance "
-        "alone — no ground-truth pH is supplied at prediction time.\n\n"
+        "# LIGTAS-pH: pH mapping pipeline\n"
+        "The model reads a six-band multispectral sample and predicts pH at "
+        "**every pixel** from spectral reflectance. No ground-truth pH is "
+        "supplied at prediction time.\n\n"
         f"{DISCLOSURE}"
     )
     with gr.Row(equal_height=False):
@@ -196,16 +196,16 @@ with gr.Blocks(title="LIGTAS-pH pipeline") as demo:
             sample_dropdown = gr.Dropdown(
                 choices=SAMPLE_IDS, value=SAMPLE_IDS[0],
                 label="Sample", info="500-sample held-out set, never seen in training")
-            preview = gr.Image(label="Input — RGB composite of the six bands",
+            preview = gr.Image(label="Input: RGB composite of the six bands",
                                value=show_preview(SAMPLE_IDS[0]),
                                height=320)
             predict_btn = gr.Button("Predict pH map", variant="primary", size="lg")
         with gr.Column(scale=6):
-            output_image = gr.Image(label="Output — predicted pH map",
+            output_image = gr.Image(label="Output: predicted pH map",
                                     height=420)
             status = gr.Markdown()
     gr.Markdown(
-        "<sub>The colour scale is fitted to each sample's own range, so read the "
+        "<sub>The colour scale is fitted to each sample's own range. Read the "
         "colourbar values rather than comparing colours between samples.</sub>")
 
     sample_dropdown.change(fn=show_preview, inputs=sample_dropdown, outputs=preview)
