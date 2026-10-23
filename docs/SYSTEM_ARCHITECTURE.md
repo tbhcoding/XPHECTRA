@@ -31,7 +31,8 @@ under a stated, physically-motivated set of assumptions."
 | `train_crn.py` | Training loop: data loading, loss functions, early stopping, evaluation, checkpointing — see §6. |
 | `extract_sensor_params.py` | One-off script that measures sensor noise + a spatial-texture check from a real (different-purpose) hyperspectral dataset (Wang et al. 2026, NHSI-meat-overtime) — used to source `sensor_sigma` and to reality-check the 970nm band. |
 | `make_figures.py` | Produces every manuscript figure from the frozen dataset and the saved result files; records the selection rule for each in `figures/figure_manifest.json`. A notebook (`LIGTAS_calibration.ipynb`) used to do this interactively; it was removed in `42e3deb` because it drifted out of sync with `PARAMS`. Do not recreate it. |
-| `README.md` | Setup + step-by-step walkthrough. |
+| `README.md` | Public overview: problem, method, headline results, quick start. |
+| `docs/WALKTHROUGH.md` | Setup + step-by-step walkthrough (moved from the root README on 2026-10-23). |
 | `docs/TEAM_LOG.md` | Dated, structured log of every session's changes/verified numbers/decisions/open items. **The authoritative history — read this, not memory, before claiming any past result.** |
 | `requirements.txt` | `numpy`, `scipy`, `h5py`, `opencv-python`, `matplotlib`, `torch`. |
 

@@ -75,7 +75,7 @@ With the adviser's approval, the project pivoted:
   training data — it has no pH labels and its wavelengths don't overlap
   cleanly with ours.
 
-This is documented in `README.md`'s opening section ("Why this exists —
+This is documented in `docs/WALKTHROUGH.md`'s opening section ("Why this exists —
 read first") and in `docs/TEAM_LOG.md`'s 2026-09-03 entry ("Pivot
 confirmed with adviser... Settled — do not re-litigate").
 
@@ -87,8 +87,9 @@ confirmed with adviser... Settled — do not re-litigate").
 | `extract_sensor_params.py` | Measures real sensor noise and texture statistics from an external real dataset (NHSI meat cubes, Wang et al. 2026 -- a mixed tray of salmon/pork/mutton/beef/chicken, species established 2026-09-18 from the authors' annotated photo) — the closest thing this project has to real measurements. |
 | `crn_model.py` | The CRN (`CrudeCRN`): a small U-Net that predicts a dense pH map from a 6-band image. This is the actual model being evaluated — the thing the synthetic dataset exists to test. |
 | `train_crn.py` | Trains the CRN on 4 sparse pH points per sample (never the full dense map — that's held out as a hidden evaluation target, which is the core experimental design: can the CRN reconstruct a full field from 4 points using spectral shape alone?). |
-| `docs/TEAM_LOG.md` | Session-by-session log: what was changed, what was actually verified (with numbers), what was decided, what's still open. **This is the most current and most trustworthy record in the repo** — more current than `README.md`'s status table, which is dated 2026-09-03 and predates later sessions. |
-| `README.md` | Onboarding walkthrough (setup, how to fill in parameters, how to run each step). Good for procedure; check `TEAM_LOG.md` for current numbers, since the README's status table is a few sessions stale. |
+| `docs/TEAM_LOG.md` | Session-by-session log: what was changed, what was actually verified (with numbers), what was decided, what's still open. **This is the most current and most trustworthy record in the repo** — more current than `docs/WALKTHROUGH.md`'s status table, which is dated 2026-09-03 and predates later sessions. |
+| `README.md` | Public project overview: problem, method, headline results, quick start. Numbers in it come from `RESULTS.md`. |
+| `docs/WALKTHROUGH.md` | Onboarding walkthrough (setup, how to fill in parameters, how to run each step); moved from the root README on 2026-10-23. Good for procedure; check `TEAM_LOG.md` for current numbers, since its status table is a few sessions stale. |
 | `collect_results.py` | Reads the saved evidence files and regenerates `RESULTS.md` / `RESULTS.json` — the single reportable-numbers document. A notebook (`LIGTAS_calibration.ipynb`) used to hold the parameter/figure work; it was removed in `42e3deb` because it drifted out of sync with `PARAMS`. Figures are now `make_figures.py`. Don't recreate the notebook. |
 | `RESULTS.md` / `RESULTS.json` | **Generated, not hand-written.** The reportable numbers, each with the evidence file that produced it. Regenerate with `collect_results.py`. |
 
